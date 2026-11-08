@@ -2,7 +2,8 @@
 // Windows: a native window (or command-line flags). macOS/Linux: command line.
 package main
 
-//go:generate go run github.com/akavel/rsrc@v0.10.2 -manifest vanta.manifest -ico vanta.ico -arch amd64 -o rsrc_windows_amd64.syso
+// Release builds regenerate this with version info from versioninfo.json (see .github/workflows/release.yml).
+//go:generate go run github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1 -64 -o rsrc_windows_amd64.syso versioninfo.json
 
 import "os"
 

@@ -60,11 +60,22 @@ jobs:
         # obsid.tar.gz: same file under Vanta's old name, so Obsid 0.2.x installs auto-update into Vanta
         run: npm run build:release && npm run package && cp release/vanta.tar.gz release/obsid.tar.gz
 
+      # Windows version info (publisher, product, version, description) + icon + manifest.
+      # An exe without it is a strong "suspicious" signal for antivirus machine-learning scanners.
+      - name: Windows resources
+        working-directory: installer
+        run: |
+          V=${GITHUB_REF_NAME#v}; IFS=. read -r MA MI PA <<< "$V"
+          go run github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1 -64 -o rsrc_windows_amd64.syso \
+            -ver-major "$MA" -ver-minor "$MI" -ver-patch "$PA" -product-ver-major "$MA" -product-ver-minor "$MI" -product-ver-patch "$PA" \
+            -file-version "$V" -product-version "$V" versioninfo.json
+
       - name: Build installers
         working-directory: installer
         run: |
           V=${GITHUB_REF_NAME#v}
-          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$V" -o ../release/VantaInstaller.exe .
+          # Windows build keeps its symbol table: stripped Go binaries score worse with antivirus heuristics
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -X main.Version=$V" -o ../release/VantaInstaller.exe .
           GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-linux .
           GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-macos .
 
