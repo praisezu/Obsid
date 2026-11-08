@@ -5,6 +5,14 @@ export function onDomReady(fn: () => void) {
 
 export const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
+/**
+ * Like setInterval, but skips the work while Discord is minimized or hidden, so polling plugins
+ * cost nothing in the background. Stop it with clearInterval().
+ */
+export function every(fn: () => void, ms: number) {
+    return setInterval(() => { if (!document.hidden) fn(); }, ms);
+}
+
 /** A <style> element owned by a plugin. Call .set(css) to update and .remove() on stop. */
 export function managedStyle(id: string) {
     let el: HTMLStyleElement | null = null;

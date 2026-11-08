@@ -1,5 +1,5 @@
 // Notification-related plugins built on Discord's own stores and events.
-import { definePlugin, common, webpack, onFlux, net, ui, h, managedStyle } from "@api";
+import { definePlugin, every, common, webpack, onFlux, net, ui, h, managedStyle } from "@api";
 
 const desktopNotify = (title: string, body: string) => {
     try { if ("Notification" in window) new Notification(title, { body, silent: false }); } catch { }
@@ -62,7 +62,7 @@ export default [
 .vanta-readall:focus-visible { outline: 2px solid #8b5cf6; }`);
             this.insert();
             // The server list re-renders sometimes; put the button back if it goes away.
-            this.timer = setInterval(() => this.insert(), 2000);
+            this.timer = every(() => this.insert(), 2000);
         },
         stop() { clearInterval(this.timer); this.btn?.remove(); this.btn = null; this.style?.remove(); },
     }),

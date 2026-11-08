@@ -137,7 +137,7 @@ in `%APPDATA%\Vanta\plugins\`.
 
 Try it with [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
-## Built-in plugins (116)
+## Built-in plugins (123)
 
 Every plugin is off until you turn it on (except NoTrack, ClearURLs and NoDevToolsWarning), and a
 plugin that's off costs nothing. Most appearance plugins are pure CSS, and plugins that react to
@@ -146,10 +146,10 @@ new messages share one page watcher, so turning many on doesn't slow Discord dow
 | Category | Plugins |
 | --- | --- |
 | Privacy | NoTrack, ClearURLs, SilentTyping, AnonymiseFileNames, BlurMedia, BlurNames |
-| Chat | NoBlockedMessages, SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history, saved log), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
+| Chat | QuickReply, PasteLinks, RevealAllSpoilers, BetterUploadButton, NoBlockedMessages, SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history, saved log), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
 | Appearance | CursorPet, KeyboardSounds, CrispText, HideMentionBars, TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
-| Utility | PlatformIndicators, HiddenChannels, FriendsSince, PinDMs, CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
-| Developer | ThemeAttributes, ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
+| Utility | VoiceNarrator, LastSeen, PlatformIndicators, HiddenChannels, FriendsSince, PinDMs, CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
+| Developer | ConsoleJanitor, ThemeAttributes, ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
 
 Each plugin's description and options are in **Settings → Vanta Settings → Plugins**. Plugins tagged
 **Restart** ask whether to restart Discord when you switch them.

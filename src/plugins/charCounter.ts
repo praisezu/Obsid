@@ -1,4 +1,4 @@
-import { definePlugin, common } from "@api";
+import { definePlugin, every, common } from "@api";
 
 export default definePlugin({
     name: "CharacterCounter",
@@ -43,7 +43,7 @@ export default definePlugin({
     start() {
         this.onInput = () => requestAnimationFrame(() => this.update());
         for (const t of ["input", "keyup", "paste", "cut"]) document.addEventListener(t, this.onInput, true);
-        this.timer = setInterval(() => this.update(), 1000); // catches channel switches / sends
+        this.timer = every(() => this.update(), 1000); // catches channel switches / sends
     },
     stop() {
         for (const t of ["input", "keyup", "paste", "cut"]) document.removeEventListener(t, this.onInput, true);

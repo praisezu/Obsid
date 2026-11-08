@@ -1,5 +1,5 @@
 // Plugins that read Discord's stores more deeply.
-import { definePlugin, common, webpack, patcher, onFlux, watchElements, managedStyle, messageFromElement, storage, ui, h } from "@api";
+import { definePlugin, every, common, webpack, patcher, onFlux, watchElements, managedStyle, messageFromElement, storage, ui, h } from "@api";
 
 const VIEW_CHANNEL = 1n << 10n;
 const userName = (u: any) => u?.globalName || u?.global_name || u?.username || "Unknown";
@@ -113,7 +113,7 @@ export default [
             this.style.set(`.vanta-hidden-pill { all:unset; cursor:pointer; display:block; margin:8px 8px 12px; padding:6px 10px; border-radius:6px; font:600 12px var(--font-primary, sans-serif);
   color:var(--text-muted); background:var(--background-mod-subtle, rgba(150,150,160,.1)); text-align:center; }
 .vanta-hidden-pill:hover { color:var(--text-default); background:var(--background-mod-normal, rgba(150,150,160,.16)); }`);
-            this.timer = setInterval(() => {
+            this.timer = every(() => {
                 const gid = common.SelectedGuildStore?.getGuildId?.();
                 const nav = document.querySelector<HTMLElement>('nav[aria-label$="(server)"]');
                 if (!gid || !nav) { this.pill?.remove(); return; }
@@ -248,7 +248,7 @@ export default [
                 this.syncButtons();
                 this.renderRow();
             });
-            this.timer = setInterval(() => this.renderRow(), 3000); // the DM list re-renders when you navigate
+            this.timer = every(() => this.renderRow(), 3000); // the DM list re-renders when you navigate
             this.renderRow();
         },
         stop() {

@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.5.1",
   "repo": "praisezu/Vanta",
   "discord": "https://discord.gg/Eh6fSPnznj",
   "plugins": [
@@ -32,6 +32,11 @@
       "name": "BetterTitle",
       "description": "Cleaner window title: drops the \"Discord |\" prefix and can show your unread count first.",
       "category": "Utility"
+    },
+    {
+      "name": "BetterUploadButton",
+      "description": "Clicking the + button next to the message box opens the file picker straight away. Right-click it for the usual menu.",
+      "category": "Chat"
     },
     {
       "name": "BlurMedia",
@@ -87,6 +92,11 @@
       "name": "ConfirmCalls",
       "description": "Asks before starting a voice or video call, so you don't ring someone by accident.",
       "category": "Utility"
+    },
+    {
+      "name": "ConsoleJanitor",
+      "description": "Silences Discord's own console logging, so DevTools only shows what matters (errors and Vanta).",
+      "category": "Developer"
     },
     {
       "name": "ConsoleShortcuts",
@@ -339,6 +349,11 @@
       "category": "Chat"
     },
     {
+      "name": "LastSeen",
+      "description": "Remembers when each friend was last online. Open this plugin's settings to see the list.",
+      "category": "Utility"
+    },
+    {
       "name": "MediaCorners",
       "description": "Change how rounded images and videos in chat are.",
       "category": "Appearance"
@@ -414,6 +429,11 @@
       "category": "Utility"
     },
     {
+      "name": "PasteLinks",
+      "description": "Select some text in the message box and paste a link: it becomes a clickable [text](link).",
+      "category": "Chat"
+    },
+    {
       "name": "PictureInPicture",
       "description": "Adds a picture-in-picture button to videos in chat so you can keep watching while you scroll.",
       "category": "Utility"
@@ -427,6 +447,11 @@
       "name": "PlatformIndicators",
       "description": "Shows whether people are on desktop, phone or web, next to their names in chat, the member list and DMs.",
       "category": "Utility"
+    },
+    {
+      "name": "QuickReply",
+      "description": "Ctrl+Up and Ctrl+Down pick a message to reply to, without touching the mouse. Ctrl+Down past the newest message cancels the reply.",
+      "category": "Chat"
     },
     {
       "name": "ReadableWidth",
@@ -447,6 +472,11 @@
       "name": "RelationshipNotifier",
       "description": "Tells you when someone unfriends you, cancels a friend request, or removes you from a server or group chat.",
       "category": "Utility"
+    },
+    {
+      "name": "RevealAllSpoilers",
+      "description": "Ctrl+click a spoiler to reveal every spoiler in the channel at once.",
+      "category": "Chat"
     },
     {
       "name": "ReverseImageSearch",
@@ -576,6 +606,11 @@
     {
       "name": "VoiceChannelAlerts",
       "description": "Tells you when people join or leave the voice channel you're in, and can say it out loud.",
+      "category": "Utility"
+    },
+    {
+      "name": "VoiceNarrator",
+      "description": "Reads out who joins and leaves your voice channel, using your computer's text-to-speech voice.",
       "category": "Utility"
     },
     {

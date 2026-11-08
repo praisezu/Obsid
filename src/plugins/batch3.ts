@@ -1,5 +1,5 @@
 // More quality-of-life plugins (BetterDiscord/Vencord-style features, written from scratch).
-import { definePlugin, cssPlugin, common, webpack, ui, native, watchElements, messageFromElement, managedStyle, copyText, net, SEND_OR_EDIT_URL } from "@api";
+import { definePlugin, every, cssPlugin, common, webpack, ui, native, watchElements, messageFromElement, managedStyle, copyText, net, SEND_OR_EDIT_URL } from "@api";
 
 const MESSAGE = '[id^="chat-messages-"]';
 const typingIn = (el: Element | null) => !!el && ((el as HTMLElement).isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
@@ -85,7 +85,7 @@ export default [
             this.style.set(`.vanta-member-count { display:flex; align-items:center; gap:6px; padding:12px 16px 4px; font:600 12px var(--font-primary, sans-serif); color:var(--text-muted); text-transform:uppercase; letter-spacing:.02em; }
 .vanta-member-count i { width:8px; height:8px; border-radius:50%; display:inline-block; }
 .vanta-member-count i:last-of-type { margin-left:8px; }`);
-            this.timer = setInterval(() => this.render(), 2000);
+            this.timer = every(() => this.render(), 2000);
             this.render();
         },
         stop() { clearInterval(this.timer); this.el?.remove(); this.el = null; this.style?.remove(); },
@@ -125,7 +125,7 @@ export default [
 .vanta-call-timer::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }`);
             let since = 0, channel: string | null = null;
             const fmt = (s: number) => [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map((n, i) => i ? String(n).padStart(2, "0") : n).join(":").replace(/^0:/, "");
-            this.timer = setInterval(() => {
+            this.timer = every(() => {
                 const now = common.SelectedChannelStore?.getVoiceChannelId?.() ?? null;
                 if (now !== channel) { channel = now; since = Date.now(); }
                 const panel = document.querySelector('[class*="panels_"]');

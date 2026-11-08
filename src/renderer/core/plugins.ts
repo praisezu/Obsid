@@ -21,6 +21,8 @@ export interface PluginDef {
     description?: string;
     authors?: string[];
     category?: string;
+    /** Vanta version the plugin was added in; shows a "New" tag during that version */
+    since?: string;
     enabledByDefault?: boolean;
     /** Wait for Discord's modules before start() */
     needsWebpack?: boolean;

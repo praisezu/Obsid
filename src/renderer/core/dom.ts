@@ -30,10 +30,15 @@ function scan(w: Watcher, root: ParentNode) {
 
 function flush() {
     scheduled = false;
-    const nodes = pending;
+    const nodes = new Set(pending); // the same node can be added more than once per frame
     pending = [];
     for (const node of nodes) {
         if (!(node instanceof Element) || !node.isConnected) continue;
+        // Discord often adds a container and its children in one frame. Scanning the container
+        // already covers the children, so skip any node inside another one in this batch.
+        let covered = false;
+        for (let p = node.parentNode; p; p = p.parentNode) if (nodes.has(p)) { covered = true; break; }
+        if (covered) continue;
         for (const w of watchers) scan(w, node);
     }
 }

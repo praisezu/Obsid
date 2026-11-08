@@ -16,6 +16,6 @@ export { native, cleanError } from "./core/native";
 export { settings, saveSettings } from "./core/settings";
 export { quickCss } from "./core/quickCss";
 export { logger, makeLogger, type Logger } from "./core/logger";
-export { onDomReady, sleep, managedStyle, escapeRegExp } from "./core/utils";
+export { onDomReady, sleep, every, managedStyle, escapeRegExp } from "./core/utils";
 export { ui, h } from "./ui/components";
 export { themes } from "./themes";

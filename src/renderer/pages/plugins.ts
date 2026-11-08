@@ -113,6 +113,7 @@ function pluginCard(p: PluginInstance, rerender: () => void, q = "") {
     const hasOptions = Object.keys(p.options || {}).length > 0 || typeof p.settingsPanel === "function";
     const source = pluginStore.sourceOf(p);
     const tags: Node[] = [];
+    if (p.since && p.since === __VANTA_VERSION__) tags.push(ui.tag("New", "ok", `Added in Vanta ${p.since}`));
     if (p.file) tags.push(ui.tag("Imported", "ok", p.file));
     if (p.error) tags.push(ui.tag("Error", "danger", p.error));
     if (p.restartNeeded) tags.push(ui.tag("Restart", "warn", "Turning this on or off needs a Discord restart"));

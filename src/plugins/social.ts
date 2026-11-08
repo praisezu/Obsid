@@ -1,4 +1,4 @@
-import { definePlugin, cssPlugin, common, webpack, onFlux, watchElements, managedStyle, messageFromElement, native, ui, h } from "@api";
+import { definePlugin, every, cssPlugin, common, webpack, onFlux, watchElements, managedStyle, messageFromElement, native, ui, h } from "@api";
 
 const userName = (u: any) => u?.globalName || u?.global_name || u?.username || "Someone";
 
@@ -101,7 +101,7 @@ export default [
             let t: ReturnType<typeof setTimeout> | undefined;
             const soon = () => { clearTimeout(t); t = setTimeout(() => this.render(), 1500); };
             this.offs = [onFlux("PRESENCE_UPDATES", soon), onFlux("RELATIONSHIP_ADD", soon), onFlux("RELATIONSHIP_REMOVE", soon)];
-            this.timer = setInterval(() => this.render(), 30000); // also catches the DM list being re-mounted
+            this.timer = every(() => this.render(), 30000); // also catches the DM list being re-mounted
             this.render();
         },
         stop() { this.offs?.forEach((f: () => void) => f()); clearInterval(this.timer); this.style?.remove(); document.querySelectorAll(".vanta-online-count").forEach(e => e.remove()); },
