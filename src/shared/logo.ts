@@ -1,27 +1,43 @@
-/** The Vanta pixel logo as a list of coloured cells, from assets/logo.json. */
+/**
+ * The Vanta pixel logo, from assets/logo.json: vanta-black letters with a thin glowing rim along
+ * every outside edge (lavender top-left → violet bottom-right), plus the void orb and a sparkle.
+ * scripts/make-logo.mjs uses the same rules for the PNG/ICO files.
+ */
 import logo from "../../assets/logo.json";
 
 export interface LogoCell { x: number; y: number; color: string }
-
-const hex = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-const toHex = (c: number[]) => "#" + c.map(v => Math.round(v).toString(16).padStart(2, "0")).join("");
+export interface LogoRect { x: number; y: number; w: number; h: number }
 
 export const LOGO_WIDTH = Math.max(...logo.rows.map(r => r.length));
 export const LOGO_HEIGHT = logo.rows.length;
+export const LOGO_RIM = logo.rim;
+
+const filled = (x: number, y: number) => { const c = logo.rows[y]?.[x]; return !!c && c !== "."; };
 
 export function logoCells(): LogoCell[] {
     const cells: LogoCell[] = [];
-    const { from, to, char } = logo.gradient;
-    const a = hex(from), b = hex(to);
-    const span = LOGO_WIDTH + LOGO_HEIGHT - 2;
     logo.rows.forEach((row, y) => [...row].forEach((ch, x) => {
-        if (ch === ".") return;
-        let color = (logo.colors as Record<string, string>)[ch];
-        if (ch === char) {
-            const t = (x + y) / span; // diagonal gradient, top-left → bottom-right
-            color = toHex(a.map((v, i) => v + (b[i] - v) * t));
-        }
-        if (color) cells.push({ x, y, color });
+        const color = (logo.colors as Record<string, string>)[ch];
+        if (ch !== "." && color) cells.push({ x, y, color });
     }));
     return cells;
+}
+
+/** Thin rectangles (in cell units) along the outer edges of the rimmed letters. */
+export function logoRim(): LogoRect[] {
+    const t = logo.rim.width;
+    const out: LogoRect[] = [];
+    logo.rows.forEach((row, y) => [...row].forEach((ch, x) => {
+        if (ch !== logo.rim.char) return;
+        if (!filled(x, y - 1)) out.push({ x, y, w: 1, h: t });
+        if (!filled(x, y + 1)) out.push({ x, y: y + 1 - t, w: 1, h: t });
+        if (!filled(x - 1, y)) out.push({ x, y, w: t, h: 1 });
+        if (!filled(x + 1, y)) out.push({ x: x + 1 - t, y, w: t, h: 1 });
+        // inside (concave) corners: both sides filled but the diagonal is empty
+        for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+            if (filled(x + dx, y) && filled(x, y + dy) && !filled(x + dx, y + dy))
+                out.push({ x: dx < 0 ? x : x + 1 - t, y: dy < 0 ? y : y + 1 - t, w: t, h: t });
+        }
+    }));
+    return out;
 }

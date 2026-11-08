@@ -23,6 +23,11 @@ const native: NativeAPI = {
     fetchTheme: url => invoke("fetch-theme", url),
 
     fetchText: url => invoke("fetch-text", url),
+    openAppUrl: url => invoke("open-app-url", url),
+    bdThemes: force => invoke("bd-themes", force),
+    bdInstallTheme: id => invoke("bd-install-theme", id),
+    storeIndex: force => invoke("store-index", force),
+    storeDownload: (p, sha) => invoke("store-download", p, sha),
 
     pluginPickFile: () => invoke("plugin-pick-file"),
     pluginFetch: url => invoke("plugin-fetch", url),

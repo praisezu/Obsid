@@ -18,6 +18,35 @@ export interface ThemeFile {
     meta: Record<string, string>;
 }
 
+/** A theme listed on betterdiscord.app */
+export interface BdTheme {
+    id: number;
+    name: string;
+    description: string;
+    author: string;
+    downloads: number;
+    likes: number;
+    tags: string[];
+    thumbnail: string | null;
+    released: string;
+    page: string;
+}
+
+/** An entry in Vanta's plugin store (store/plugins.json in the Vanta repo). */
+export interface StorePlugin {
+    id: string;
+    name: string;
+    description: string;
+    author: string;
+    version: string;
+    /** Path inside the repo, e.g. "store/community/Foo.js". Official = under store/official/. */
+    path: string;
+    /** sha256 (hex) of the file; checked before installing */
+    sha256: string;
+    tags?: string[];
+    updated?: string;
+}
+
 export interface RendererScript {
     name: string;
     code: string;
@@ -94,6 +123,17 @@ export interface NativeAPI {
 
     /** GET an https URL from the main process (not subject to Discord's CSP). */
     fetchText(url: string): Promise<string>;
+
+    /** Opens spotify:/steam: links in their desktop apps */
+    openAppUrl(url: string): Promise<void>;
+
+    bdThemes(force?: boolean): Promise<BdTheme[]>;
+    bdInstallTheme(id: number): Promise<string>;
+
+    /** Vanta plugin store */
+    storeIndex(force?: boolean): Promise<{ plugins: StorePlugin[]; repo: string; branch: string }>;
+    /** Downloads a store plugin and checks its sha256. Returns { fileName, code, url }. */
+    storeDownload(path: string, sha256: string): Promise<FetchedPlugin>;
 
     pluginPickFile(): Promise<FetchedPlugin | null>;
     pluginFetch(url: string): Promise<FetchedPlugin>;

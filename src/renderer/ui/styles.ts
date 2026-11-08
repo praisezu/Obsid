@@ -82,6 +82,14 @@ export const CSS = `
 .vanta-empty { padding:36px 20px; text-align:center; color:var(--o-muted); font-size:14px; line-height:20px;
   border:1px dashed var(--o-line-strong); border-radius:var(--o-r-md); display:flex; flex-direction:column; align-items:center; gap:12px; }
 .vanta-empty svg { opacity:.6; }
+.vanta-theme-grid { grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+.vanta-theme-card { overflow:hidden; }
+.vanta-theme-thumb { display:block; margin:-14px -16px 2px; width:calc(100% + 32px); aspect-ratio:16/9; object-fit:cover;
+  background:var(--o-input); border-bottom:1px solid var(--o-line); }
+.vanta-badge { display:inline-flex; align-items:center; gap:4px; height:18px; padding:0 6px; border-radius:4px; font-size:11px; font-weight:700; }
+.vanta-badge.official { background:color-mix(in srgb,var(--o-ok) 18%,transparent); color:var(--o-ok); }
+.vanta-badge.community { background:var(--o-hover); color:var(--o-muted); }
+.vanta-badge.impostor { background:color-mix(in srgb,var(--o-danger) 16%,transparent); color:var(--o-danger); }
 .vanta-code { font-family:var(--font-code,Consolas,monospace); font-size:12.5px; }
 .vanta-kv { display:grid; grid-template-columns:auto 1fr; gap:8px 20px; font-size:14px; }
 .vanta-kv dt { color:var(--o-muted); }

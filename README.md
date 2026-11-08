@@ -64,11 +64,23 @@ Vanta adds an **Vanta Settings** section to Discord's own **User Settings** side
 | --- | --- |
 | Vanta | Version info, quick actions (reload, restart, DevTools), general options, folders |
 | Plugins | Every plugin with search, category and on/off filters, per-plugin settings, **Import plugin** |
-| Themes | Local `.css` themes (BetterDiscord themes work), online themes from a link, the Quick CSS editor |
+| Themes | Browse and install BetterDiscord themes, your installed `.css` themes, themes from a link, the Quick CSS editor |
 | Updater | Updates Vanta with git once the folder is a git repo with a remote |
 | Backup & Restore | Export settings, Quick CSS and themes to one file, restore it, or reset |
 
 Press **Ctrl+Shift+O** anywhere to open the same pages in a pop-up without going through Settings.
+
+## Plugin Store
+
+**Settings → Vanta Settings → Plugin Store** lists plugins from [`store/`](store/) in this repo.
+
+- **Official** plugins (green badge) are made by Vanta and live in `store/official/`.
+- **Community** plugins are made by anyone and submitted by pull request (see [store/README.md](store/README.md)).
+  Before installing one, Vanta warns that it isn't official and shows its full code.
+- "Official" comes only from the folder, never from the author name. A community plugin whose author or
+  name looks like "Vanta" (including look-alike letters such as a Cyrillic "а") is flagged
+  **"Not really Vanta"**.
+- Every store plugin is pinned to a sha256 checksum, so its code can't change after review.
 
 ## Importing plugins
 
@@ -86,7 +98,7 @@ in `%APPDATA%\Vanta\plugins\`.
 
 Try it with [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
-## Built-in plugins (97)
+## Built-in plugins (111)
 
 Every plugin is off until you turn it on (except NoTrack, ClearURLs and NoDevToolsWarning), and a
 plugin that's off costs nothing. Most appearance plugins are pure CSS, and plugins that react to
@@ -95,10 +107,10 @@ new messages share one page watcher, so turning many on doesn't slow Discord dow
 | Category | Plugins |
 | --- | --- |
 | Privacy | NoTrack, ClearURLs, SilentTyping, AnonymiseFileNames, BlurMedia, BlurNames |
-| Chat | MessageLogger (keeps deleted messages in chat, shows edit history), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
-| Appearance | TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
-| Utility | ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
-| Developer | ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
+| Chat | SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
+| Appearance | CursorPet, KeyboardSounds, CrispText, HideMentionBars, TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
+| Utility | CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
+| Developer | ThemeAttributes, ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
 
 Each plugin's description and options are in **Settings → Vanta Settings → Plugins**. Plugins tagged
 **Restart** ask whether to restart Discord when you switch them.

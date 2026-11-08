@@ -7,7 +7,7 @@ import { logger } from "../core/logger";
 import { onDomReady } from "../core/utils";
 import { CSS } from "./styles";
 import { ICONS } from "./icons";
-import { logoCells, LOGO_WIDTH, LOGO_HEIGHT } from "@shared/logo";
+import { logoCells, logoRim, LOGO_WIDTH, LOGO_HEIGHT, LOGO_RIM } from "@shared/logo";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -84,15 +84,33 @@ export function logo(size = 48): SVGSVGElement {
     svg.setAttribute("height", String(size));
     svg.setAttribute("aria-hidden", "true");
     svg.setAttribute("shape-rendering", "crispEdges");
-    for (const c of logoCells()) {
+    const rect = (x: number, y: number, w: number, hh: number, fill: string) => {
         const r = document.createElementNS(SVG_NS, "rect");
-        r.setAttribute("x", String(c.x + ox));
-        r.setAttribute("y", String(c.y + oy));
-        r.setAttribute("width", "1.02"); // tiny overlap avoids hairline gaps when scaled
-        r.setAttribute("height", "1.02");
-        r.setAttribute("fill", c.color);
+        r.setAttribute("x", String(x + ox));
+        r.setAttribute("y", String(y + oy));
+        r.setAttribute("width", String(w + 0.02)); // tiny overlap avoids hairline gaps when scaled
+        r.setAttribute("height", String(hh + 0.02));
+        r.setAttribute("fill", fill);
         svg.append(r);
+    };
+    // Rim gradient across the whole logo: lavender top-left → violet bottom-right
+    const id = "vanta-rim-" + Math.random().toString(36).slice(2, 8);
+    const defs = document.createElementNS(SVG_NS, "defs");
+    const grad = document.createElementNS(SVG_NS, "linearGradient");
+    grad.setAttribute("id", id);
+    grad.setAttribute("gradientUnits", "userSpaceOnUse");
+    grad.setAttribute("x1", String(ox)); grad.setAttribute("y1", String(oy));
+    grad.setAttribute("x2", String(ox + LOGO_WIDTH)); grad.setAttribute("y2", String(oy + LOGO_HEIGHT));
+    for (const [offset, color] of [["0", LOGO_RIM.from], ["1", LOGO_RIM.to]]) {
+        const s = document.createElementNS(SVG_NS, "stop");
+        s.setAttribute("offset", offset);
+        s.setAttribute("stop-color", color);
+        grad.append(s);
     }
+    defs.append(grad);
+    svg.append(defs);
+    for (const c of logoCells()) rect(c.x, c.y, 1, 1, c.color);
+    for (const r of logoRim()) rect(r.x, r.y, r.w, r.h, `url(#${id})`);
     return svg;
 }
 

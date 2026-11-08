@@ -3,6 +3,7 @@ import { quickCss } from "../core/quickCss";
 import { settings } from "../core/settings";
 import { themes } from "../themes";
 import { ui, h, type PageContext } from "../ui/components";
+import { browseTab } from "./themeBrowser";
 
 ui.registerPage({
     id: "themes",
@@ -12,13 +13,13 @@ ui.registerPage({
     keywords: ["css", "quick css", "appearance"],
     render(ctx) {
         const st = ctx.state;
-        st.tab ??= "local";
+        st.tab ??= "browse";
         ctx.onDispose(themes.onChange(() => { if (st.tab !== "quickcss") ctx.rerender(); }));
 
-        const body = st.tab === "local" ? localTab() : st.tab === "online" ? onlineTab() : quickCssTab(ctx);
+        const body = st.tab === "browse" ? browseTab(ctx) : st.tab === "local" ? localTab() : st.tab === "online" ? onlineTab() : quickCssTab(ctx);
         return h("div", { class: "vanta-page" },
             ui.pageHead("Themes", "Restyle Discord with CSS. BetterDiscord themes (.theme.css) work too. One theme is on at a time; Quick CSS always applies on top."),
-            ui.tabs([["local", "Local themes"], ["online", "Online themes"], ["quickcss", "Quick CSS"]], st.tab,
+            ui.tabs([["browse", "Browse"], ["local", "Installed"], ["online", "Online themes"], ["quickcss", "Quick CSS"]], st.tab,
                 id => { st.tab = id; ctx.rerender(); }),
             body,
         );

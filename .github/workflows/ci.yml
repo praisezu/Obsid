@@ -23,6 +23,8 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
       - run: npm run typecheck
+      - name: Plugin store index matches the files
+        run: node scripts/store-index.mjs --check
       - run: npm run build:release && npm run package
       - name: Build installer (all platforms)
         working-directory: installer

@@ -21,6 +21,7 @@ import { ui } from "./ui/components";
 
 import "./pages/vanta";
 import "./pages/plugins";
+import "./pages/store";
 import "./pages/themes";
 import "./pages/updater";
 import { startAutoUpdate, checkForUpdates } from "./autoUpdate";

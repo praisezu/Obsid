@@ -16,7 +16,9 @@ export interface Settings {
         /** Set right before an automatic restart; shown as "updated to x.x.x" after it */
         pendingUpdate?: { from: string; to: string; notes?: string; at: number } | null;
     };
-    themes: { enabled: string[]; online: { url: string; enabled: boolean }[]; quickCssEnabled: boolean };
+    themes: { enabled: string[]; online: { url: string; enabled: boolean }[]; quickCssEnabled: boolean; /** BetterDiscord theme id → installed file */ bd?: Record<string, string> };
+    /** installed store plugins: file name → where it came from and the reviewed hash */
+    storeInstalled?: Record<string, { path: string; sha256: string }>;
     /** file name → URL, for plugins imported from a link */
     pluginSources: Record<string, string>;
 }

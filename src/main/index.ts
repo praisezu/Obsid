@@ -14,6 +14,8 @@ import type { BackupData, BackupParts, RendererScript, ThemeFile } from "@shared
 import { parseMeta, safeName } from "./util";
 import { updaterInfo, updaterCheck, updaterApply } from "./updater";
 import { installCspPatch } from "./csp";
+import { bdThemes, bdInstallTheme } from "./bdStore";
+import { storeIndex, storeDownload } from "./pluginStore";
 
 const g = globalThis as any;
 if (!g.__VANTA_LOADED__) {
@@ -174,6 +176,17 @@ function main() {
     });
 
     // Plain GET for plugins (Discord's CSP blocks most direct requests from the page).
+    // OpenInApp plugin: hand Spotify/Steam links to their desktop apps (only these schemes).
+    handle("open-app-url", (_, url) => {
+        if (/^(spotify:[a-z]+:[A-Za-z0-9]+|steam:\/\/openurl\/https:\/\/(store\.steampowered\.com|steamcommunity\.com)\/\S+)$/.test(String(url)))
+            return shell.openExternal(String(url));
+        throw new Error("Not an app link Vanta opens");
+    });
+    handle("bd-themes", (_, force) => bdThemes(!!force));
+    handle("bd-install-theme", (_, id) => bdInstallTheme(Number(id), THEMES_DIR));
+    handle("store-index", (_, force) => storeIndex(!!force));
+    handle("store-download", (_, p, sha) => storeDownload(String(p), String(sha)));
+
     handle("fetch-text", async (_, url) => {
         if (!/^https:\/\/\S+$/i.test(String(url))) throw new Error("Only https:// URLs are allowed");
         const res = await fetch(String(url), { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 Vanta" } });

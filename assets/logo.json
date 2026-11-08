@@ -1,5 +1,5 @@
 {
-    "about": "Vanta pixel logo. Each character is one pixel: W = white V, G = gradient a, R/K/H = void orb rim/core/highlight, S = sparkle. Regenerate icons with: node scripts/make-logo.mjs",
+    "about": "Vanta pixel logo. Each character is one pixel: B = vanta-black letter (drawn with a glowing rim), R/K/H = void orb rim/core/highlight, S = sparkle. Regenerate icons with: node scripts/make-logo.mjs",
     "rows": [
         ".....................S....",
         "..........................",
@@ -7,33 +7,34 @@
         "......................SSS.",
         ".................RRR...S..",
         "................RKKKR.....",
-        "WWW.......WWW..RKHKKKR....",
-        "WWW.......WWW..RKKKKKR....",
-        "WWW.......WWW..RKKKKKR....",
-        ".WWW.....WWW....RKKKR.....",
-        ".WWW.....WWW.....RRR......",
-        ".WWW.....WW..GGGGGGG......",
-        "..WWW...WW..GGGGGGGG......",
-        "..WWW...WW.GGGGGGGGG......",
-        "..WWW...WW.GGGG..GGG......",
-        "...WWW.WWW.GGG...GGG......",
-        "...WWW.WWW.GGG...GGG......",
-        "...WWW.WWW.GGG...GGG......",
-        "....WWWWW..GGGG..GGG......",
-        "....WWWWW..GGGGGGGGG......",
-        "....WWWWW...GGGGGGGGG.....",
-        ".....WWW.....GGGGGGGG....."
+        "BBB.......BBB..RKHKKKR....",
+        "BBB.......BBB..RKKKKKR....",
+        "BBB.......BBB..RKKKKKR....",
+        ".BBB.....BBB....RKKKR.....",
+        ".BBB.....BBB.....RRR......",
+        ".BBB.....BB..BBBBBBB......",
+        "..BBB...BB..BBBBBBBB......",
+        "..BBB...BB.BBBBBBBBB......",
+        "..BBB...BB.BBBB..BBB......",
+        "...BBB.BBB.BBB...BBB......",
+        "...BBB.BBB.BBB...BBB......",
+        "...BBB.BBB.BBB...BBB......",
+        "....BBBBB..BBBB..BBB......",
+        "....BBBBB..BBBBBBBBB......",
+        "....BBBBB...BBBBBBBBB.....",
+        ".....BBB.....BBBBBBBB....."
     ],
     "colors": {
-        "W": "#f5f3ff",
+        "B": "#060509",
         "R": "#a78bfa",
         "K": "#0e0b14",
         "H": "#f5f3ff",
         "S": "#e9d5ff"
     },
-    "gradient": {
-        "char": "G",
-        "from": "#f0abfc",
-        "to": "#6d28d9"
+    "rim": {
+        "char": "B",
+        "width": 0.3,
+        "from": "#f3e8ff",
+        "to": "#7c3aed"
     }
 }
