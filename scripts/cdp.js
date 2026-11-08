@@ -16,7 +16,9 @@ const timer = setTimeout(() => { console.error("Timed out after 20s (is the page
 
 async function main() {
     const targets = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json();
-    const page = targets.find(t => t.type === "page" && /discord\.com/.test(t.url));
+    // Prefer the main window over pop-outs (discord.com/popout)
+    const pages = targets.filter(t => t.type === "page" && /discord\.com/.test(t.url));
+    const page = pages.find(t => !/\/popout/.test(t.url)) ?? pages[0];
     if (!page) throw new Error("Discord page not found. Is Discord running with --remote-debugging-port?");
 
     const ws = new WebSocket(page.webSocketDebuggerUrl);

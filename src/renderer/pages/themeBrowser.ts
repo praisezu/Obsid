@@ -68,13 +68,27 @@ export function browseTab(ctx: PageContext) {
     );
 }
 
+let observer: IntersectionObserver | null = null;
+function thumbObserver() {
+    return observer ??= new IntersectionObserver(entries => {
+        for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            const img = e.target as HTMLImageElement;
+            img.src = img.dataset.src!;
+            observer!.unobserve(img);
+        }
+    }, { rootMargin: "400px 0px" });
+}
+
 function card(t: BdTheme, rerender: () => void) {
     const file = installedFile(t);
     const active = !!file && themes.isEnabled(file);
+    // Native loading="lazy" doesn't notice Discord's settings scroller, so we lazy-load ourselves.
     const img = t.thumbnail
-        ? h("img", { class: "vanta-theme-thumb", src: t.thumbnail, alt: "", loading: "lazy", referrerpolicy: "no-referrer" })
+        ? h("img", { class: "vanta-theme-thumb", "data-src": t.thumbnail, alt: "", referrerpolicy: "no-referrer" })
         : h("div", { class: "vanta-theme-thumb" });
     img.addEventListener("error", () => img.replaceWith(h("div", { class: "vanta-theme-thumb" })));
+    if (t.thumbnail) thumbObserver().observe(img);
 
     const action = active
         ? ui.button("Applied", { small: true, icon: "check", disabled: true })

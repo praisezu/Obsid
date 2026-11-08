@@ -1,6 +1,7 @@
 import { makeLogger, logger, type Logger } from "./logger";
 import { settings, saveSettings, type PluginSettings } from "./settings";
 import { ready as webpackReady } from "./webpack";
+import { onDomReady } from "./utils";
 
 export type OptionType = "boolean" | "string" | "number" | "text" | "select";
 
@@ -58,10 +59,12 @@ export function cssPlugin(def: PluginDef & { css: string | ((settings: Record<st
     const id = "vanta-css-" + def.name.replace(/\W+/g, "-").toLowerCase();
     const render = (self: PluginInstance) => typeof def.css === "function" ? def.css(self.settings) : def.css;
     let el: HTMLStyleElement | null = null;
-    const apply = (self: PluginInstance) => {
+    // Plugins can start before the page has a <head> (right after a reload), so wait for it.
+    const apply = (self: PluginInstance) => onDomReady(() => {
+        if (!self.started && el === null && !isPluginEnabled(self.name)) return; // stopped meanwhile
         el ??= document.head.appendChild(Object.assign(document.createElement("style"), { id }));
         el.textContent = render(self);
-    };
+    });
     return {
         ...def,
         start() { apply(this as PluginInstance); },
@@ -107,18 +110,34 @@ export function registerPlugin(def: PluginDef): PluginInstance {
     return p;
 }
 
+/**
+ * Starts a plugin. Plugins that use Discord's internals are retried for ~20s if they fail:
+ * right after a reload, many of Discord's stores load a few seconds after the core ones, and a
+ * plugin that looks one up too early would otherwise be stuck showing an error.
+ */
 export async function startPlugin(p: PluginInstance) {
     if (p.started) return true;
-    try {
-        if (p.needsWebpack) await webpackReady;
-        await p.start?.();
-        p.started = true;
-        p.error = null;
-        logger.log(`Started ${p.name}`);
-    } catch (e: any) {
-        p.error = String(e?.message || e);
-        logger.error(`Failed to start ${p.name}:`, e);
+    if (p.needsWebpack) await webpackReady;
+    const delays = p.needsWebpack ? [1000, 2000, 3000, 4000, 5000, 5000] : [];
+    for (let attempt = 0; ; attempt++) {
+        if (!isPluginEnabled(p.name) && attempt > 0) return false; // turned off meanwhile
+        try {
+            await p.start?.();
+            p.started = true;
+            p.error = null;
+            logger.log(`Started ${p.name}${attempt ? ` (after ${attempt} retr${attempt === 1 ? "y" : "ies"})` : ""}`);
+            break;
+        } catch (e: any) {
+            try { await p.stop?.(); } catch { } // undo anything half-started
+            if (attempt >= delays.length) {
+                p.error = String(e?.message || e);
+                logger.error(`Failed to start ${p.name}:`, e);
+                break;
+            }
+            await new Promise(r => setTimeout(r, delays[attempt]));
+        }
     }
+    window.dispatchEvent(new CustomEvent("vanta:plugins"));
     return p.started;
 }
 
