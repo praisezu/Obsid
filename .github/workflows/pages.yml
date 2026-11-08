@@ -30,6 +30,9 @@ jobs:
           node-version: 22
       - name: Build site data
         run: node scripts/site-data.mjs
+      # Browsers cache style.css/site.js; a new ?v= per deploy makes them fetch the fresh files
+      - name: Cache-bust assets
+        run: find docs -name '*.html' -exec sed -i "s/?v=dev/?v=${GITHUB_SHA::7}/g" {} +
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
