@@ -4,7 +4,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "TimestampShortcuts",
     description: "Type {now}, {in 2h}, {at 9pm} or {tomorrow 18:00} and it becomes a timestamp everyone sees in their own time zone.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
 
     STYLES: { t: "t", T: "T", d: "d", D: "D", f: "f", F: "F", R: "R" },

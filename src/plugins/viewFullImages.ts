@@ -3,7 +3,7 @@ import { definePlugin, native } from "@api";
 export default definePlugin({
     name: "ViewFullImages",
     description: "Ctrl+click any avatar, server icon, emoji, banner or image to open it at full size in your browser.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Utility",
     options: {
         modifier: {

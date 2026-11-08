@@ -6,20 +6,20 @@ import { definePlugin, common, ui, h, patcher, watchElements, managedStyle, mess
 const EPHEMERAL = 1 << 6;
 
 const CSS = `
-.obsid-deleted { background: color-mix(in srgb, var(--status-danger, #e5484d) 9%, transparent) !important; }
-.obsid-deleted [id^="message-content-"], .obsid-deleted [id^="message-accessories-"] { opacity: .85; }
-.obsid-deleted [id^="message-content-"] { color: color-mix(in srgb, var(--status-danger, #e5484d) 75%, var(--text-default)) !important; }
-.obsid-deleted-tag { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 700; line-height: 16px;
+.vanta-deleted { background: color-mix(in srgb, var(--status-danger, #e5484d) 9%, transparent) !important; }
+.vanta-deleted [id^="message-content-"], .vanta-deleted [id^="message-accessories-"] { opacity: .85; }
+.vanta-deleted [id^="message-content-"] { color: color-mix(in srgb, var(--status-danger, #e5484d) 75%, var(--text-default)) !important; }
+.vanta-deleted-tag { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 11px; font-weight: 700; line-height: 16px;
   vertical-align: middle; color: var(--status-danger, #e5484d); background: color-mix(in srgb, var(--status-danger, #e5484d) 15%, transparent); }
-.obsid-edit-history { margin: 2px 0 4px; display: flex; flex-direction: column; gap: 2px; }
-.obsid-edit-history div { font-size: .9em; color: var(--text-muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-muted) 60%, transparent);
+.vanta-edit-history { margin: 2px 0 4px; display: flex; flex-direction: column; gap: 2px; }
+.vanta-edit-history div { font-size: .9em; color: var(--text-muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-muted) 60%, transparent);
   white-space: pre-wrap; overflow-wrap: anywhere; }
-.obsid-edit-history div::before { content: "edited from: "; text-decoration: none; display: inline-block; font-size: .85em; font-weight: 600; margin-right: 4px; opacity: .8; }`;
+.vanta-edit-history div::before { content: "edited from: "; text-decoration: none; display: inline-block; font-size: .85em; font-weight: 600; margin-right: 4px; opacity: .8; }`;
 
 export default definePlugin({
     name: "MessageLogger",
     description: "See deleted and edited messages. Deleted ones stay in chat marked red, edits show what they said before, and everything goes into a log.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
     needsWebpack: true,
     options: {
@@ -80,16 +80,16 @@ export default definePlugin({
         const ids = li && messageIdsFromElement(li);
         if (!li || !ids) return;
         if (this.deleted.has(ids.messageId)) {
-            li.classList.add("obsid-deleted");
+            li.classList.add("vanta-deleted");
             const header = li.querySelector('[id^="message-timestamp-"]')?.parentElement;
-            if (header && !header.querySelector(".obsid-deleted-tag"))
-                header.append(Object.assign(document.createElement("span"), { className: "obsid-deleted-tag", textContent: "deleted" }));
+            if (header && !header.querySelector(".vanta-deleted-tag"))
+                header.append(Object.assign(document.createElement("span"), { className: "vanta-deleted-tag", textContent: "deleted" }));
         }
         const history = this.settings.showEdits && this.edits.get(ids.messageId);
         const content = li.querySelector('[id^="message-content-"]');
         if (history?.length && content) {
-            let box = li.querySelector<HTMLElement>(".obsid-edit-history");
-            if (!box) { box = document.createElement("div"); box.className = "obsid-edit-history"; }
+            let box = li.querySelector<HTMLElement>(".vanta-edit-history");
+            if (!box) { box = document.createElement("div"); box.className = "vanta-edit-history"; }
             if (box.previousElementSibling !== content) content.before(box);
             box.replaceChildren(...history.map(t => Object.assign(document.createElement("div"), { textContent: t || "(empty)" })));
         }
@@ -98,7 +98,7 @@ export default definePlugin({
     start() {
         const { FluxDispatcher, MessageStore } = common;
         if (!FluxDispatcher || !MessageStore) throw new Error("Couldn't find Discord's message modules");
-        this.style = managedStyle("obsid-message-logger");
+        this.style = managedStyle("vanta-message-logger");
         this.style.set(CSS);
 
         this.unpatch = patcher.instead(FluxDispatcher, "dispatch", (args: any[], original: (...a: any[]) => any) => {
@@ -138,29 +138,29 @@ export default definePlugin({
         this.unpatch?.();
         this.unwatch?.();
         this.style?.remove();
-        document.querySelectorAll(".obsid-deleted").forEach(el => el.classList.remove("obsid-deleted"));
-        document.querySelectorAll(".obsid-deleted-tag, .obsid-edit-history").forEach(el => el.remove());
+        document.querySelectorAll(".vanta-deleted").forEach(el => el.classList.remove("vanta-deleted"));
+        document.querySelectorAll(".vanta-deleted-tag, .vanta-edit-history").forEach(el => el.remove());
     },
 
     settingsPanel() {
-        const list = h("div", { class: "obsid-list", style: { maxHeight: "360px", overflow: "auto" } });
+        const list = h("div", { class: "vanta-list", style: { maxHeight: "360px", overflow: "auto" } });
         const render = () => {
-            list.replaceChildren(...(this.log.length ? this.log.map((e: any) => ui.card({ class: "obsid-pad", style: { display: "flex", flexDirection: "column", gap: "4px" } },
+            list.replaceChildren(...(this.log.length ? this.log.map((e: any) => ui.card({ class: "vanta-pad", style: { display: "flex", flexDirection: "column", gap: "4px" } },
                 h("div", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } },
                     ui.tag(e.kind === "deleted" ? "Deleted" : "Edited", e.kind === "deleted" ? "danger" : "warn"),
                     h("b", {}, e.author),
-                    h("span", { class: "obsid-row-desc", style: { margin: 0 } }, `${e.where} · ${e.at}`)),
+                    h("span", { class: "vanta-row-desc", style: { margin: 0 } }, `${e.where} · ${e.at}`)),
                 h("div", { style: { whiteSpace: "pre-wrap", overflowWrap: "anywhere", textDecoration: e.kind === "edited" ? "line-through" : "none", opacity: e.kind === "edited" ? .7 : 1 } }, e.content || "(no text)"),
                 e.after != null ? h("div", { style: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" } }, e.after) : null,
-                e.attachments?.length ? h("div", { class: "obsid-row-desc obsid-code", style: { overflowWrap: "anywhere" } }, e.attachments.join("\n")) : null,
+                e.attachments?.length ? h("div", { class: "vanta-row-desc vanta-code", style: { overflowWrap: "anywhere" } }, e.attachments.join("\n")) : null,
             )) : [ui.empty(this.started ? "Nothing logged yet. Deleted and edited messages will show up here." : "Turn MessageLogger on to start logging.", "info")]));
         };
         render();
         return h("div", { style: { display: "flex", flexDirection: "column", gap: "10px" } },
             h("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
-                h("div", { class: "obsid-row-title", style: { flex: "1" } }, `Log (${this.log.length})`),
+                h("div", { class: "vanta-row-title", style: { flex: "1" } }, `Log (${this.log.length})`),
                 ui.button("Clear", { small: true, variant: "ghost", icon: "trash", onClick: () => { this.log.length = 0; render(); } })),
             list,
-            h("div", { class: "obsid-row-desc" }, "The log lives in memory only and is cleared when Discord restarts."));
+            h("div", { class: "vanta-row-desc" }, "The log lives in memory only and is cleared when Discord restarts."));
     },
 });

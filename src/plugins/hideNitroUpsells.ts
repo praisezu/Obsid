@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "HideUpsells",
     description: "Removes Nitro, Shop and Quests links from your DM list, plus the gift button.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Appearance",
     options: {
         nitro: { type: "boolean", default: true, label: "Hide Nitro link" },
@@ -28,7 +28,7 @@ export default definePlugin({
         return rules.join("\n");
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-hide-upsells" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-hide-upsells" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

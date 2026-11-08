@@ -1,5 +1,5 @@
 /*
- * Adds an "Obsid Settings" section to Discord's User Settings sidebar.
+ * Adds an "Vanta Settings" section to Discord's User Settings sidebar.
  *
  * Discord's class names are hashed and change between builds, so nothing here hardcodes them:
  * the section and items are cloned from Discord's own sidebar at runtime, then relabelled.
@@ -9,7 +9,7 @@ import { logger } from "./core/logger";
 import { onDomReady, sleep } from "./core/utils";
 import { ui, pages, mountPage } from "./ui/components";
 
-const SECTION_ATTR = "data-obsid-section";
+const SECTION_ATTR = "data-vanta-section";
 const pageStates: Record<string, Record<string, any>> = {};
 
 interface Current {
@@ -40,7 +40,7 @@ function textLeaf(el: Element): Element {
 }
 
 function findNav(): HTMLElement | null {
-    return document.querySelector("[data-settings-sidebar-item]:not([data-obsid-page])")?.closest("nav") ?? null;
+    return document.querySelector("[data-settings-sidebar-item]:not([data-vanta-page])")?.closest("nav") ?? null;
 }
 
 /* ------------------------------------------------------------- injection */
@@ -50,7 +50,7 @@ function inject(nav: HTMLElement) {
     const first = sections[0];
     const labelled = sections.find(li => q(li, '[class*="sectionLabel_"]'));
     const template = [...nav.querySelectorAll<HTMLElement>("li[data-settings-sidebar-item]")]
-        .find(li => !li.dataset.obsidPage && !q(li, '[class*="subnav"]') && q(li, "svg"));
+        .find(li => !li.dataset.vantaPage && !q(li, '[class*="subnav"]') && q(li, "svg"));
     const listTemplate = q(first, 'ul[class*="sectionList_"]');
     if (!first || !template || !listTemplate) return;
 
@@ -58,7 +58,7 @@ function inject(nav: HTMLElement) {
     section.setAttribute(SECTION_ATTR, "");
     if (labelled) {
         const label = q(labelled, '[class*="sectionLabel_"]')!.cloneNode(true) as HTMLElement;
-        textLeaf(label).textContent = "Obsid Settings";
+        textLeaf(label).textContent = "Vanta Settings";
         section.append(label);
     }
     const list = listTemplate.cloneNode(false) as HTMLElement;
@@ -66,13 +66,13 @@ function inject(nav: HTMLElement) {
     section.append(list);
     first.after(section);
     hookSearch(nav);
-    logger.log("Added Obsid section to settings sidebar");
+    logger.log("Added Vanta section to settings sidebar");
 }
 
 function makeItem(template: HTMLElement, page: (typeof pages)[number]) {
     const li = template.cloneNode(true) as HTMLElement;
-    li.setAttribute("data-settings-sidebar-item", "obsid_" + page.id);
-    li.dataset.obsidPage = page.id;
+    li.setAttribute("data-settings-sidebar-item", "vanta_" + page.id);
+    li.dataset.vantaPage = page.id;
     const link = (q(li, '[role="link"]') || li.firstElementChild) as HTMLElement;
     for (const c of [...link.classList]) if (/^active_/.test(c)) link.classList.remove(c);
     link.removeAttribute("aria-current");
@@ -94,16 +94,16 @@ function makeItem(template: HTMLElement, page: (typeof pages)[number]) {
 /** Hide our items that don't match Discord's sidebar search. */
 function hookSearch(nav: HTMLElement) {
     const input = q<HTMLInputElement>(nav.closest("aside"), 'input[type="text"], input:not([type])');
-    if (!input || input.dataset.obsidHooked) return;
-    input.dataset.obsidHooked = "1";
+    if (!input || input.dataset.vantaHooked) return;
+    input.dataset.vantaHooked = "1";
     input.addEventListener("input", () => {
         const section = q(nav, `[${SECTION_ATTR}]`);
         if (!section) return;
         const term = input.value.trim().toLowerCase();
         let shown = 0;
-        for (const li of section.querySelectorAll<HTMLElement>("[data-obsid-page]")) {
-            const page = pages.find(p => p.id === li.dataset.obsidPage)!;
-            const match = !term || [page.label, "obsid", ...(page.keywords || [])].join(" ").toLowerCase().includes(term);
+        for (const li of section.querySelectorAll<HTMLElement>("[data-vanta-page]")) {
+            const page = pages.find(p => p.id === li.dataset.vantaPage)!;
+            const match = !term || [page.label, "vanta", ...(page.keywords || [])].join(" ").toLowerCase().includes(term);
             li.style.display = match ? "" : "none";
             if (match) shown++;
         }
@@ -128,7 +128,7 @@ export function open(pageId: string, state?: Record<string, any>): boolean {
         // Deactivate Discord's highlighted item(s); remember them so we can restore.
         const deactivated: Current["deactivated"] = [];
         for (const link of nav.querySelectorAll('[role="link"]')) {
-            if (link.closest("[data-obsid-page]")) continue;
+            if (link.closest("[data-vanta-page]")) continue;
             const cls = [...link.classList].filter(c => /^active_/.test(c));
             const aria = link.getAttribute("aria-current");
             if (cls.length || aria) {
@@ -141,7 +141,7 @@ export function open(pageId: string, state?: Record<string, any>): boolean {
         let crumbClone: HTMLElement | null = null;
         if (crumbs) {
             crumbClone = crumbs.cloneNode(true) as HTMLElement;
-            crumbClone.dataset.obsidCrumb = "";
+            crumbClone.dataset.vantaCrumb = "";
             crumbClone.querySelectorAll('li, [role="listitem"]').forEach((li, i) => { if (i > 0) li.remove(); });
             crumbs.style.display = "none";
             crumbs.after(crumbClone);
@@ -149,12 +149,12 @@ export function open(pageId: string, state?: Record<string, any>): boolean {
 
         const host = document.createElement("div");
         host.className = body.className;
-        host.dataset.obsidHost = "";
+        host.dataset.vantaHost = "";
         const scroller = document.createElement("div");
         if (body.firstElementChild) scroller.className = body.firstElementChild.className;
         scroller.style.overflowY = "auto";
         scroller.style.height = "100%";
-        scroller.dataset.obsidScroll = "";
+        scroller.dataset.vantaScroll = "";
         const mount = document.createElement("div");
         scroller.append(mount);
         host.append(scroller);
@@ -163,7 +163,7 @@ export function open(pageId: string, state?: Record<string, any>): boolean {
 
         const onNavClick = (e: Event) => {
             const link = (e.target as Element).closest?.('[role="link"]');
-            if (link && !link.closest("[data-obsid-page]")) close();
+            if (link && !link.closest("[data-vanta-page]")) close();
         };
         nav.addEventListener("click", onNavClick, true);
         current = { nav, body, crumbs, crumbClone, host, scroller, mount, deactivated, onNavClick, controller: null };
@@ -175,11 +175,11 @@ export function open(pageId: string, state?: Record<string, any>): boolean {
     const page = current.controller.page;
     if (current.crumbClone) textLeaf(current.crumbClone).textContent = page.label;
 
-    for (const li of nav.querySelectorAll<HTMLElement>("[data-obsid-page]")) {
+    for (const li of nav.querySelectorAll<HTMLElement>("[data-vanta-page]")) {
         const link = q(li, '[role="link"]');
         if (!link) continue;
         const cls = activeClassFor(link);
-        const on = li.dataset.obsidPage === page.id;
+        const on = li.dataset.vantaPage === page.id;
         if (cls) link.classList.toggle(cls, on);
         if (on) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
     }
@@ -201,7 +201,7 @@ export function close() {
         link.classList.add(...cls);
         if (aria) link.setAttribute("aria-current", aria);
     }
-    for (const link of c.nav.querySelectorAll('[data-obsid-page] [role="link"]')) {
+    for (const link of c.nav.querySelectorAll('[data-vanta-page] [role="link"]')) {
         const cls = activeClassFor(link);
         if (cls) link.classList.remove(cls);
         link.removeAttribute("aria-current");
@@ -223,8 +223,8 @@ onDomReady(() => {
         .observe(document.body, { childList: true, subtree: true });
 });
 
-/** Opens Discord's User Settings and shows an Obsid page. Returns false if it couldn't. */
-export async function openInSettings(pageId = "obsid", state?: Record<string, any>) {
+/** Opens Discord's User Settings and shows an Vanta page. Returns false if it couldn't. */
+export async function openInSettings(pageId = "vanta", state?: Record<string, any>) {
     if (!findNav()) {
         const gear = document.querySelector<HTMLElement>('[aria-label="User Settings"], [aria-label="User settings"]');
         if (!gear) return false;

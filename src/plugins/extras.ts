@@ -4,7 +4,7 @@ export default [
     cssPlugin({
         name: "BlurNames",
         description: "Streamer-safe: blurs names and previews in your DM list and member list until you hover them.",
-        authors: ["Obsid"], category: "Privacy",
+        authors: ["Vanta"], category: "Privacy",
         options: { strength: { type: "number", default: 6, label: "Blur (px)" } },
         css: s => {
             const px = Math.max(2, Math.min(20, Number(s.strength) || 6));
@@ -16,26 +16,26 @@ export default [
     cssPlugin({
         name: "ReadableWidth",
         description: "Keeps chat lines from stretching across ultrawide screens.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { width: { type: "number", default: 1000, label: "Max width (px)" } },
         css: s => `[class*="messagesWrapper_"] [class*="scrollerInner_"] { max-width: ${Math.max(500, Number(s.width) || 1000)}px; margin: 0 auto; width: 100%; }`,
     }),
     cssPlugin({
         name: "HideBadgeCounts",
         description: "Hides red mention/unread number badges on servers and DMs (the unread dot stays).",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `nav[aria-label="Servers sidebar"] [class*="numberBadge_"], nav[aria-label="Servers sidebar"] [class*="lowerBadge_"] { display: none !important; }`,
     }),
     cssPlugin({
         name: "HideAttachButton",
         description: "Hides the + (upload) button in the message box. Drag-and-drop and paste still work.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `form [class*="attachWrapper_"] { display: none !important; }`,
     }),
     definePlugin({
         name: "ServerHotkeys",
         description: "Alt+1 … Alt+9 jumps to your first nine servers (in sidebar order).",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onKey = (e: KeyboardEvent) => {
                 if (!e.altKey || e.ctrlKey || e.shiftKey || !/^Digit[1-9]$/.test(e.code)) return;
@@ -54,7 +54,7 @@ export default [
     definePlugin({
         name: "CopyInlineCode",
         description: "Click `inline code` in a message to copy it.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onClick = async (e: MouseEvent) => {
                 const code = (e.target as Element).closest?.('[id^="message-content-"] code') as HTMLElement | null;

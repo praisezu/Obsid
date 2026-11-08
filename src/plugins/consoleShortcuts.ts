@@ -2,8 +2,8 @@ import { definePlugin, webpack, common, patcher } from "@api";
 
 export default definePlugin({
     name: "ConsoleShortcuts",
-    description: "Adds shortcuts to the DevTools console for plugin development: wp, findByProps, findByCode, common, Obsid.",
-    authors: ["Obsid"],
+    description: "Adds shortcuts to the DevTools console for plugin development: wp, findByProps, findByCode, common, Vanta.",
+    authors: ["Vanta"],
     category: "Developer",
 
     start() {

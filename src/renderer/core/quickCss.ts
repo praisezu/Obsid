@@ -14,7 +14,7 @@ export const quickCss = {
         onDomReady(() => {
             if (!this.el) {
                 this.el = document.createElement("style");
-                this.el.id = "obsid-quickcss";
+                this.el.id = "vanta-quickcss";
                 document.head.append(this.el);
             }
             const css = this.enabled ? this.css : "";
@@ -32,5 +32,5 @@ export const quickCss = {
 native.onQuickCssChange(css => {
     quickCss.css = css;
     quickCss.apply();
-    window.dispatchEvent(new CustomEvent("obsid:quickcss"));
+    window.dispatchEvent(new CustomEvent("vanta:quickcss"));
 });

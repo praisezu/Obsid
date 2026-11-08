@@ -9,7 +9,7 @@ export default [
     definePlugin({
         name: "CopyIds",
         description: "Ctrl+Shift+click a message to copy its ID. Add Alt to copy the author's user ID instead.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onClick = async (e: MouseEvent) => {
                 if (!(e.ctrlKey && e.shiftKey) || e.button !== 0 || !isMessageClick(e)) return;
@@ -33,7 +33,7 @@ export default [
     definePlugin({
         name: "CopyMessageLink",
         description: "Ctrl+Alt+click a message to copy a link to it.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onClick = async (e: MouseEvent) => {
                 if (!(e.ctrlKey && e.altKey) || e.shiftKey || e.button !== 0 || !isMessageClick(e)) return;
@@ -50,7 +50,7 @@ export default [
     definePlugin({
         name: "ViewRaw",
         description: "Ctrl+middle-click a message to see its raw text (with markdown) and copy it.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         needsWebpack: true,
         start() {
             this.onAux = (e: MouseEvent) => {
@@ -64,10 +64,10 @@ export default [
                     timestamp: String(msg.timestamp), edited: msg.editedTimestamp ? String(msg.editedTimestamp) : null,
                     attachments: (msg.attachments || []).map((a: any) => a.url), embeds: (msg.embeds || []).length, flags: msg.flags,
                 }, null, 2);
-                const pre = (text: string) => h("pre", { class: "obsid-code", style: { margin: 0, padding: "12px", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "240px", overflow: "auto", background: "var(--o-input)", borderRadius: "8px" } }, text);
+                const pre = (text: string) => h("pre", { class: "vanta-code", style: { margin: 0, padding: "12px", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "240px", overflow: "auto", background: "var(--o-input)", borderRadius: "8px" } }, text);
                 ui.modal({
                     title: `Message from ${msg.author?.username ?? "unknown"}`,
-                    body: [h("div", { class: "obsid-row-title" }, "Content"), pre(raw || "(empty)"), h("div", { class: "obsid-row-title" }, "Details"), pre(json)],
+                    body: [h("div", { class: "vanta-row-title" }, "Content"), pre(raw || "(empty)"), h("div", { class: "vanta-row-title" }, "Details"), pre(json)],
                     buttons: [
                         { text: "Copy content", variant: "ghost", onClick: async () => { await copyText(raw); ui.toast("Copied", { type: "ok" }); return false; } },
                         { text: "Close", variant: "primary" },
@@ -86,7 +86,7 @@ export default [
     definePlugin({
         name: "DoubleClickActions",
         description: "Double-click a message to reply to it, or double-click your own message to edit it.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         needsWebpack: true,
         options: {
             edit: { type: "boolean", default: true, label: "Double-click my messages to edit" },

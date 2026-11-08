@@ -5,7 +5,7 @@ import { definePlugin, net, patcher, webpack } from "@api";
 export default definePlugin({
     name: "SilentTyping",
     description: "Hides your typing indicator from other people.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Privacy",
     needsWebpack: true,
 

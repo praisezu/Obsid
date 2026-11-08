@@ -3,7 +3,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "ClearURLs",
     description: "Strips tracking parameters (utm_*, fbclid, si, …) from links in messages you send.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Privacy",
     enabledByDefault: true,
     options: {

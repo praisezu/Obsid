@@ -1,6 +1,6 @@
 /** Types shared by the main process, the preload and the renderer. */
 
-export interface ObsidInfo {
+export interface VantaInfo {
     version: string;
     repo: string;
     root: string;
@@ -56,7 +56,7 @@ export interface UpdateCheck extends UpdaterInfo {
 }
 
 export interface BackupData {
-    obsidBackup: 1;
+    vantaBackup: 1;
     version: string;
     created: string;
     settings?: Record<string, any>;
@@ -76,9 +76,9 @@ export interface FetchedPlugin {
     url?: string;
 }
 
-/** window.ObsidNative — the bridge the preload exposes to the page. */
+/** window.VantaNative — the bridge the preload exposes to the page. */
 export interface NativeAPI {
-    info: ObsidInfo;
+    info: VantaInfo;
     getSettings(): Record<string, any>;
     setSettings(s: Record<string, any>): Promise<void>;
     resetSettings(): Promise<void>;

@@ -63,7 +63,7 @@ export function installCspPatch() {
             callback({ ...response, responseHeaders: headers as any });
         };
         if (wrapped && matches(details.url, wrapped.urls)) {
-            try { wrapped.listener(details, finish); } catch (e) { console.error("[Obsid] wrapped header listener threw", e); finish(); }
+            try { wrapped.listener(details, finish); } catch (e) { console.error("[Vanta] wrapped header listener threw", e); finish(); }
         } else finish();
     };
 

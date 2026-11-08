@@ -1,9 +1,9 @@
 /*
- * Obsid — Electron main process.
+ * Vanta — Electron main process.
  *
  * Loaded by Discord's discord_desktop_core/index.js BEFORE core.asar (the installer adds a
  * require() for dist/main.js), so we can swap electron.BrowserWindow for a subclass that points
- * Discord's main window at Obsid's preload. The preload then loads Discord's own preload.
+ * Discord's main window at Vanta's preload. The preload then loads Discord's own preload.
  */
 import * as electron from "electron";
 import { app, ipcMain, shell, dialog, BrowserWindow as ElectronBrowserWindow, type IpcMainInvokeEvent } from "electron";
@@ -16,8 +16,8 @@ import { updaterInfo, updaterCheck, updaterApply } from "./updater";
 import { installCspPatch } from "./csp";
 
 const g = globalThis as any;
-if (!g.__OBSID_LOADED__) {
-    g.__OBSID_LOADED__ = true;
+if (!g.__VANTA_LOADED__) {
+    g.__VANTA_LOADED__ = true;
     main();
 }
 
@@ -25,24 +25,45 @@ function main() {
     const DIST = __dirname;
     const ROOT = path.join(DIST, "..");
     const PRELOAD = path.join(DIST, "preload.js");
-    const DATA_DIR = path.join(app.getPath("appData"), "Obsid");
+    const DATA_DIR = path.join(app.getPath("appData"), "Vanta");
     const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
     const QUICKCSS_FILE = path.join(DATA_DIR, "quickCss.css");
     const USER_PLUGINS_DIR = path.join(DATA_DIR, "plugins");
     const THEMES_DIR = path.join(DATA_DIR, "themes");
-    const VERSION = __OBSID_VERSION__;
+    const VERSION = __VANTA_VERSION__;
     const MAX_PLUGIN_SIZE = 2 * 1024 * 1024;
 
-    const log = (...a: unknown[]) => console.log("[Obsid]", ...a);
+    const log = (...a: unknown[]) => console.log("[Vanta]", ...a);
 
     // Let themes load CSS/fonts/images from other sites (Discord's CSP blocks @import otherwise).
     app.whenReady().then(() => {
         try { installCspPatch(); log("Theme content policy patch installed"); }
-        catch (e) { console.error("[Obsid] couldn't patch the content security policy:", e); }
+        catch (e) { console.error("[Vanta] couldn't patch the content security policy:", e); }
     });
 
+    migrateFromObsid();
     for (const d of [USER_PLUGINS_DIR, THEMES_DIR]) fs.mkdirSync(d, { recursive: true });
-    if (!fs.existsSync(QUICKCSS_FILE)) fs.writeFileSync(QUICKCSS_FILE, "/* Obsid Quick CSS */\n");
+    if (!fs.existsSync(QUICKCSS_FILE)) fs.writeFileSync(QUICKCSS_FILE, "/* Vanta Quick CSS */\n");
+
+    /** Vanta used to be called Obsid: copy its settings, plugins, themes and Quick CSS over once. */
+    function migrateFromObsid() {
+        const old = path.join(app.getPath("appData"), "Obsid");
+        if (fs.existsSync(path.join(DATA_DIR, "settings.json")) || !fs.existsSync(old)) return;
+        try {
+            fs.mkdirSync(DATA_DIR, { recursive: true });
+            for (const entry of fs.readdirSync(old)) {
+                if (entry === "app") continue; // old program files, not user data
+                fs.cpSync(path.join(old, entry), path.join(DATA_DIR, entry), { recursive: true, force: false, errorOnExist: false });
+            }
+            const settings = path.join(DATA_DIR, "settings.json");
+            if (fs.existsSync(settings)) {
+                const s = JSON.parse(fs.readFileSync(settings, "utf8"));
+                if (s.obsid && !s.vanta) { s.vanta = s.obsid; delete s.obsid; }
+                fs.writeFileSync(settings, JSON.stringify(s, null, 4));
+            }
+            log("Moved your Obsid settings, plugins and themes to", DATA_DIR);
+        } catch (e) { console.error("[Vanta] couldn't copy settings from Obsid:", e); }
+    }
     copyBundledThemes();
 
     /* ------------------------------------------------------------ files */
@@ -67,7 +88,7 @@ function main() {
         catch { return []; }
     }
 
-    /** Copies the themes shipped with Obsid into the user's themes folder, once each. */
+    /** Copies the themes shipped with Vanta into the user's themes folder, once each. */
     function copyBundledThemes() {
         try {
             const marker = path.join(DATA_DIR, ".bundled-themes");
@@ -80,15 +101,15 @@ function main() {
                 seen.add(f);
             }
             fs.writeFileSync(marker, [...seen].join("\n"));
-        } catch (e) { console.error("[Obsid] couldn't copy bundled themes:", e); }
+        } catch (e) { console.error("[Vanta] couldn't copy bundled themes:", e); }
     }
 
     /** Tags a user plugin's definePlugin() call with its file name so the UI can update/delete it. */
     function wrapUserPlugin(file: string, code: string) {
-        return `window.Obsid && (Obsid.__currentFile = ${JSON.stringify(file)});\ntry {\n${code}\n} finally { window.Obsid && (Obsid.__currentFile = null); }`;
+        return `window.Vanta && (Vanta.__currentFile = ${JSON.stringify(file)});\ntry {\n${code}\n} finally { window.Vanta && (Vanta.__currentFile = null); }`;
     }
 
-    /** What the preload runs, in order: Obsid itself, the user's plugins, then boot. */
+    /** What the preload runs, in order: Vanta itself, the user's plugins, then boot. */
     function rendererScripts(): RendererScript[] {
         return [
             { name: "renderer.js", code: readText(path.join(DIST, "renderer.js")) },
@@ -96,7 +117,7 @@ function main() {
                 name: "user-plugins/" + f,
                 code: wrapUserPlugin(f, readText(path.join(USER_PLUGINS_DIR, f))),
             })),
-            { name: "boot.js", code: "window.Obsid?.__boot?.();" },
+            { name: "boot.js", code: "window.Vanta?.__boot?.();" },
         ];
     }
 
@@ -115,15 +136,15 @@ function main() {
     };
     const winOf = (e: IpcMainInvokeEvent) => ElectronBrowserWindow.fromWebContents(e.sender)!;
     const handle = (channel: string, fn: (e: IpcMainInvokeEvent, ...args: any[]) => unknown) =>
-        ipcMain.handle("obsid:" + channel, fn);
+        ipcMain.handle("vanta:" + channel, fn);
 
-    ipcMain.on("obsid:get-renderer", e => { e.returnValue = rendererScripts(); });
-    ipcMain.on("obsid:get-settings", e => { e.returnValue = readSettings(); });
-    ipcMain.on("obsid:get-quickcss", e => { e.returnValue = readText(QUICKCSS_FILE); });
-    ipcMain.on("obsid:get-themes", e => { e.returnValue = listThemes(); });
-    ipcMain.on("obsid:get-info", e => {
+    ipcMain.on("vanta:get-renderer", e => { e.returnValue = rendererScripts(); });
+    ipcMain.on("vanta:get-settings", e => { e.returnValue = readSettings(); });
+    ipcMain.on("vanta:get-quickcss", e => { e.returnValue = readText(QUICKCSS_FILE); });
+    ipcMain.on("vanta:get-themes", e => { e.returnValue = listThemes(); });
+    ipcMain.on("vanta:get-info", e => {
         e.returnValue = {
-            version: VERSION, repo: __OBSID_REPO__, root: ROOT, dataDir: DATA_DIR, pluginsDir: USER_PLUGINS_DIR, themesDir: THEMES_DIR,
+            version: VERSION, repo: __VANTA_REPO__, root: ROOT, dataDir: DATA_DIR, pluginsDir: USER_PLUGINS_DIR, themesDir: THEMES_DIR,
             electron: process.versions.electron, chrome: process.versions.chrome, discord: app.getVersion(),
         };
     });
@@ -155,7 +176,7 @@ function main() {
     // Plain GET for plugins (Discord's CSP blocks most direct requests from the page).
     handle("fetch-text", async (_, url) => {
         if (!/^https:\/\/\S+$/i.test(String(url))) throw new Error("Only https:// URLs are allowed");
-        const res = await fetch(String(url), { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 Obsid" } });
+        const res = await fetch(String(url), { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 Vanta" } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         if (text.length > 2 * 1024 * 1024) throw new Error("Response is larger than 2 MB");
@@ -166,7 +187,7 @@ function main() {
     const pluginFileName = (n: string) => safeName(String(n).replace(/[^\w.\-]+/g, "_"), ".js");
     handle("plugin-pick-file", async e => {
         const { canceled, filePaths } = await dialog.showOpenDialog(winOf(e), {
-            title: "Import Obsid plugin",
+            title: "Import Vanta plugin",
             properties: ["openFile"],
             filters: [{ name: "JavaScript plugin", extensions: ["js"] }],
         });
@@ -197,7 +218,7 @@ function main() {
         const name = safeName(file, ".js");
         const code = wrapUserPlugin(name, readText(path.join(USER_PLUGINS_DIR, name)));
         // `void 0`: the script's last value (the plugin object) can't be sent back over IPC.
-        await e.sender.executeJavaScript(`${code};\nvoid 0;\n//# sourceURL=obsid://user-plugins/${name}`);
+        await e.sender.executeJavaScript(`${code};\nvoid 0;\n//# sourceURL=vanta://user-plugins/${name}`);
     });
     handle("plugin-trash", (_, file) => shell.trashItem(path.join(USER_PLUGINS_DIR, safeName(file, ".js"))));
     handle("plugin-read", (_, file) => readText(path.join(USER_PLUGINS_DIR, safeName(file, ".js"))));
@@ -211,9 +232,9 @@ function main() {
     handle("backup-export", async (e, data: BackupData) => {
         const stamp = new Date().toISOString().slice(0, 10);
         const { canceled, filePath } = await dialog.showSaveDialog(winOf(e), {
-            title: "Export Obsid backup",
-            defaultPath: path.join(app.getPath("downloads"), `obsid-backup-${stamp}.json`),
-            filters: [{ name: "Obsid backup", extensions: ["json"] }],
+            title: "Export Vanta backup",
+            defaultPath: path.join(app.getPath("downloads"), `vanta-backup-${stamp}.json`),
+            filters: [{ name: "Vanta backup", extensions: ["json"] }],
         });
         if (canceled || !filePath) return null;
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
@@ -221,13 +242,13 @@ function main() {
     });
     handle("backup-import", async e => {
         const { canceled, filePaths } = await dialog.showOpenDialog(winOf(e), {
-            title: "Import Obsid backup",
+            title: "Import Vanta backup",
             properties: ["openFile"],
-            filters: [{ name: "Obsid backup", extensions: ["json"] }],
+            filters: [{ name: "Vanta backup", extensions: ["json"] }],
         });
         if (canceled || !filePaths?.[0]) return null;
         const data = JSON.parse(fs.readFileSync(filePaths[0], "utf8"));
-        if (data?.obsidBackup !== 1) throw new Error("That file isn't an Obsid backup.");
+        if (data?.vantaBackup !== 1) throw new Error("That file isn't an Vanta backup.");
         return data;
     });
     handle("backup-apply", (_, data: BackupData, parts: BackupParts) => {
@@ -253,12 +274,12 @@ function main() {
             });
         } catch (e: any) { log("watch failed for", target, e.message); }
     }
-    watch(QUICKCSS_FILE, () => sendAll("obsid:quickcss-changed", readText(QUICKCSS_FILE)));
-    watch(THEMES_DIR, () => sendAll("obsid:themes-changed"));
+    watch(QUICKCSS_FILE, () => sendAll("vanta:quickcss-changed", readText(QUICKCSS_FILE)));
+    watch(THEMES_DIR, () => sendAll("vanta:themes-changed"));
 
     /* -------------------------------------------------- window patching */
 
-    const ORIGINAL_PRELOAD_ARG = "--obsid-original-preload=";
+    const ORIGINAL_PRELOAD_ARG = "--vanta-original-preload=";
     const shouldInject = (o: Electron.BrowserWindowConstructorOptions) => {
         const p = o?.webPreferences?.preload;
         return typeof p === "string" && !/splash/i.test(p);

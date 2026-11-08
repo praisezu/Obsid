@@ -55,7 +55,7 @@ export function definePlugin<T extends PluginDef>(plugin: T & ThisType<T & Plugi
  *   export default cssPlugin({ name, description, options, css: s => `...${s.color}...` });
  */
 export function cssPlugin(def: PluginDef & { css: string | ((settings: Record<string, any>) => string) }): PluginDef {
-    const id = "obsid-css-" + def.name.replace(/\W+/g, "-").toLowerCase();
+    const id = "vanta-css-" + def.name.replace(/\W+/g, "-").toLowerCase();
     const render = (self: PluginInstance) => typeof def.css === "function" ? def.css(self.settings) : def.css;
     let el: HTMLStyleElement | null = null;
     const apply = (self: PluginInstance) => {
@@ -82,7 +82,7 @@ export const isPluginEnabled = (name: string) => !!settings.plugins[name]?.enabl
 export function registerPlugin(def: PluginDef): PluginInstance {
     if (!def?.name) throw new Error("Plugin needs a name");
     const p = def as PluginInstance;
-    p.file = (window as any).Obsid?.__currentFile ?? null;
+    p.file = (window as any).Vanta?.__currentFile ?? null;
     const existing = plugins.get(p.name);
     if (existing) {
         if (p.file && existing.file === p.file) {
@@ -103,7 +103,7 @@ export function registerPlugin(def: PluginDef): PluginInstance {
     Object.defineProperty(p, "settings", { configurable: true, get: () => pluginSettings(p.name).options });
     plugins.set(p.name, p);
     if (booted) { saveSettings(); if (s.enabled) startPlugin(p); }
-    window.dispatchEvent(new CustomEvent("obsid:plugins"));
+    window.dispatchEvent(new CustomEvent("vanta:plugins"));
     return p;
 }
 
@@ -145,7 +145,7 @@ export async function removePlugin(name: string) {
     plugins.delete(name);
     delete settings.plugins[name];
     saveSettings();
-    window.dispatchEvent(new CustomEvent("obsid:plugins"));
+    window.dispatchEvent(new CustomEvent("vanta:plugins"));
 }
 
 export function startAll() {

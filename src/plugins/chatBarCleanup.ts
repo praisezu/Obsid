@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "ChatBarCleanup",
     description: "Hides chat bar buttons you never use: gift, GIF, stickers, apps and more.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Appearance",
     options: {
         gift: { type: "boolean", default: true, label: "Hide gift button" },
@@ -30,7 +30,7 @@ export default definePlugin({
         return `[class*="buttons_"] > :has(:is(${btn})), [class*="buttons_"] :is(${btn}) { display: none !important; }`;
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-chatbar-cleanup" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-chatbar-cleanup" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

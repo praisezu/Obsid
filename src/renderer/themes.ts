@@ -1,5 +1,5 @@
 /*
- * Theme manager. Local themes live in %APPDATA%/Obsid/themes/*.css (BetterDiscord .theme.css files
+ * Theme manager. Local themes live in %APPDATA%/Vanta/themes/*.css (BetterDiscord .theme.css files
  * work as-is). Online themes are downloaded by the main process, so Discord's CSP doesn't block them.
  */
 import type { ThemeFile } from "@shared/types";
@@ -126,7 +126,7 @@ export const themes = {
                 let el = styles.get(key);
                 if (!el) {
                     el = document.createElement("style");
-                    el.dataset.obsidTheme = key;
+                    el.dataset.vantaTheme = key;
                     styles.set(key, el);
                 }
                 if (el.textContent !== css) el.textContent = css;

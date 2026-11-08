@@ -3,7 +3,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "TextReplace",
     description: "Automatically replaces words or patterns in messages you send, using your own rules.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
     options: {
         rules: {

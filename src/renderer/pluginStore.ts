@@ -14,7 +14,7 @@ export interface PluginInfo {
     description?: string;
     author?: string;
     version?: string;
-    isObsid: boolean;
+    isVanta: boolean;
     isBetterDiscord: boolean;
     isVencord: boolean;
     flags: ["warn" | "danger", string][];
@@ -26,7 +26,8 @@ export function parseInfo(code: string): PluginInfo {
     const block = code.match(/^\s*\/\*\*([\s\S]*?)\*\//);
     if (block) for (const m of block[1].matchAll(/@(\w+)[ \t]+([^\r\n]+)/g)) meta[m[1]] = m[2].trim();
     const field = (key: string) => code.match(new RegExp(`definePlugin\\s*\\(\\s*\\{[\\s\\S]*?\\b${key}\\s*:\\s*(["'\`])([\\s\\S]*?)\\1`))?.[2];
-    const isObsid = /Obsid\s*\.\s*definePlugin\s*\(/.test(code);
+    // Plugins written for Obsid (Vanta's old name) still work: window.Obsid is an alias.
+    const isVanta = /(Vanta|Obsid)\s*\.\s*definePlugin\s*\(/.test(code);
 
     const flags: PluginInfo["flags"] = [];
     if (/\bgetToken\b|["']token["']|localStorage\s*\.\s*(getItem\s*\(\s*["']token|token)|authorization/i.test(code))
@@ -35,17 +36,17 @@ export function parseInfo(code: string): PluginInfo {
         flags.push(["warn", "Sends network requests. It could send data to other websites."]);
     if (/\beval\s*\(|new\s+Function\s*\(|\bFunction\s*\(\s*["'`]/.test(code))
         flags.push(["warn", "Runs code it builds at runtime (eval). Hard to review."]);
-    if (/ObsidNative|\bnative\.(pluginInstall|backupApply|resetSettings|relaunch)\b/.test(code))
-        flags.push(["warn", "Uses Obsid's native functions (files, restart)."]);
+    if (/VantaNative|\bnative\.(pluginInstall|backupApply|resetSettings|relaunch)\b/.test(code))
+        flags.push(["warn", "Uses Vanta's native functions (files, restart)."]);
 
     return {
         name: meta.name || field("name"),
         description: meta.description || field("description"),
         author: meta.author || field("authors")?.replace(/["'`]/g, ""),
         version: meta.version,
-        isObsid,
-        isBetterDiscord: !isObsid && /module\.exports\s*=|BdApi\b/.test(code),
-        isVencord: !isObsid && /from\s+["']@(utils|api|webpack)|definePlugin\s*\(\s*\{[\s\S]*patches\s*:/.test(code),
+        isVanta,
+        isBetterDiscord: !isVanta && /module\.exports\s*=|BdApi\b/.test(code),
+        isVencord: !isVanta && /from\s+["']@(utils|api|webpack)|definePlugin\s*\(\s*\{[\s\S]*patches\s*:/.test(code),
         flags,
         lines: code.split("\n").length,
     };
@@ -57,17 +58,17 @@ function review({ fileName, code, url }: FetchedPlugin, info: PluginInfo, replac
         const details = h("details", { style: { border: "1px solid var(--o-line)", borderRadius: "8px" } },
             h("summary", { style: { cursor: "pointer", padding: "10px 12px", fontWeight: "600" } }, `View code (${info.lines} lines)`),
             h("pre", {
-                class: "obsid-code", style: {
+                class: "vanta-code", style: {
                     margin: "0", padding: "12px", maxHeight: "260px", overflow: "auto",
                     borderTop: "1px solid var(--o-line)", whiteSpace: "pre", background: "var(--o-input)",
                 },
             }, code));
         const body: Child[] = [
-            ui.card({ class: "obsid-pad", style: { display: "flex", flexDirection: "column", gap: "6px" } },
-                h("div", { class: "obsid-row-title" }, info.name || fileName, info.version ? " " : null, info.version ? ui.tag("v" + info.version) : null),
-                info.description ? h("div", { class: "obsid-row-desc" }, info.description) : null,
-                h("div", { class: "obsid-row-desc" }, info.author ? `by ${info.author} · ` : "",
-                    url ? h("span", { class: "obsid-code", style: { overflowWrap: "anywhere" } }, url) : fileName),
+            ui.card({ class: "vanta-pad", style: { display: "flex", flexDirection: "column", gap: "6px" } },
+                h("div", { class: "vanta-row-title" }, info.name || fileName, info.version ? " " : null, info.version ? ui.tag("v" + info.version) : null),
+                info.description ? h("div", { class: "vanta-row-desc" }, info.description) : null,
+                h("div", { class: "vanta-row-desc" }, info.author ? `by ${info.author} · ` : "",
+                    url ? h("span", { class: "vanta-code", style: { overflowWrap: "anywhere" } }, url) : fileName),
             ),
             ui.note("warn", "Plugins run with full access to your Discord account. Only install plugins from people you trust."),
             info.flags.map(([kind, text]) => ui.note(kind, text)),
@@ -87,12 +88,12 @@ function review({ fileName, code, url }: FetchedPlugin, info: PluginInfo, replac
 
 export async function install(data: FetchedPlugin, { fileName }: { fileName?: string } = {}) {
     const info = parseInfo(data.code);
-    if (!info.isObsid) {
+    if (!info.isVanta) {
         ui.modal({
-            title: "Not an Obsid plugin",
+            title: "Not an Vanta plugin",
             body: [
-                h("div", {}, `${data.fileName} doesn't call Obsid.definePlugin(), so Obsid can't load it.`),
-                info.isBetterDiscord ? ui.note("", "This looks like a BetterDiscord plugin. Those use a different API and won't run in Obsid.") : null,
+                h("div", {}, `${data.fileName} doesn't call Vanta.definePlugin(), so Vanta can't load it.`),
+                info.isBetterDiscord ? ui.note("", "This looks like a BetterDiscord plugin. Those use a different API and won't run in Vanta.") : null,
                 info.isVencord ? ui.note("", "This looks like Vencord plugin source code. Vencord plugins have to be built into Vencord and won't run here.") : null,
             ],
             buttons: [{ text: "OK", variant: "primary" }],
@@ -157,8 +158,8 @@ export const pluginStore = {
         ui.toast(`Deleted ${p.name}.`);
     },
     openImportDialog() {
-        const input = h("input", { class: "obsid-input", type: "url", placeholder: "https://github.com/user/repo/blob/main/MyPlugin.js", "aria-label": "Plugin link" });
-        const error = h("div", { class: "obsid-row-desc", role: "alert", style: { color: "var(--o-danger)", minHeight: "18px" } });
+        const input = h("input", { class: "vanta-input", type: "url", placeholder: "https://github.com/user/repo/blob/main/MyPlugin.js", "aria-label": "Plugin link" });
+        const error = h("div", { class: "vanta-row-desc", role: "alert", style: { color: "var(--o-danger)", minHeight: "18px" } });
         const go = async () => {
             error.textContent = "";
             if (!input.value.trim()) { error.textContent = "Paste a link first."; return false; }
@@ -171,13 +172,13 @@ export const pluginStore = {
         const dialog = ui.modal({
             title: "Import a plugin",
             body: [
-                h("div", { class: "obsid-row-title" }, "From a link"),
-                h("div", { class: "obsid-row-desc" }, "A direct link to a .js file. GitHub file links are converted to raw links for you. Plugins added from a link can be updated with one click later."),
+                h("div", { class: "vanta-row-title" }, "From a link"),
+                h("div", { class: "vanta-row-desc" }, "A direct link to a .js file. GitHub file links are converted to raw links for you. Plugins added from a link can be updated with one click later."),
                 input, error,
-                h("div", { class: "obsid-row-title", style: { marginTop: "4px" } }, "From your computer"),
-                h("div", { class: "obsid-btns" },
+                h("div", { class: "vanta-row-title", style: { marginTop: "4px" } }, "From your computer"),
+                h("div", { class: "vanta-btns" },
                     ui.button("Choose .js file…", { icon: "folder", onClick: () => { dialog.close(); return pluginStore.fromFile(); } }),
-                    h("span", { class: "obsid-row-desc", style: { alignSelf: "center" } }, "or drag a file onto the Plugins page")),
+                    h("span", { class: "vanta-row-desc", style: { alignSelf: "center" } }, "or drag a file onto the Plugins page")),
             ],
             buttons: [
                 { text: "Cancel", variant: "ghost" },

@@ -3,13 +3,13 @@
  * Dev helper: talks to a Discord started with --remote-debugging-port=9223.
  *   node scripts/cdp.js eval "<js expression>"     evaluates in Discord's page (await supported)
  *   node scripts/cdp.js shot out.png               screenshots the Discord window
- *   node scripts/cdp.js reload                     reloads Discord (re-runs Obsid renderer code)
- * Set OBSID_CDP_PORT to use another port.
+ *   node scripts/cdp.js reload                     reloads Discord (re-runs Vanta renderer code)
+ * Set VANTA_CDP_PORT to use another port.
  */
 "use strict";
 const fs = require("fs");
 
-const PORT = process.env.OBSID_CDP_PORT || 9223;
+const PORT = process.env.VANTA_CDP_PORT || 9223;
 const [cmd, arg] = process.argv.slice(2);
 
 const timer = setTimeout(() => { console.error("Timed out after 20s (is the page frozen?)"); process.exit(2); }, 20000);

@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "AlwaysTrustLinks",
     description: "Skips the \"Leaving Discord\" warning and opens links straight away. (English Discord only.)",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Utility",
 
     tryConfirm(dialog: HTMLElement) {

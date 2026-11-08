@@ -1,6 +1,6 @@
 package main
 
-// Platform-neutral installer logic: finding Discord, injecting Obsid, getting Obsid's files.
+// Platform-neutral installer logic: finding Discord, injecting Vanta, getting Vanta's files.
 
 import (
 	"archive/tar"
@@ -22,8 +22,10 @@ import (
 
 const (
 	Repo      = "praisezu/Obsid"
-	AssetName = "obsid.tar.gz"
-	Marker    = "// Obsid injection"
+	AssetName = "vanta.tar.gz"
+	Marker    = "// Vanta injection"
+	// Vanta used to be called Obsid; installs made by Obsid use this marker.
+	LegacyMarker = "// Obsid injection"
 	// Discord's stock discord_desktop_core/index.js
 	DefaultIndex = "module.exports = require('./core.asar');\n"
 )
@@ -152,7 +154,7 @@ func FindDiscords(mainEntry string) []*Branch {
 
 var reRequire = regexp.MustCompile(`require\("((?:[^"\\]|\\.)*)"\)`)
 
-// Refresh re-reads index.js and works out whether Obsid is injected.
+// Refresh re-reads index.js and works out whether Vanta is injected.
 func (b *Branch) Refresh(mainEntry string) {
 	data, err := os.ReadFile(b.IndexPath)
 	if err != nil {
@@ -161,7 +163,7 @@ func (b *Branch) Refresh(mainEntry string) {
 	}
 	content := string(data)
 	b.InjectedPath = ""
-	if strings.Contains(content, Marker) {
+	if isInjected(content) {
 		if m := reRequire.FindStringSubmatch(content); m != nil {
 			var p string
 			if json.Unmarshal([]byte(`"`+m[1]+`"`), &p) == nil {
@@ -201,10 +203,13 @@ func Inject(b *Branch, mainEntry string) error {
 	if err != nil {
 		return err
 	}
-	if !strings.Contains(string(current), Marker) {
-		if err := os.WriteFile(b.IndexPath+".obsid-backup", current, 0o644); err != nil {
+	if !isInjected(string(current)) {
+		if err := os.WriteFile(b.IndexPath+".vanta-backup", current, 0o644); err != nil {
 			return fmt.Errorf("couldn't back up index.js: %w", err)
 		}
+	} else if _, err := os.Stat(b.IndexPath + ".vanta-backup"); err != nil {
+		// Upgrading an Obsid install: keep its backup of Discord's original file.
+		_ = os.Rename(b.IndexPath+".obsid-backup", b.IndexPath+".vanta-backup")
 	}
 	entry, _ := json.Marshal(mainEntry)
 	content := strings.Join([]string{
@@ -212,7 +217,7 @@ func Inject(b *Branch, mainEntry string) error {
 		"try {",
 		"    require(" + string(entry) + ");",
 		"} catch (e) {",
-		`    console.error("[Obsid] failed to load, starting Discord without it:", e);`,
+		`    console.error("[Vanta] failed to load, starting Discord without it:", e);`,
 		"}",
 		"module.exports = require('./core.asar');",
 		"",
@@ -220,16 +225,24 @@ func Inject(b *Branch, mainEntry string) error {
 	return os.WriteFile(b.IndexPath, []byte(content), 0o644)
 }
 
-// Uninject restores Discord's original index.js.
+// Uninject restores Discord's original index.js (from a Vanta or an older Obsid backup).
 func Uninject(b *Branch) error {
-	backup := b.IndexPath + ".obsid-backup"
-	if data, err := os.ReadFile(backup); err == nil {
-		if err := os.WriteFile(b.IndexPath, data, 0o644); err != nil {
-			return err
+	for _, suffix := range []string{".vanta-backup", ".obsid-backup"} {
+		backup := b.IndexPath + suffix
+		if data, err := os.ReadFile(backup); err == nil {
+			if err := os.WriteFile(b.IndexPath, data, 0o644); err != nil {
+				return err
+			}
+			_ = os.Remove(b.IndexPath + ".vanta-backup")
+			_ = os.Remove(b.IndexPath + ".obsid-backup")
+			return nil
 		}
-		return os.Remove(backup)
 	}
 	return os.WriteFile(b.IndexPath, []byte(DefaultIndex), 0o644)
+}
+
+func isInjected(content string) bool {
+	return strings.Contains(content, Marker) || strings.Contains(content, LegacyMarker)
 }
 
 /* ----------------------------------------------------------- Discord process */
@@ -273,23 +286,23 @@ func Launch(b *Branch) error {
 	}
 }
 
-/* -------------------------------------------------------------- Obsid files */
+/* -------------------------------------------------------------- Vanta files */
 
-// DataDir is where Obsid keeps settings, plugins, themes, and (for release installs) its own files.
+// DataDir is where Vanta keeps settings, plugins, themes, and (for release installs) its own files.
 func DataDir() string {
 	switch runtime.GOOS {
 	case "windows":
-		return filepath.Join(os.Getenv("APPDATA"), "Obsid")
+		return filepath.Join(os.Getenv("APPDATA"), "Vanta")
 	case "darwin":
 		home, _ := os.UserHomeDir()
-		return filepath.Join(home, "Library", "Application Support", "Obsid")
+		return filepath.Join(home, "Library", "Application Support", "Vanta")
 	default:
 		cfg := os.Getenv("XDG_CONFIG_HOME")
 		if cfg == "" {
 			home, _ := os.UserHomeDir()
 			cfg = filepath.Join(home, ".config")
 		}
-		return filepath.Join(cfg, "Obsid")
+		return filepath.Join(cfg, "Vanta")
 	}
 }
 
@@ -337,14 +350,14 @@ var httpClient = &http.Client{Timeout: 60 * time.Second}
 func LatestRelease() (*Release, error) {
 	req, _ := http.NewRequest("GET", "https://api.github.com/repos/"+Repo+"/releases/latest", nil)
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "Obsid-Installer")
+	req.Header.Set("User-Agent", "Vanta-Installer")
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't reach GitHub: %w", err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode == 404 {
-		return nil, errors.New("there's no Obsid release on GitHub yet")
+		return nil, errors.New("there's no Vanta release on GitHub yet")
 	}
 	if res.StatusCode != 200 {
 		return nil, fmt.Errorf("GitHub returned HTTP %d", res.StatusCode)
@@ -375,7 +388,7 @@ func DownloadRelease(status func(string)) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	status("Downloading Obsid " + rel.Tag + "…")
+	status("Downloading Vanta " + rel.Tag + "…")
 	res, err := httpClient.Get(rel.Download)
 	if err != nil {
 		return "", err
@@ -442,12 +455,12 @@ func extractTarGz(r io.Reader, dest string) error {
 
 /* ---------------------------------------------------------------- actions */
 
-// Source says where Obsid's files come from.
+// Source says where Vanta's files come from.
 type Source struct {
 	Local string // non-empty = use this dev checkout
 }
 
-// Prepare makes sure Obsid's files are on disk and returns the main.js path to inject.
+// Prepare makes sure Vanta's files are on disk and returns the main.js path to inject.
 func (s Source) Prepare(status func(string)) (string, error) {
 	if s.Local != "" {
 		entry := MainEntryFor(s.Local)
@@ -486,7 +499,7 @@ func UninstallFrom(b *Branch, restart bool, status func(string)) error {
 		status("Closing " + b.Name + "…")
 		Kill(b)
 	}
-	status("Removing Obsid from " + b.Name + "…")
+	status("Removing Vanta from " + b.Name + "…")
 	if err := Uninject(b); err != nil {
 		return err
 	}

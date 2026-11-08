@@ -7,7 +7,7 @@ export interface PluginSettings {
 
 export interface Settings {
     plugins: Record<string, PluginSettings>;
-    obsid: {
+    vanta: {
         startupToast: boolean;
         quickPanel: boolean;
         autoCheckUpdates: boolean;
@@ -26,13 +26,14 @@ const raw = (native.getSettings() || {}) as Partial<Settings>;
 export const settings: Settings = {
     ...raw,
     plugins: raw.plugins ?? {},
-    obsid: { startupToast: true, quickPanel: true, autoCheckUpdates: true, autoUpdate: true, ...raw.obsid },
+    // `obsid` is the old (pre-rebrand) name of this section
+    vanta: { startupToast: true, quickPanel: true, autoCheckUpdates: true, autoUpdate: true, ...(raw as any).obsid, ...raw.vanta },
     themes: { enabled: [], online: [], quickCssEnabled: true, ...raw.themes },
     pluginSources: raw.pluginSources ?? {},
 };
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
-/** Debounced write to %APPDATA%/Obsid/settings.json */
+/** Debounced write to %APPDATA%/Vanta/settings.json */
 export function saveSettings() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => native.setSettings(settings), 250);

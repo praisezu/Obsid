@@ -100,8 +100,8 @@ func runGUI() int {
 			return
 		}
 		if install && b.State == OtherMod {
-			if walk.MsgBox(mw, "Obsid Installer",
-				b.Name+" was already modified by another mod (for example BetterDiscord).\n\nInstalling Obsid replaces that change. The current file is backed up, and uninstalling Obsid restores it.\n\nContinue?",
+			if walk.MsgBox(mw, "Vanta Installer",
+				b.Name+" was already modified by another mod (for example BetterDiscord).\n\nInstalling Vanta replaces that change. The current file is backed up, and uninstalling Vanta restores it.\n\nContinue?",
 				walk.MsgBoxYesNo|walk.MsgBoxIconWarning) != walk.DlgCmdYes {
 				return
 			}
@@ -127,13 +127,13 @@ func runGUI() int {
 				switch {
 				case err != nil:
 					statusLbl.SetText("Failed: " + err.Error())
-					walk.MsgBox(mw, "Obsid Installer", err.Error(), walk.MsgBoxIconError)
+					walk.MsgBox(mw, "Vanta Installer", err.Error(), walk.MsgBoxIconError)
 				case install && restart:
-					statusLbl.SetText("Obsid installed into " + b.Name + ". Press Ctrl+Shift+O in Discord.")
+					statusLbl.SetText("Vanta installed into " + b.Name + ". Press Ctrl+Shift+O in Discord.")
 				case install:
-					statusLbl.SetText("Obsid installed into " + b.Name + ". Fully quit and reopen Discord to load it.")
+					statusLbl.SetText("Vanta installed into " + b.Name + ". Fully quit and reopen Discord to load it.")
 				default:
-					statusLbl.SetText("Obsid removed from " + b.Name + ".")
+					statusLbl.SetText("Vanta removed from " + b.Name + ".")
 				}
 			})
 		}()
@@ -146,7 +146,7 @@ func runGUI() int {
 
 	err := MainWindow{
 		AssignTo: &mw,
-		Title:    "Obsid Installer",
+		Title:    "Vanta Installer",
 		Size:     Size{Width: 600, Height: 520},
 		MinSize:  Size{Width: 520, Height: 460},
 		Layout:   VBox{Margins: Margins{Left: 18, Top: 16, Right: 18, Bottom: 14}, Spacing: 10},
@@ -158,7 +158,7 @@ func runGUI() int {
 					Composite{
 						Layout: VBox{MarginsZero: true, Spacing: 0},
 						Children: []Widget{
-							Label{Text: "Obsid", Font: Font{Family: "Segoe UI Semibold", PointSize: 20}},
+							Label{Text: "Vanta", Font: Font{Family: "Segoe UI Semibold", PointSize: 20}},
 							Label{Text: fmt.Sprintf("Installer %s  ·  github.com/%s", Version, Repo), TextColor: walk.RGB(110, 105, 125)},
 						},
 					},
@@ -166,7 +166,7 @@ func runGUI() int {
 				},
 			},
 			GroupBox{
-				Title:  "Install Obsid from",
+				Title: "Install Vanta from",
 				// HBox + spacer keeps the radio buttons left-aligned at full width.
 				Layout: HBox{Spacing: 0},
 				Children: []Widget{
@@ -194,7 +194,7 @@ func runGUI() int {
 				Columns: []TableViewColumn{
 					{Title: "Discord", Width: 170},
 					{Title: "Version", Width: 130},
-					{Title: "Obsid"},
+					{Title: "Vanta"},
 				},
 			},
 			CheckBox{AssignTo: &restartCB, Text: "Close and reopen Discord after changes", Checked: true},
@@ -204,7 +204,7 @@ func runGUI() int {
 					PushButton{AssignTo: &installBtn, Text: "Install", MinSize: Size{Width: 110}, OnClicked: func() { run(true) }},
 					PushButton{AssignTo: &uninstallBtn, Text: "Uninstall", MinSize: Size{Width: 110}, OnClicked: func() { run(false) }},
 					HSpacer{},
-					PushButton{Text: "Open Obsid folder", OnClicked: func() { openFolder(DataDir()) }},
+					PushButton{Text: "Open Vanta folder", OnClicked: func() { openFolder(DataDir()) }},
 				},
 			},
 			ProgressBar{AssignTo: &progress, MarqueeMode: true, Visible: false, MaxSize: Size{Height: 6}},
@@ -212,7 +212,7 @@ func runGUI() int {
 		},
 	}.Create()
 	if err != nil {
-		walk.MsgBox(nil, "Obsid Installer", "Couldn't open the installer window: "+err.Error(), walk.MsgBoxIconError)
+		walk.MsgBox(nil, "Vanta Installer", "Couldn't open the installer window: "+err.Error(), walk.MsgBoxIconError)
 		return 1
 	}
 

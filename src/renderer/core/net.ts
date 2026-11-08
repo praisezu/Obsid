@@ -48,16 +48,16 @@ export const net = {
 const absUrl = (u: unknown) => { try { return new URL(String(u), location.href).href; } catch { return String(u); } };
 
 /* ------------------------------------------------------------- install hooks */
-type TaggedXHR = XMLHttpRequest & { __obsid?: NetRequest };
+type TaggedXHR = XMLHttpRequest & { __vanta?: NetRequest };
 const XHR = XMLHttpRequest.prototype as TaggedXHR;
 const origOpen = XHR.open, origSend = XHR.send;
 
 XHR.open = function (this: TaggedXHR, method: string, url: string | URL, ...rest: any[]) {
-    this.__obsid = { method: String(method).toUpperCase(), url: absUrl(url), body: undefined };
+    this.__vanta = { method: String(method).toUpperCase(), url: absUrl(url), body: undefined };
     return (origOpen as any).call(this, method, url, ...rest);
 };
 XHR.send = function (this: TaggedXHR, body?: any) {
-    const req = this.__obsid;
+    const req = this.__vanta;
     if (req) {
         req.body = body;
         if (isBlocked(req)) return fakeXhrSuccess(this);
@@ -69,7 +69,7 @@ XHR.send = function (this: TaggedXHR, body?: any) {
 function fakeXhrSuccess(xhr: TaggedXHR) {
     const def = (k: string, v: unknown) => Object.defineProperty(xhr, k, { configurable: true, get: () => v });
     def("readyState", 4); def("status", 204); def("statusText", "No Content");
-    def("responseText", ""); def("response", ""); def("responseURL", xhr.__obsid!.url);
+    def("responseText", ""); def("response", ""); def("responseURL", xhr.__vanta!.url);
     setTimeout(() => { for (const t of ["readystatechange", "load", "loadend"]) xhr.dispatchEvent(new Event(t)); });
 }
 

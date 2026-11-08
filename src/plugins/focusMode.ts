@@ -3,7 +3,7 @@ import { definePlugin, ui, onDomReady } from "@api";
 export default definePlugin({
     name: "FocusMode",
     description: "Press Ctrl+Alt+F to hide the server list, channel list and member list, leaving just the chat.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Appearance",
     options: {
         servers: { type: "boolean", default: true, label: "Hide server list" },
@@ -20,15 +20,15 @@ export default definePlugin({
         if (this.settings.servers) rules.push(`nav[aria-label="Servers sidebar"]`);
         if (this.settings.channels && hash) rules.push(`.sidebar_${CSS.escape(hash)}`);
         if (this.settings.members) rules.push(`aside[class*="membersWrap_"]`);
-        return rules.length ? `html.obsid-focus :is(${rules.join(", ")}) { display: none !important; }` : "";
+        return rules.length ? `html.vanta-focus :is(${rules.join(", ")}) { display: none !important; }` : "";
     },
     toggle(force?: boolean) {
-        const on = document.documentElement.classList.toggle("obsid-focus", force);
+        const on = document.documentElement.classList.toggle("vanta-focus", force);
         if (on) this.update();
         if (force === undefined) ui.toast(on ? "Focus mode on (Ctrl+Alt+F to exit)" : "Focus mode off");
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-focus-mode" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-focus-mode" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

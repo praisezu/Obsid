@@ -3,7 +3,7 @@ import { definePlugin, net, common } from "@api";
 export default definePlugin({
     name: "SilentMessages",
     description: "Sends your messages as @silent so they don't push-notify anyone (mentions still show up).",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
     options: {
         skipDMs: { type: "boolean", default: true, label: "Not in DMs", description: "Send DMs and group DMs normally." },

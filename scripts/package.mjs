@@ -1,4 +1,4 @@
-// Packs a release archive: release/obsid.tar.gz with dist/*.js, themes/, package.json, LICENSE.
+// Packs a release archive: release/vanta.tar.gz with dist/*.js, themes/, package.json, LICENSE.
 // This is what the installer and the in-app updater download from GitHub Releases.
 import { readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, resolve, dirname, relative } from "node:path";
@@ -42,6 +42,6 @@ function tar(files) {
 const out = join(root, "release");
 mkdirSync(out, { recursive: true });
 const archive = gzipSync(tar(want), { level: 9 });
-writeFileSync(join(out, "obsid.tar.gz"), archive);
-console.log(`release/obsid.tar.gz (${(archive.length / 1024).toFixed(1)} KB):\n  ${want.join("\n  ")}`);
+writeFileSync(join(out, "vanta.tar.gz"), archive);
+console.log(`release/vanta.tar.gz (${(archive.length / 1024).toFixed(1)} KB):\n  ${want.join("\n  ")}`);
 void relative;

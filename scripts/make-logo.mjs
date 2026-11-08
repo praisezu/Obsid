@@ -1,7 +1,7 @@
 // Renders assets/logo.json into PNG/ICO files:
 //   assets/logo.png        512px, for the README
 //   installer/logo.png     256px, embedded in the installer window
-//   installer/obsid.ico    multi-size icon for ObsidInstaller.exe (run `go generate` in installer/ after)
+//   installer/vanta.ico    multi-size icon for VantaInstaller.exe (run `go generate` in installer/ after)
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,23 +23,32 @@ const grid = logo.rows.map((row, y) => [...row].map((ch, x) => {
 
 const OUTLINE = hex("#1a1523");
 
-/** A thin dark outline around the pixels keeps the white O visible on light backgrounds. */
-const outlined = (gx, gy) => {
-    if (grid[gy]?.[gx]) return false;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (grid[gy + dy]?.[gx + dx]) return true;
+/**
+ * A hairline dark outline (a fraction of a cell) hugging each shape keeps the white V visible on
+ * light backgrounds, without filling the gaps between separate parts.
+ */
+function nearShape(fx, fy, t) {
+    const gx = Math.floor(fx), gy = Math.floor(fy);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const cx = gx + dx, cy = gy + dy;
+        if (!grid[cy]?.[cx]) continue;
+        const ddx = Math.max(cx - fx, 0, fx - (cx + 1)), ddy = Math.max(cy - fy, 0, fy - (cy + 1));
+        if (Math.hypot(ddx, ddy) <= t) return true;
+    }
     return false;
-};
+}
 
 /** Square transparent RGBA image, logo centred, nearest-neighbour scaled. */
 function render(size) {
-    const side = Math.max(W, H) + 2; // room for the outline
+    const side = Math.max(W, H) + 1;
     const cell = size / side;
     const ox = (side - W) / 2, oy = (side - H) / 2;
+    const t = Math.max(1 / cell, 0.22); // outline width in cells (at least one pixel)
     const px = Buffer.alloc(size * size * 4);
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
         const i = (y * size + x) * 4;
-        const gx = Math.floor(x / cell - ox), gy = Math.floor(y / cell - oy);
-        const c = grid[gy]?.[gx] ?? (outlined(gx, gy) ? OUTLINE : null);
+        const fx = (x + 0.5) / cell - ox, fy = (y + 0.5) / cell - oy;
+        const c = grid[Math.floor(fy)]?.[Math.floor(fx)] ?? (nearShape(fx, fy, t) ? OUTLINE : null);
         if (!c) continue;
         px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255;
     }
@@ -79,5 +88,5 @@ function ico(sizes) {
 
 writeFileSync(join(root, "assets/logo.png"), png(512));
 writeFileSync(join(root, "installer/logo.png"), png(256));
-writeFileSync(join(root, "installer/obsid.ico"), ico([16, 24, 32, 48, 64, 128, 256]));
-console.log("Wrote assets/logo.png, installer/logo.png, installer/obsid.ico");
+writeFileSync(join(root, "installer/vanta.ico"), ico([16, 24, 32, 48, 64, 128, 256]));
+console.log("Wrote assets/logo.png, installer/logo.png, installer/vanta.ico");

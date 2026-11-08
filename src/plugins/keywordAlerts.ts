@@ -3,11 +3,11 @@ import { definePlugin, common, ui } from "@api";
 export default definePlugin({
     name: "KeywordAlerts",
     description: "Get notified when a message anywhere mentions words you care about, like your name or a game.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
     needsWebpack: true,
     options: {
-        keywords: { type: "string", default: "", label: "Keywords", placeholder: "obsid, raid, my-nickname", description: "Separated by commas. Not case sensitive." },
+        keywords: { type: "string", default: "", label: "Keywords", placeholder: "vanta, raid, my-nickname", description: "Separated by commas. Not case sensitive." },
         wholeWord: { type: "boolean", default: true, label: "Whole words only" },
         desktop: { type: "boolean", default: true, label: "Desktop notification", description: "Also show a Windows notification, not just an in-app one." },
         ignoreBots: { type: "boolean", default: true, label: "Ignore bots" },

@@ -1,5 +1,7 @@
 /** 24x24 icon paths (string = one path, array = [path, opacity] facets). */
 export const ICONS: Record<string, string | [string, number][]> = {
+    // Vanta orb: a ring with a highlight
+    orb: [["M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 3.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6Z", 1], ["M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z", .45], ["M10 8.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2Z", 1]],
     gem: [
         ["M12 1.5 21 8.25 12 11.25Z", 1], ["M12 1.5 12 11.25 3 8.25Z", .78], ["M3 8.25 12 11.25 6.75 22.5Z", .55],
         ["M21 8.25 17.25 22.5 12 11.25Z", .66], ["M12 11.25 17.25 22.5 6.75 22.5Z", .4],

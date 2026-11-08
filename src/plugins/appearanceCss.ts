@@ -9,19 +9,19 @@ export default [
     cssPlugin({
         name: "AlwaysShowTimestamps",
         description: "Shows the time on every message in a group, not just when you hover.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `[class*="timestampVisibleOnHover_"] { opacity: 1 !important; visibility: visible !important; color: var(--text-muted) !important; }`,
     }),
     cssPlugin({
         name: "HideGifTag",
         description: "Removes the little \"GIF\" label on GIFs in chat.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: hide('[class*="gifTag_"]'),
     }),
     cssPlugin({
         name: "HideStatuses",
         description: "Hides what people are playing and their custom statuses in the member and DM lists.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             activity: { type: "boolean", default: true, label: "Hide activity (Playing…, Listening to…)" },
             custom: { type: "boolean", default: true, label: "Hide custom statuses" },
@@ -34,7 +34,7 @@ export default [
     cssPlugin({
         name: "ServerListCleanup",
         description: "Hides the Add a Server and Discover buttons and the separator lines in the server list.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             add: { type: "boolean", default: true, label: "Hide \"Add a Server\"" },
             discover: { type: "boolean", default: true, label: "Hide \"Discover\"" },
@@ -49,13 +49,13 @@ export default [
     cssPlugin({
         name: "NoJumboEmoji",
         description: "Messages that are only emoji show them at normal size instead of huge.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `[class*="emojiJumbo_"] { width: 1.375em !important; height: 1.375em !important; min-height: 0 !important; vertical-align: bottom; }`,
     }),
     cssPlugin({
         name: "HideStickers",
         description: "Hides stickers in chat (or blurs them until hovered).",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { mode: { type: "select", default: "hide", label: "Stickers", options: [{ value: "hide", label: "Hide" }, { value: "blur", label: "Blur until hovered" }] } },
         css: s => s.mode === "blur"
             ? `[class*="stickerAsset_"] { filter: blur(14px); transition: filter .2s; } [class*="stickerAsset_"]:hover { filter: none; }`
@@ -64,19 +64,19 @@ export default [
     cssPlugin({
         name: "HideLinkEmbeds",
         description: "Hides link previews (embeds) under messages. Images and videos you upload still show.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: hide('[id^="message-accessories-"] article[class*="embed_"]'),
     }),
     cssPlugin({
         name: "HideReplyPreviews",
         description: "Hides the quoted line above replies. You still see who replied, just less clutter.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: hide('[class*="repliedMessage_"]'),
     }),
     cssPlugin({
         name: "NoChatAvatars",
         description: "Removes avatars from chat for a compact, IRC-like look.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `[id^="chat-messages-"] [class*="cozy_"] img[class*="avatar_"],
 [id^="chat-messages-"] [class*="cozy_"] [class*="avatarDecoration_"] { display: none !important; }
 [id^="chat-messages-"] [class*="cozy_"] { padding-left: 16px !important; }
@@ -85,7 +85,7 @@ export default [
     cssPlugin({
         name: "TitleBarCleanup",
         description: "Hides the Help and Inbox buttons in the top bar.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             help: { type: "boolean", default: true, label: "Hide Help" },
             inbox: { type: "boolean", default: false, label: "Hide Inbox" },
@@ -95,7 +95,7 @@ export default [
     cssPlugin({
         name: "ChannelHeaderCleanup",
         description: "Hides buttons you don't use in the channel header: calls, pins, invite.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             voice: { type: "boolean", default: false, label: "Hide \"Start Voice Call\"" },
             video: { type: "boolean", default: true, label: "Hide \"Start Video Call\"" },
@@ -109,7 +109,7 @@ export default [
     cssPlugin({
         name: "HoverBarCleanup",
         description: "Trims the buttons that appear when you hover a message.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             quickReactions: { type: "boolean", default: true, label: "Hide quick reactions" },
             forward: { type: "boolean", default: false, label: "Hide Forward" },
@@ -124,7 +124,7 @@ export default [
     cssPlugin({
         name: "ThinScrollbars",
         description: "Slimmer scrollbars everywhere, or none at all.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { mode: { type: "select", default: "thin", label: "Scrollbars", options: [{ value: "thin", label: "Thin" }, { value: "hidden", label: "Hidden" }] } },
         css: s => s.mode === "hidden"
             ? `::-webkit-scrollbar { width: 0 !important; height: 0 !important; } * { scrollbar-width: none !important; }`
@@ -136,13 +136,13 @@ export default [
     cssPlugin({
         name: "ReduceMotion",
         description: "Turns off animations and transitions. Makes Discord feel snappier on slow PCs.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `*, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important; }`,
     }),
     cssPlugin({
         name: "MentionHighlight",
         description: "Pick your own colour for messages that mention you.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             color: { type: "string", default: "#8b5cf6", label: "Colour", placeholder: "#8b5cf6", description: "Any CSS colour: #hex, rgb(), a name." },
             strength: { type: "number", default: 14, label: "Background strength (%)" },
@@ -157,7 +157,7 @@ export default [
     cssPlugin({
         name: "AccentColor",
         description: "Change Discord's blurple accent (buttons, links, toggles) to any colour.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { color: { type: "string", default: "#8b5cf6", label: "Accent colour", placeholder: "#8b5cf6" } },
         css: s => {
             const c = String(s.color || "#8b5cf6").replace(/[;{}<>]/g, "");
@@ -171,7 +171,7 @@ export default [
     cssPlugin({
         name: "ChatBackground",
         description: "Put an image behind your chat.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: {
             url: { type: "string", default: "", label: "Image link", placeholder: "https://…/wallpaper.jpg" },
             dim: { type: "number", default: 70, label: "Darken (%)", description: "Keeps text readable. 0 = no dimming." },
@@ -187,32 +187,32 @@ export default [
     cssPlugin({
         name: "HideTypingIndicator",
         description: "Hides \"someone is typing…\" under the message box.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: `form [class*="typing_"] { visibility: hidden !important; }`,
     }),
     cssPlugin({
         name: "HideReactions",
         description: "Hides reactions under messages.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: hide('[id^="message-reactions-"]'),
     }),
     cssPlugin({
         name: "GrayscaleMode",
         description: "Turns Discord black and white. Less distracting when you're trying to focus.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { amount: { type: "number", default: 100, label: "Amount (%)" } },
         css: s => `#app-mount { filter: grayscale(${Math.max(0, Math.min(100, Number(s.amount) || 0))}%); }`,
     }),
     cssPlugin({
         name: "HideRoleIcons",
         description: "Hides the small role icons next to names.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         css: hide('[class*="roleIcon_"]'),
     }),
     cssPlugin({
         name: "MediaCorners",
         description: "Change how rounded images and videos in chat are.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { radius: { type: "number", default: 0, label: "Corner radius (px)", description: "0 = square corners." } },
         css: s => {
             const r = Math.max(0, Math.min(40, Number(s.radius) || 0));

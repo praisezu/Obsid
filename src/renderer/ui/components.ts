@@ -31,8 +31,8 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props?: Props, 
 
 export function ensureStyle() {
     installFocusGuard();
-    if (document.getElementById("obsid-ui-style")) return;
-    document.head.append(h("style", { id: "obsid-ui-style" }, CSS));
+    if (document.getElementById("vanta-ui-style")) return;
+    document.head.append(h("style", { id: "vanta-ui-style" }, CSS));
 }
 
 /**
@@ -45,7 +45,7 @@ let focusGuard = false;
 function installFocusGuard() {
     if (focusGuard) return;
     focusGuard = true;
-    const ours = (n: EventTarget | null) => n instanceof Element && !!n.closest(".obsid-modal-back, #obsid-quick, #obsid-toasts");
+    const ours = (n: EventTarget | null) => n instanceof Element && !!n.closest(".vanta-modal-back, #vanta-quick, #vanta-toasts");
     for (const type of ["focusin", "focusout"]) {
         window.addEventListener(type, e => {
             const fe = e as FocusEvent;
@@ -73,7 +73,7 @@ export function icon(name: string, size = 20): SVGSVGElement {
     return svg;
 }
 
-/** The Obsid pixel logo (white O, gradient b, a gem perched on top). */
+/** The Vanta pixel logo (white O, gradient b, a gem perched on top). */
 export function logo(size = 48): SVGSVGElement {
     const svg = document.createElementNS(SVG_NS, "svg");
     // Square viewBox with the logo centred
@@ -99,7 +99,7 @@ export function logo(size = 48): SVGSVGElement {
 /* ------------------------------------------------------------ components */
 export function switchEl({ checked, onChange, label, disabled }: { checked: boolean; onChange?: (v: boolean) => void; label: string; disabled?: boolean }) {
     const el = h("button", {
-        class: "obsid-switch", role: "switch", type: "button",
+        class: "vanta-switch", role: "switch", type: "button",
         "aria-checked": String(!!checked), "aria-label": label, disabled,
     });
     el.addEventListener("click", e => {
@@ -121,7 +121,7 @@ export interface ButtonOptions {
 }
 
 export function button(text: string, { variant = "", icon: ic, onClick, small, title, disabled }: ButtonOptions = {}) {
-    const cls = ["obsid-btn", variant, small && "small", !text && "icon-only"].filter(Boolean).join(" ");
+    const cls = ["vanta-btn", variant, small && "small", !text && "icon-only"].filter(Boolean).join(" ");
     const el = h("button", { class: cls, type: "button", title, "aria-label": !text ? title : null, disabled },
         ic ? icon(ic, small || !text ? 16 : 18) : null, text || null);
     if (onClick) el.addEventListener("click", async e => {
@@ -133,44 +133,44 @@ export function button(text: string, { variant = "", icon: ic, onClick, small, t
 }
 
 export const pageHead = (title: string, subtitle?: string) =>
-    h("div", { class: "obsid-page-head" }, h("h1", {}, title), subtitle ? h("p", {}, subtitle) : null);
+    h("div", { class: "vanta-page-head" }, h("h1", {}, title), subtitle ? h("p", {}, subtitle) : null);
 
 export const section = (title: string | null, ...children: Child[]) =>
-    h("section", { class: "obsid-section" }, title ? h("h2", { class: "obsid-section-title" }, title) : null, children);
+    h("section", { class: "vanta-section" }, title ? h("h2", { class: "vanta-section-title" }, title) : null, children);
 
 export const card = (props: Props, ...children: Child[]) =>
-    h("div", { ...props, class: "obsid-card " + (props?.class || "") }, children);
+    h("div", { ...props, class: "vanta-card " + (props?.class || "") }, children);
 
 export function row({ title, description, control }: { title: Child; description?: Child; control?: Child }) {
-    return h("div", { class: "obsid-row" },
-        h("div", { class: "obsid-row-text" },
-            h("div", { class: "obsid-row-title" }, title),
-            description ? h("div", { class: "obsid-row-desc" }, description) : null),
+    return h("div", { class: "vanta-row" },
+        h("div", { class: "vanta-row-text" },
+            h("div", { class: "vanta-row-title" }, title),
+            description ? h("div", { class: "vanta-row-desc" }, description) : null),
         control);
 }
 
-/** A settings row bound to a boolean in settings.obsid */
+/** A settings row bound to a boolean in settings.vanta */
 export function settingRow(key: "startupToast" | "quickPanel" | "autoCheckUpdates" | "autoUpdate", title: string, description: string, onChange?: (v: boolean) => void) {
     return row({
         title, description,
         control: switchEl({
-            checked: settings.obsid[key], label: title,
-            onChange: v => { settings.obsid[key] = v; saveSettings(); onChange?.(v); },
+            checked: settings.vanta[key], label: title,
+            onChange: v => { settings.vanta[key] = v; saveSettings(); onChange?.(v); },
         }),
     });
 }
 
 export function searchInput(placeholder: string, onInput: (v: string) => void) {
-    const input = h("input", { class: "obsid-input", type: "search", placeholder, "aria-label": placeholder });
+    const input = h("input", { class: "vanta-input", type: "search", placeholder, "aria-label": placeholder });
     input.addEventListener("input", () => onInput(input.value));
-    return h("div", { class: "obsid-input-wrap" }, icon("search", 18), input);
+    return h("div", { class: "vanta-input-wrap" }, icon("search", 18), input);
 }
 
 export function segment(options: [string, string][], value: string, onChange: (id: string) => void) {
-    const wrap = h("div", { class: "obsid-segment", role: "group" });
+    const wrap = h("div", { class: "vanta-segment", role: "group" });
     const render = () => {
         wrap.replaceChildren(...options.map(([id, label]) => h("button", {
-            class: "obsid-chip", type: "button", "aria-pressed": String(id === value),
+            class: "vanta-chip", type: "button", "aria-pressed": String(id === value),
             onclick: () => { value = id; render(); onChange(id); },
         }, label)));
     };
@@ -179,17 +179,17 @@ export function segment(options: [string, string][], value: string, onChange: (i
 }
 
 export function tabs(list: [string, string][], active: string, onSelect: (id: string) => void) {
-    return h("div", { class: "obsid-tabs", role: "tablist" }, list.map(([id, label]) =>
-        h("button", { class: "obsid-tab", role: "tab", type: "button", "aria-selected": String(id === active), onclick: () => onSelect(id) }, label)));
+    return h("div", { class: "vanta-tabs", role: "tablist" }, list.map(([id, label]) =>
+        h("button", { class: "vanta-tab", role: "tab", type: "button", "aria-selected": String(id === active), onclick: () => onSelect(id) }, label)));
 }
 
 export const empty = (text: string, iconName = "info", ...extra: Child[]) =>
-    h("div", { class: "obsid-empty" }, icon(iconName, 32), h("div", {}, text), extra);
+    h("div", { class: "vanta-empty" }, icon(iconName, 32), h("div", {}, text), extra);
 
 export const note = (kind: "" | "warn" | "danger", ...children: Child[]) =>
-    h("div", { class: "obsid-note " + kind }, icon(kind === "warn" || kind === "danger" ? "warn" : "info", 18), h("div", {}, children));
+    h("div", { class: "vanta-note " + kind }, icon(kind === "warn" || kind === "danger" ? "warn" : "info", 18), h("div", {}, children));
 
-export const tag = (text: string, kind = "", title?: string) => h("span", { class: "obsid-tag " + kind, title }, text);
+export const tag = (text: string, kind = "", title?: string) => h("span", { class: "vanta-tag " + kind, title }, text);
 
 /* ---------------------------------------------------------- modal, toast */
 export interface ModalButton {
@@ -215,12 +215,12 @@ export function modal({ title, body, buttons = [], onClose }: { title: string; b
     const onKey = (e: KeyboardEvent) => {
         if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); close(null); }
     };
-    const foot = h("div", { class: "obsid-modal-foot" }, buttons.map(b =>
+    const foot = h("div", { class: "vanta-modal-foot" }, buttons.map(b =>
         button(b.text, { variant: b.variant, onClick: async () => { const r = await b.onClick?.(); if (r !== false) close(b.value); } })));
-    const back: HTMLDivElement = h("div", { class: "obsid-modal-back obsid-scope", onmousedown: (e: MouseEvent) => { if (e.target === back) close(null); } },
-        h("div", { class: "obsid-modal", role: "dialog", "aria-modal": "true", "aria-label": title },
-            h("div", { class: "obsid-modal-head" }, title),
-            h("div", { class: "obsid-modal-body" }, body),
+    const back: HTMLDivElement = h("div", { class: "vanta-modal-back vanta-scope", onmousedown: (e: MouseEvent) => { if (e.target === back) close(null); } },
+        h("div", { class: "vanta-modal", role: "dialog", "aria-modal": "true", "aria-label": title },
+            h("div", { class: "vanta-modal-head" }, title),
+            h("div", { class: "vanta-modal-body" }, body),
             buttons.length ? foot : null));
     // Discord's own modals (e.g. User Settings) lock focus inside themselves, which would make our
     // inputs and dropdowns unclickable. Their focus-lock library skips elements with this attribute.
@@ -249,10 +249,10 @@ export function confirm({ title, body, confirmText = "Confirm", cancelText = "Ca
 export function toast(text: string, { type = "", ms = 4000 }: { type?: "" | "ok" | "danger"; ms?: number } = {}) {
     onDomReady(() => {
         ensureStyle();
-        let host = document.getElementById("obsid-toasts");
-        if (!host) document.body.append(host = h("div", { id: "obsid-toasts", class: "obsid-scope", role: "status", "aria-live": "polite" }));
-        const el = h("div", { class: "obsid-toast " + type },
-            type === "danger" ? icon("warn", 18) : type === "ok" ? icon("check", 18) : icon("gem", 18), text);
+        let host = document.getElementById("vanta-toasts");
+        if (!host) document.body.append(host = h("div", { id: "vanta-toasts", class: "vanta-scope", role: "status", "aria-live": "polite" }));
+        const el = h("div", { class: "vanta-toast " + type },
+            type === "danger" ? icon("warn", 18) : type === "ok" ? icon("check", 18) : icon("orb", 18), text);
         host.append(el);
         setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 260); }, ms);
     });
@@ -293,7 +293,7 @@ export function mountPage(id: string, container: HTMLElement, { navigate, state 
         try { content = page.render(ctx); }
         catch (e: any) {
             logger.error(`Page ${page.id} failed to render`, e);
-            content = h("div", { class: "obsid-page" }, note("danger", `This page crashed: ${e.message}`));
+            content = h("div", { class: "vanta-page" }, note("danger", `This page crashed: ${e.message}`));
         }
         container.replaceChildren(content);
     };
@@ -302,14 +302,14 @@ export function mountPage(id: string, container: HTMLElement, { navigate, state 
         onDispose: fn => { disposers.push(fn); },
         navigate: (to, s) => navigate?.(to, s),
         rerender() {
-            const scroll = (container.closest("[data-obsid-scroll]") || container) as HTMLElement;
+            const scroll = (container.closest("[data-vanta-scroll]") || container) as HTMLElement;
             const top = scroll.scrollTop;
             dispose();
             render();
             scroll.scrollTop = top;
         },
     };
-    container.classList.add("obsid-scope");
+    container.classList.add("vanta-scope");
     render();
     return { page, dispose, ctx };
 }

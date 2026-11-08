@@ -10,7 +10,7 @@ export default [
     definePlugin({
         name: "ReadAllNotifications",
         description: "Adds a \"Read all\" button above your server list that clears every unread server at once.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         needsWebpack: true,
         options: { dms: { type: "boolean", default: false, label: "Also mark DMs as read" } },
 
@@ -43,7 +43,7 @@ export default [
             const item = sep?.closest('[class*="listItem_"]') ?? sep;
             if (!item?.parentElement) return;
             this.btn ??= h("button", {
-                class: "obsid-readall", type: "button", title: "Mark all servers as read",
+                class: "vanta-readall", type: "button", title: "Mark all servers as read",
                 onclick: () => {
                     try {
                         const n = this.readAll();
@@ -54,12 +54,12 @@ export default [
             item.parentElement.insertBefore(this.btn, item);
         },
         start() {
-            this.style = managedStyle("obsid-readall");
-            this.style.set(`.obsid-readall { all: unset; box-sizing: border-box; display: block; width: 48px; margin: 4px auto 6px; padding: 4px 0; text-align: center;
+            this.style = managedStyle("vanta-readall");
+            this.style.set(`.vanta-readall { all: unset; box-sizing: border-box; display: block; width: 48px; margin: 4px auto 6px; padding: 4px 0; text-align: center;
   cursor: pointer; border-radius: 8px; font: 700 10px var(--font-primary, sans-serif); letter-spacing: .02em; color: var(--text-muted);
   background: var(--background-surface-high, rgba(150,150,160,.12)); transition: color .12s, background .12s; }
-.obsid-readall:hover { color: var(--text-default); background: var(--background-mod-normal, rgba(150,150,160,.2)); }
-.obsid-readall:focus-visible { outline: 2px solid #8b5cf6; }`);
+.vanta-readall:hover { color: var(--text-default); background: var(--background-mod-normal, rgba(150,150,160,.2)); }
+.vanta-readall:focus-visible { outline: 2px solid #8b5cf6; }`);
             this.insert();
             // The server list re-renders sometimes; put the button back if it goes away.
             this.timer = setInterval(() => this.insert(), 2000);
@@ -70,7 +70,7 @@ export default [
     definePlugin({
         name: "RelationshipNotifier",
         description: "Tells you when someone unfriends you, cancels a friend request, or removes you from a server or group chat.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         needsWebpack: true,
         options: {
             friends: { type: "boolean", default: true, label: "Friend removed" },
@@ -91,7 +91,7 @@ export default [
             remember();
             const say = (text: string) => {
                 ui.toast(text, { ms: 8000 });
-                if (this.settings.desktop) desktopNotify("Obsid", text);
+                if (this.settings.desktop) desktopNotify("Vanta", text);
             };
             // Things *you* do also produce these events; note them so we don't notify about your own actions.
             this.offNet = net.block(({ method, url }) => {
@@ -126,7 +126,7 @@ export default [
     definePlugin({
         name: "VoiceChannelAlerts",
         description: "Tells you when people join or leave the voice channel you're in, and can say it out loud.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         needsWebpack: true,
         options: {
             speak: { type: "boolean", default: false, label: "Say it out loud", description: "Uses your computer's text-to-speech voice." },
@@ -159,7 +159,7 @@ export default [
     definePlugin({
         name: "MuteNewServers",
         description: "When you join a server, it's muted with @everyone and role pings suppressed, so new servers don't flood you.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         needsWebpack: true,
         start() {
             // Discord's authenticated HTTP helper: { get, post, put, patch, del }

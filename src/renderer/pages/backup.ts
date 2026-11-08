@@ -6,13 +6,13 @@ import { themes } from "../themes";
 import { ui, h } from "../ui/components";
 
 const PARTS: [keyof BackupParts, string, string][] = [
-    ["settings", "Settings & plugin config", "Which plugins are on, their options, Obsid settings and online themes."],
+    ["settings", "Settings & plugin config", "Which plugins are on, their options, Vanta settings and online themes."],
     ["quickCss", "Quick CSS", "Your Quick CSS editor contents."],
     ["themes", "Local theme files", "The .css files in your themes folder."],
 ];
 
 function partRows(parts: BackupParts, available?: BackupParts) {
-    return ui.card({ class: "obsid-rows" },
+    return ui.card({ class: "vanta-rows" },
         PARTS.filter(([k]) => !available || available[k]).map(([key, title, desc]) => ui.row({
             title, description: desc,
             control: ui.switch({ checked: parts[key], label: title, onChange: v => { parts[key] = v; } }),
@@ -31,7 +31,7 @@ function showRestore(data: BackupData) {
     ui.modal({
         title: "Restore backup",
         body: [
-            h("div", {}, `Made with Obsid ${data.version || "?"} on ${created}. Pick what to restore:`),
+            h("div", {}, `Made with Vanta ${data.version || "?"} on ${created}. Pick what to restore:`),
             partRows(parts, available),
             ui.note("warn", "Restoring replaces your current settings and Quick CSS. Theme files with the same name are overwritten. Discord reloads afterwards."),
         ],
@@ -57,17 +57,17 @@ ui.registerPage({
     render(ctx) {
         const parts = (ctx.state.parts ??= { settings: true, quickCss: true, themes: true }) as BackupParts;
 
-        return h("div", { class: "obsid-page" },
+        return h("div", { class: "vanta-page" },
             ui.pageHead("Backup & Restore", "Export everything to one file, bring it back later or on another computer."),
 
             ui.section("Export",
-                h("div", { class: "obsid-row-desc" }, "Save your Obsid setup to a file you can keep or move to another PC."),
+                h("div", { class: "vanta-row-desc" }, "Save your Vanta setup to a file you can keep or move to another PC."),
                 partRows(parts),
-                h("div", { class: "obsid-btns" },
+                h("div", { class: "vanta-btns" },
                     ui.button("Export backup", {
                         variant: "primary", icon: "upload",
                         onClick: async () => {
-                            const data: BackupData = { obsidBackup: 1, version: native.info.version, created: new Date().toISOString() };
+                            const data: BackupData = { vantaBackup: 1, version: native.info.version, created: new Date().toISOString() };
                             if (parts.settings) data.settings = JSON.parse(JSON.stringify(settings));
                             if (parts.quickCss) data.quickCss = quickCss.css;
                             if (parts.themes) data.themes = Object.fromEntries(themes.local.map(t => [t.file, t.css]));
@@ -80,8 +80,8 @@ ui.registerPage({
             ),
 
             ui.section("Restore",
-                h("div", { class: "obsid-row-desc" }, "Load a backup file. You'll see what's in it before anything changes."),
-                h("div", { class: "obsid-btns" },
+                h("div", { class: "vanta-row-desc" }, "Load a backup file. You'll see what's in it before anything changes."),
+                h("div", { class: "vanta-btns" },
                     ui.button("Choose backup file…", {
                         icon: "download",
                         onClick: async () => {
@@ -92,9 +92,9 @@ ui.registerPage({
             ),
 
             ui.section("Danger zone",
-                ui.card({ class: "obsid-rows" },
+                ui.card({ class: "vanta-rows" },
                     ui.row({
-                        title: "Reset Obsid settings",
+                        title: "Reset Vanta settings",
                         description: "Turns every plugin back to its default and clears plugin options. Themes and Quick CSS files are kept.",
                         control: ui.button("Reset", {
                             variant: "danger", onClick: async () => {

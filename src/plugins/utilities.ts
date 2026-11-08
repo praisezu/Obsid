@@ -5,7 +5,7 @@ export default [
     definePlugin({
         name: "ConfirmCalls",
         description: "Asks before starting a voice or video call, so you don't ring someone by accident.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             const allowed = new WeakSet<Element>();
             this.onClick = async (e: MouseEvent) => {
@@ -26,7 +26,7 @@ export default [
     definePlugin({
         name: "NotificationVolume",
         description: "Makes Discord's notification and UI sounds quieter (or louder, up to normal) without touching call volume.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         options: { volume: { type: "number", default: 40, label: "Sound volume (%)", description: "0–100. Calls and videos aren't affected." } },
         start() {
             const base = new WeakMap<HTMLMediaElement, number>(), applied = new WeakMap<HTMLMediaElement, number>();
@@ -45,8 +45,8 @@ export default [
     definePlugin({
         name: "BetterTitle",
         description: "Cleaner window title: drops the \"Discord |\" prefix and can show your unread count first.",
-        authors: ["Obsid"], category: "Utility",
-        options: { prefix: { type: "string", default: "", label: "Custom prefix", placeholder: "Obsid", description: "Optional text shown before the title." } },
+        authors: ["Vanta"], category: "Utility",
+        options: { prefix: { type: "string", default: "", label: "Custom prefix", placeholder: "Vanta", description: "Optional text shown before the title." } },
         start() {
             const fix = () => {
                 const t = document.title;
@@ -65,7 +65,7 @@ export default [
     definePlugin({
         name: "CopyImageLink",
         description: "Shift+click an image in chat to copy its link.",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onClick = async (e: MouseEvent) => {
                 if (!e.shiftKey || e.ctrlKey || e.altKey || e.button !== 0) return;
@@ -89,7 +89,7 @@ export default [
     definePlugin({
         name: "DevToolsKeybind",
         description: "Ctrl+Shift+I or F12 opens DevTools (Discord blocks these by default).",
-        authors: ["Obsid"], category: "Developer",
+        authors: ["Vanta"], category: "Developer",
         start() {
             this.onKey = (e: KeyboardEvent) => {
                 if (e.key === "F12" || (e.ctrlKey && e.shiftKey && !e.altKey && e.code === "KeyI")) {
@@ -104,7 +104,7 @@ export default [
     definePlugin({
         name: "F5Reload",
         description: "F5 reloads Discord, like a browser (Ctrl+R still works too).",
-        authors: ["Obsid"], category: "Utility",
+        authors: ["Vanta"], category: "Utility",
         start() {
             this.onKey = (e: KeyboardEvent) => {
                 if (e.key !== "F5" || e.ctrlKey || e.altKey) return;
@@ -118,7 +118,7 @@ export default [
     definePlugin({
         name: "ThemeHelper",
         description: "For theme makers: Ctrl+Alt+Shift+click anything to copy a selector for it that survives Discord updates.",
-        authors: ["Obsid"], category: "Developer",
+        authors: ["Vanta"], category: "Developer",
         selectorFor(el: Element) {
             const parts: string[] = [];
             for (let e: Element | null = el, depth = 0; e && e !== document.body && depth < 3; e = e.parentElement, depth++) {
@@ -144,18 +144,18 @@ export default [
     definePlugin({
         name: "DimWhenUnfocused",
         description: "Dims Discord when it's not the active window.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         options: { amount: { type: "number", default: 30, label: "Dim amount (%)" } },
         start() {
-            this.style = managedStyle("obsid-dim-unfocused");
+            this.style = managedStyle("vanta-dim-unfocused");
             const update = () => {
                 const a = Math.max(0, Math.min(90, Number(this.settings.amount) || 0)) / 100;
-                this.style.set(`html.obsid-unfocused #app-mount { filter: brightness(${1 - a}); transition: filter .25s; } #app-mount { transition: filter .25s; }`);
+                this.style.set(`html.vanta-unfocused #app-mount { filter: brightness(${1 - a}); transition: filter .25s; } #app-mount { transition: filter .25s; }`);
             };
             this.update = update;
             update();
-            this.onBlur = () => document.documentElement.classList.add("obsid-unfocused");
-            this.onFocus = () => document.documentElement.classList.remove("obsid-unfocused");
+            this.onBlur = () => document.documentElement.classList.add("vanta-unfocused");
+            this.onFocus = () => document.documentElement.classList.remove("vanta-unfocused");
             window.addEventListener("blur", this.onBlur);
             window.addEventListener("focus", this.onFocus);
         },
@@ -163,7 +163,7 @@ export default [
         stop() {
             window.removeEventListener("blur", this.onBlur);
             window.removeEventListener("focus", this.onFocus);
-            document.documentElement.classList.remove("obsid-unfocused");
+            document.documentElement.classList.remove("vanta-unfocused");
             this.style?.remove();
         },
     }),

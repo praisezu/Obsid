@@ -1,23 +1,26 @@
-<p align="center"><img src="assets/logo.png" width="128" alt="Obsid logo"></p>
+<p align="center"><img src="assets/logo.png" width="128" alt="Vanta logo"></p>
 
-# Obsid
+# Vanta
+
+> Vanta was called **Obsid** until v0.3.0. Existing Obsid installs update to Vanta automatically and keep
+> their settings, plugins and themes. Plugins written as `Obsid.definePlugin(...)` still work.
 
 A Discord client mod in the spirit of Vencord, written in TypeScript. It has built-in plugins,
 themes, a settings section inside Discord, and a way to import plugins from a file or a link.
 
 ## Install
 
-Download **`ObsidInstaller.exe`** from the [latest release](https://github.com/praisezu/Obsid/releases/latest)
+Download **`VantaInstaller.exe`** from the [latest release](https://github.com/praisezu/Obsid/releases/latest)
 and run it. It finds every Discord install (Stable, PTB, Canary, Development) and has
-**Install / Repair** and **Uninstall** buttons. It downloads Obsid into `%APPDATA%\Obsid\app`,
+**Install / Repair** and **Uninstall** buttons. It downloads Vanta into `%APPDATA%\Vanta\app`,
 closes and reopens Discord for you, and in-app updates come from the same releases.
 
 Command line (Windows, macOS, Linux):
 
 ```bash
-ObsidInstaller -install [-branch stable|ptb|canary|development|all]
-ObsidInstaller -uninstall
-ObsidInstaller -status
+VantaInstaller -install [-branch stable|ptb|canary|development|all]
+VantaInstaller -uninstall
+VantaInstaller -status
 ```
 
 Discord installs each update into a new `app-x.x.x` folder, which drops the injection.
@@ -36,7 +39,7 @@ npm run build        # → dist/main.js, dist/preload.js, dist/renderer.js
 npm run inject       # point Discord Stable at this checkout's dist/ (or use the installer's "Local build")
 npm run watch        # rebuild on save; press Ctrl+R in Discord to reload renderer changes
 npm run typecheck
-npm run build:installer   # → dist/ObsidInstaller.exe
+npm run build:installer   # → dist/VantaInstaller.exe
 ```
 
 Main-process and preload changes need a full Discord restart; renderer changes only need Ctrl+R.
@@ -44,25 +47,25 @@ Main-process and preload changes need a full Discord restart; renderer changes o
 ### Releasing
 
 Bump the version, commit, then push an annotated tag. Its message becomes the release notes, so keep
-it short. GitHub Actions builds everything and publishes `obsid.tar.gz` plus the installers:
+it short. GitHub Actions builds everything and publishes `vanta.tar.gz` plus the installers:
 
 ```bash
 npm version 0.2.1 --no-git-tag-version
-git commit -am "Obsid 0.2.1"
-git tag -a v0.2.1 -m "Obsid 0.2.1" -m "- Fixed X" -m "- Added Y"
+git commit -am "Vanta 0.2.1"
+git tag -a v0.2.1 -m "Vanta 0.2.1" -m "- Fixed X" -m "- Added Y"
 git push --follow-tags
 ```
 
 ## Settings
 
-Obsid adds an **Obsid Settings** section to Discord's own **User Settings** sidebar:
+Vanta adds an **Vanta Settings** section to Discord's own **User Settings** sidebar:
 
 | Page | What's there |
 | --- | --- |
-| Obsid | Version info, quick actions (reload, restart, DevTools), general options, folders |
+| Vanta | Version info, quick actions (reload, restart, DevTools), general options, folders |
 | Plugins | Every plugin with search, category and on/off filters, per-plugin settings, **Import plugin** |
 | Themes | Local `.css` themes (BetterDiscord themes work), online themes from a link, the Quick CSS editor |
-| Updater | Updates Obsid with git once the folder is a git repo with a remote |
+| Updater | Updates Vanta with git once the folder is a git repo with a remote |
 | Backup & Restore | Export settings, Quick CSS and themes to one file, restore it, or reset |
 
 Press **Ctrl+Shift+O** anywhere to open the same pages in a pop-up without going through Settings.
@@ -76,12 +79,12 @@ On **Plugins → Import plugin** you can:
 - pick a `.js` file from your computer
 - or drag a `.js` file onto the Plugins page
 
-Before anything is installed, Obsid shows a review screen with the plugin's name, author and full
+Before anything is installed, Vanta shows a review screen with the plugin's name, author and full
 code. It warns you if the code mentions your login token, sends network requests, or uses `eval`.
 Imported plugins start right away, with no reload, and can be deleted from their card. They're saved
-in `%APPDATA%\Obsid\plugins\`.
+in `%APPDATA%\Vanta\plugins\`.
 
-Try it with [`examples/HelloObsid.js`](examples/HelloObsid.js).
+Try it with [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
 ## Built-in plugins (97)
 
@@ -97,10 +100,10 @@ new messages share one page watcher, so turning many on doesn't slow Discord dow
 | Utility | ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
 | Developer | ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
 
-Each plugin's description and options are in **Settings → Obsid Settings → Plugins**. Plugins tagged
+Each plugin's description and options are in **Settings → Vanta Settings → Plugins**. Plugins tagged
 **Restart** ask whether to restart Discord when you switch them.
 
-A built-in theme ships in `themes/` (Obsidian). Only one theme is on at a time; Quick CSS layers
+A built-in theme ships in `themes/` (Vantablack). Only one theme is on at a time; Quick CSS layers
 on top. Themes that `@import` their CSS from a website (most BetterDiscord themes) work.
 
 ## How it works
@@ -109,9 +112,9 @@ on top. Themes that `@import` their CSS from a website (most BetterDiscord theme
 Discord bootstrap (app.asar)
   └─ modules/discord_desktop_core/index.js   ← installer adds: require("…/dist/main.js")
        ├─ dist/main.js      swaps electron.BrowserWindow for a subclass that points the main
-       │                    window's preload at Obsid and keeps Discord's preload as an arg
-       └─ core.asar         Discord creates its window → gets Obsid's preload
-            └─ dist/preload.js   exposes window.ObsidNative, runs dist/renderer.js in the page,
+       │                    window's preload at Vanta and keeps Discord's preload as an arg
+       └─ core.asar         Discord creates its window → gets Vanta's preload
+            └─ dist/preload.js   exposes window.VantaNative, runs dist/renderer.js in the page,
                                  then your imported plugins, then require()s Discord's preload
 ```
 
@@ -123,7 +126,7 @@ Source layout:
 | `src/preload/` | The bridge between the page and the main process |
 | `src/renderer/core/` | Webpack finder, patcher, request hooks, settings, plugin manager |
 | `src/renderer/ui/`, `pages/` | Components and the five settings pages |
-| `src/renderer/settingsSidebar.ts` | Adds "Obsid Settings" to Discord's User Settings |
+| `src/renderer/settingsSidebar.ts` | Adds "Vanta Settings" to Discord's User Settings |
 | `src/plugins/` | Built-in plugins, one file each, picked up automatically by the build |
 | `installer/` | Go installer (GUI on Windows, CLI everywhere) |
 
@@ -161,11 +164,11 @@ export default definePlugin({
 
 ### Imported (plain JavaScript)
 
-Same shape, but call the global: `Obsid.definePlugin({ ... })`, and use `Obsid.net`, `Obsid.ui`,
+Same shape, but call the global: `Vanta.definePlugin({ ... })`, and use `Vanta.net`, `Vanta.ui`,
 etc. Share the `.js` file or a link to it; people add it with **Plugins → Import plugin**.
-See [`examples/HelloObsid.js`](examples/HelloObsid.js).
+See [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
-### API (`@api` / `window.Obsid`)
+### API (`@api` / `window.Vanta`)
 
 - `common.FluxDispatcher`, `UserStore`, `ChannelStore`, `GuildStore`, `MessageStore`,
   `SelectedChannelStore`, `SelectedGuildStore`, `RelationshipStore`: Discord modules, found for you
@@ -186,7 +189,7 @@ internals, which change with updates.
 - `scripts/dev-restart.ps1` restarts Discord with a debug port. Then
   `node scripts/cdp.js eval "<js>"`, `evalfile <file>`, `shot <png>` and `reload` drive it from a
   terminal. Restart Discord normally afterwards to close the port.
-- DevTools: Settings → Obsid → DevTools. Obsid logs are tagged `[Obsid]`.
+- DevTools: Settings → Vanta → DevTools. Vanta logs are tagged `[Vanta]`.
 
-If Obsid breaks badly, Discord still starts, because the injection is wrapped in try/catch. The
+If Vanta breaks badly, Discord still starts, because the injection is wrapped in try/catch. The
 installer's **Uninstall** (or `npm run uninject`) removes it completely.

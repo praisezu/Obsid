@@ -1,7 +1,7 @@
 # Push a version tag to publish a release (the tag message becomes the release notes):
-#   npm version 0.2.1 --no-git-tag-version && git commit -am "Obsid 0.2.1"
-#   git tag -a v0.2.1 -m "Obsid 0.2.1" -m "- short list of changes" && git push --follow-tags
-# The release gets obsid.tar.gz (what the installer and in-app updater download) and the installers.
+#   npm version 0.2.1 --no-git-tag-version && git commit -am "Vanta 0.2.1"
+#   git tag -a v0.2.1 -m "Vanta 0.2.1" -m "- short list of changes" && git push --follow-tags
+# The release gets vanta.tar.gz (what the installer and in-app updater download) and the installers.
 name: Release
 
 on:
@@ -20,12 +20,12 @@ jobs:
           fetch-depth: 0
 
       # The release description is the (short) message of the annotated tag:
-      #   git tag -a v0.2.0 -m "Obsid 0.2.0" -m "- what changed"
+      #   git tag -a v0.2.0 -m "Vanta 0.2.0" -m "- what changed"
       - name: Release notes from tag
         run: |
           git fetch --tags --force
           git tag -l --format='%(contents:body)' "$GITHUB_REF_NAME" > notes.md
-          [ -s notes.md ] || echo "Obsid ${GITHUB_REF_NAME#v}" > notes.md
+          [ -s notes.md ] || echo "Vanta ${GITHUB_REF_NAME#v}" > notes.md
 
       - uses: actions/setup-node@v4
         with:
@@ -52,24 +52,26 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Build Obsid
-        run: npm run build:release && npm run package
+      - name: Build Vanta
+        # obsid.tar.gz: same file under Vanta's old name, so Obsid 0.2.x installs auto-update into Vanta
+        run: npm run build:release && npm run package && cp release/vanta.tar.gz release/obsid.tar.gz
 
       - name: Build installers
         working-directory: installer
         run: |
           V=${GITHUB_REF_NAME#v}
-          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$V" -o ../release/ObsidInstaller.exe .
-          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/ObsidInstaller-linux .
-          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/ObsidInstaller-macos .
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$V" -o ../release/VantaInstaller.exe .
+          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-linux .
+          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-macos .
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: Obsid ${{ github.ref_name }}
+          name: Vanta ${{ github.ref_name }}
           body_path: notes.md
           files: |
+            release/vanta.tar.gz
             release/obsid.tar.gz
-            release/ObsidInstaller.exe
-            release/ObsidInstaller-linux
-            release/ObsidInstaller-macos
+            release/VantaInstaller.exe
+            release/VantaInstaller-linux
+            release/VantaInstaller-macos

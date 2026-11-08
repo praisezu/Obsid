@@ -1,11 +1,11 @@
 /**
- * @name HelloObsid
+ * @name HelloVanta
  * @author You
  * @version 1.0.0
  * @description Example imported plugin: greets you when it starts and counts the messages you send.
  */
-Obsid.definePlugin({
-    name: "HelloObsid",
+Vanta.definePlugin({
+    name: "HelloVanta",
     description: "Example imported plugin: greets you when it starts and counts the messages you send.",
     authors: ["You"],
     category: "Examples",
@@ -15,8 +15,8 @@ Obsid.definePlugin({
 
     sent: 0,
     start() {
-        Obsid.ui.toast(this.settings.greeting);
-        this.unwatch = Obsid.net.transform(({ method, url }) => {
+        Vanta.ui.toast(this.settings.greeting);
+        this.unwatch = Vanta.net.transform(({ method, url }) => {
             if (method === "POST" && /\/channels\/\d+\/messages$/.test(url)) this.logger.log("Messages sent:", ++this.sent);
         });
     },

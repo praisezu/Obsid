@@ -1,9 +1,9 @@
 /*
- * Updates Obsid. Two modes:
- *  - git:     the Obsid folder is a git checkout → fetch + fast-forward pull, then rebuild is needed
+ * Updates Vanta. Two modes:
+ *  - git:     the Vanta folder is a git checkout → fetch + fast-forward pull, then rebuild is needed
  *             (dist/ is not committed), so this mode is meant for development.
  *  - release: installed by the installer from a GitHub release → download the latest release's
- *             obsid.tar.gz and unpack it over the install folder.
+ *             vanta.tar.gz and unpack it over the install folder.
  */
 import { execFile } from "node:child_process";
 import * as fs from "node:fs";
@@ -13,8 +13,8 @@ import { gunzipSync } from "node:zlib";
 import type { UpdateCheck, UpdaterInfo } from "@shared/types";
 import { compareVersions } from "./util";
 
-const REPO = __OBSID_REPO__;
-const ASSET = "obsid.tar.gz";
+const REPO = __VANTA_REPO__;
+const ASSET = "vanta.tar.gz";
 
 function git(root: string, ...args: string[]) {
     return new Promise<{ ok: boolean; out: string; err: string }>(resolve => {
@@ -42,7 +42,7 @@ export async function updaterInfo(root: string, version: string): Promise<Update
 
 async function latestRelease() {
     const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-        headers: { Accept: "application/vnd.github+json", "User-Agent": "Obsid-Updater" },
+        headers: { Accept: "application/vnd.github+json", "User-Agent": "Vanta-Updater" },
     });
     if (res.status === 404) return null; // no releases yet
     if (!res.ok) throw new Error(`GitHub returned HTTP ${res.status}`);

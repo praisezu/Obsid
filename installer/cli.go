@@ -1,9 +1,9 @@
 package main
 
 // Command-line mode (all platforms):
-//   ObsidInstaller -install   [-branch stable|ptb|canary|development|all] [-local <obsid folder>] [-no-restart]
-//   ObsidInstaller -uninstall [-branch …] [-no-restart]
-//   ObsidInstaller -status
+//   VantaInstaller -install   [-branch stable|ptb|canary|development|all] [-local <vanta folder>] [-no-restart]
+//   VantaInstaller -uninstall [-branch …] [-no-restart]
+//   VantaInstaller -status
 
 import (
 	"bufio"
@@ -20,13 +20,13 @@ type cliOptions struct {
 
 func parseFlags() (cliOptions, bool) {
 	var o cliOptions
-	fs := flag.NewFlagSet("ObsidInstaller", flag.ContinueOnError)
-	fs.BoolVar(&o.install, "install", false, "install (or repair) Obsid")
-	fs.BoolVar(&o.uninstall, "uninstall", false, "remove Obsid")
-	fs.BoolVar(&o.status, "status", false, "show which Discord installs have Obsid")
+	fs := flag.NewFlagSet("VantaInstaller", flag.ContinueOnError)
+	fs.BoolVar(&o.install, "install", false, "install (or repair) Vanta")
+	fs.BoolVar(&o.uninstall, "uninstall", false, "remove Vanta")
+	fs.BoolVar(&o.status, "status", false, "show which Discord installs have Vanta")
 	fs.BoolVar(&o.noRestart, "no-restart", false, "don't close and reopen Discord")
 	fs.StringVar(&o.branch, "branch", "stable", "stable, ptb, canary, development or all")
-	fs.StringVar(&o.local, "local", "", "install from a local Obsid folder (dev build) instead of GitHub")
+	fs.StringVar(&o.local, "local", "", "install from a local Vanta folder (dev build) instead of GitHub")
 	cli := false
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		os.Exit(2)
@@ -36,7 +36,7 @@ func parseFlags() (cliOptions, bool) {
 }
 
 func runCLI(o cliOptions) int {
-	fmt.Printf("Obsid Installer %s\n\n", Version)
+	fmt.Printf("Vanta Installer %s\n\n", Version)
 	src := Source{Local: o.local}
 	entry := MainEntryFor(AppDir())
 	if src.Local != "" {
@@ -88,9 +88,9 @@ func runCLI(o cliOptions) int {
 			fmt.Printf("Error with %s: %v\n", b.Name, err)
 			code = 1
 		} else if o.install {
-			fmt.Printf("Obsid installed into %s.\n", b.Name)
+			fmt.Printf("Vanta installed into %s.\n", b.Name)
 		} else {
-			fmt.Printf("Obsid removed from %s.\n", b.Name)
+			fmt.Printf("Vanta removed from %s.\n", b.Name)
 		}
 	}
 	return code
@@ -99,7 +99,7 @@ func runCLI(o cliOptions) int {
 // runInteractive is the menu shown on platforms without the GUI.
 func runInteractive() int {
 	in := bufio.NewReader(os.Stdin)
-	fmt.Println("Obsid Installer " + Version)
+	fmt.Println("Vanta Installer " + Version)
 	fmt.Println("  1) Install / repair")
 	fmt.Println("  2) Uninstall")
 	fmt.Println("  3) Status")

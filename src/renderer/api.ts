@@ -1,7 +1,7 @@
 /*
  * Everything a plugin needs, in one import:
  *   import { definePlugin, net, ui, common, patcher, webpack } from "@api";
- * The same things are on window.Obsid for imported (.js) plugins.
+ * The same things are on window.Vanta for imported (.js) plugins.
  */
 export { watchElements } from "./core/dom";
 export { onFlux } from "./core/flux";

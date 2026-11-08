@@ -1,4 +1,4 @@
-/** The Obsid pixel logo as a list of coloured cells, from assets/logo.json. */
+/** The Vanta pixel logo as a list of coloured cells, from assets/logo.json. */
 import logo from "../../assets/logo.json";
 
 export interface LogoCell { x: number; y: number; color: string }

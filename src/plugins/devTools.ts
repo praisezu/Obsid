@@ -5,7 +5,7 @@ export default [
     definePlugin({
         name: "FluxLogger",
         description: "Logs Discord's internal events (Flux actions) to the DevTools console. For plugin developers.",
-        authors: ["Obsid"], category: "Developer",
+        authors: ["Vanta"], category: "Developer",
         needsWebpack: true,
         options: {
             filter: { type: "string", default: "", label: "Only types matching", placeholder: "MESSAGE_|TYPING", description: "A regex. Empty = everything." },
@@ -27,7 +27,7 @@ export default [
     definePlugin({
         name: "NetworkLogger",
         description: "Logs every API request Discord makes to the DevTools console. For plugin developers.",
-        authors: ["Obsid"], category: "Developer",
+        authors: ["Vanta"], category: "Developer",
         options: { filter: { type: "string", default: "/api/", label: "Only URLs containing" } },
         start() {
             // A blocker that never blocks: it just observes.

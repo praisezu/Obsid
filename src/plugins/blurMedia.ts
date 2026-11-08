@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "BlurMedia",
     description: "Blurs images and videos in chat until you hover over them. Handy when sharing your screen.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Privacy",
     options: {
         amount: { type: "number", default: 20, label: "Blur strength", description: "In pixels. Higher is blurrier." },
@@ -20,7 +20,7 @@ export default definePlugin({
         return css;
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-blur-media" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-blur-media" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

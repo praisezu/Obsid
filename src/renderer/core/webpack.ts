@@ -8,7 +8,7 @@ import { sleep } from "./utils";
 export type Filter = (m: any) => boolean;
 type WebpackRequire = ((id: string | number) => any) & { c: Record<string, { exports: any }>; m: Record<string, unknown> };
 
-const NOT_A_PROP = "__obsidDefinitelyNotARealProp__";
+const NOT_A_PROP = "__vantaDefinitelyNotARealProp__";
 const isSearchable = (v: any) => {
     try {
         return v != null && (typeof v === "object" || typeof v === "function") &&
@@ -49,7 +49,7 @@ function init() {
     lastInit = Date.now();
     try {
         // Every runtime in the push chain calls our callback with its own require.
-        chunk.push([[Symbol("obsid")], {}, (r: WebpackRequire) => { if (r?.c && !requires.includes(r)) requires.push(r); }]);
+        chunk.push([[Symbol("vanta")], {}, (r: WebpackRequire) => { if (r?.c && !requires.includes(r)) requires.push(r); }]);
         chunk.pop();
     } catch (e) { logger.error("webpack init failed", e); }
     const main = mainRequire();

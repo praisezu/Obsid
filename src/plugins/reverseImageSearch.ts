@@ -3,7 +3,7 @@ import { definePlugin, native } from "@api";
 export default definePlugin({
     name: "ReverseImageSearch",
     description: "Alt+Shift+click an image in chat to look it up with Google Lens, Bing, Yandex or TinEye.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Utility",
     options: {
         engine: {

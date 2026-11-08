@@ -35,7 +35,7 @@ export default [
     definePlugin({
         name: "FixEmbeds",
         description: "Swaps Twitter/X, Instagram, TikTok, Reddit, Bluesky and Pixiv links for versions that show a proper preview in Discord.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         options: Object.fromEntries(Object.keys(EMBED_FIXES).map(k => [k, { type: "boolean" as const, default: true, label: k[0].toUpperCase() + k.slice(1) }])),
         start() {
             this.off = contentTransformer(text => text.replace(/https?:\/\/[^\s<>]+/g, link => {
@@ -48,7 +48,7 @@ export default [
     definePlugin({
         name: "YouTubeShortLinks",
         description: "Turns youtube.com/watch?v=… links into short youtu.be links (keeps the timestamp).",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         start() {
             this.off = contentTransformer(text => text.replace(/https?:\/\/(?:www\.|m\.)?youtube\.com\/watch\?[^\s<>]+/gi, link => {
                 try {
@@ -65,7 +65,7 @@ export default [
     definePlugin({
         name: "SuppressEmbeds",
         description: "Sends links without a preview underneath (like wrapping every link in < >).",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         start() {
             this.off = net.transform(({ method, url, body }) => {
                 if (method !== "POST" || !SEND_URL.test(url)) return;
@@ -80,7 +80,7 @@ export default [
     definePlugin({
         name: "SafeMentions",
         description: "Stops your messages from pinging @everyone, @here or roles by accident (the text still shows).",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         options: {
             everyone: { type: "boolean", default: true, label: "Never ping @everyone / @here" },
             roles: { type: "boolean", default: false, label: "Never ping roles" },
@@ -106,7 +106,7 @@ export default [
     definePlugin({
         name: "TextEffects",
         description: "Start a message with !owo, !mock, !up, !rev, !wide, !small, !clap or !spoil to transform it.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         EFFECTS: {
             owo: (t: string) => t.replace(/[rl]/g, "w").replace(/[RL]/g, "W").replace(/n([aeiou])/g, "ny$1").replace(/ove/g, "uv") + " owo",
             mock: (t: string) => { let i = 0; return t.replace(/[a-z]/gi, c => (i++ % 2 ? c.toUpperCase() : c.toLowerCase())); },
@@ -133,7 +133,7 @@ export default [
     definePlugin({
         name: "SmartPunctuation",
         description: "Typographer's touches: -- becomes —, ... becomes …, -> becomes →.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         start() {
             this.off = contentTransformer(text => plainWords(text, w =>
                 w.replace(/(^|[^-])--(?!-)/g, "$1—").replace(/\.\.\.(?!\.)/g, "…").replace(/->/g, "→").replace(/<-(?!>)/g, "←").replace(/=>/g, "⇒")));
@@ -143,7 +143,7 @@ export default [
     definePlugin({
         name: "InlineCalc",
         description: "Write {= 12*4 + 3} in a message and it's replaced with the answer when you send.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         options: { showExpr: { type: "boolean", default: false, label: "Keep the sum", description: "Send \"12*4+3 = 51\" instead of just \"51\"." } },
         /** Safe arithmetic: numbers, + - * / % ^, parentheses. No eval. */
         calc(expr: string): number | null {
@@ -186,9 +186,9 @@ export default [
     definePlugin({
         name: "Signature",
         description: "Adds a signature line to the end of messages you send.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         options: {
-            text: { type: "string", default: "", label: "Signature", placeholder: "— sent from Obsid" },
+            text: { type: "string", default: "", label: "Signature", placeholder: "— sent from Vanta" },
             serversOnly: { type: "boolean", default: false, label: "Only in servers", description: "Don't add it in DMs." },
             subtext: { type: "boolean", default: true, label: "Small text", description: "Use Discord's -# small text." },
         },
@@ -209,7 +209,7 @@ export default [
     definePlugin({
         name: "AutoCapitalize",
         description: "Capitalizes the first letter of your messages (and optionally adds a full stop).",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         options: { period: { type: "boolean", default: false, label: "Add a full stop", description: "If the message ends with a letter." } },
         start() {
             this.off = net.transform(({ method, url, body }) => {
@@ -229,7 +229,7 @@ export default [
     definePlugin({
         name: "SpoilerUploads",
         description: "Marks every file you upload as a spoiler.",
-        authors: ["Obsid"], category: "Chat",
+        authors: ["Vanta"], category: "Chat",
         spoil: (name: string) => (name && !name.startsWith("SPOILER_") ? "SPOILER_" + name : name),
         start() {
             this.off = net.transform(({ method, url, body }) => {

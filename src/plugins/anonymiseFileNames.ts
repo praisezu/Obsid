@@ -3,7 +3,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "AnonymiseFileNames",
     description: "Renames files you upload so their original names (like IMG_2041 or your-real-name.pdf) aren't shared.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Privacy",
     options: {
         style: {

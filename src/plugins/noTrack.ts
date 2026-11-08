@@ -3,7 +3,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "NoTrack",
     description: "Blocks Discord's analytics (science/metrics) requests and Sentry crash reporting.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Privacy",
     enabledByDefault: true,
 

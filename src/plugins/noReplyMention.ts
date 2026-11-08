@@ -3,7 +3,7 @@ import { definePlugin, net } from "@api";
 export default definePlugin({
     name: "NoReplyMention",
     description: "Never @mention the person you're replying to (the reply ping toggle is forced off).",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
 
     start() {

@@ -4,7 +4,7 @@
  */
 import { logger } from "./logger";
 
-const PATCH = Symbol("obsid.patch");
+const PATCH = Symbol("vanta.patch");
 
 type BeforeFn = (this: any, args: any[]) => any[] | void;
 type InsteadFn = (this: any, args: any[], original: (...a: any[]) => any) => any;

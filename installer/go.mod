@@ -1,4 +1,4 @@
-module github.com/praisezu/Obsid/installer
+module github.com/praisezu/Vanta/installer
 
 go 1.26.4
 

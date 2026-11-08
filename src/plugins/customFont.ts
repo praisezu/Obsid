@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "CustomFont",
     description: "Use any font installed on your computer for Discord's text and code.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Appearance",
     options: {
         font: { type: "string", default: "", label: "Text font", placeholder: "Inter", description: "Font name as installed, e.g. Inter or Segoe UI. Empty = Discord default." },
@@ -27,7 +27,7 @@ export default definePlugin({
         return css;
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-custom-font" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-custom-font" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

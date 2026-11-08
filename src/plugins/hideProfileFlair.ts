@@ -3,7 +3,7 @@ import { definePlugin, onDomReady } from "@api";
 export default definePlugin({
     name: "HideProfileFlair",
     description: "Hides avatar decorations, server tags and profile effects for a cleaner chat.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Appearance",
     options: {
         decorations: { type: "boolean", default: true, label: "Hide avatar decorations" },
@@ -20,7 +20,7 @@ export default definePlugin({
         return rules.join("\n");
     },
     update() {
-        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-hide-flair" }));
+        this.style ??= document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-hide-flair" }));
         this.style.textContent = this.css();
     },
     onSettingChange() { if (this.started) this.update(); },

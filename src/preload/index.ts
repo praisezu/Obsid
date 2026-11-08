@@ -1,23 +1,23 @@
 /*
- * Obsid — preload. Exposes window.ObsidNative, runs Obsid in the page's main world,
+ * Vanta — preload. Exposes window.VantaNative, runs Vanta in the page's main world,
  * then loads Discord's own preload.
  */
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 import type { NativeAPI, RendererScript } from "@shared/types";
 
-const invoke = (ch: string, ...a: unknown[]) => ipcRenderer.invoke("obsid:" + ch, ...a);
+const invoke = (ch: string, ...a: unknown[]) => ipcRenderer.invoke("vanta:" + ch, ...a);
 
 const native: NativeAPI = {
-    info: ipcRenderer.sendSync("obsid:get-info"),
-    getSettings: () => ipcRenderer.sendSync("obsid:get-settings"),
+    info: ipcRenderer.sendSync("vanta:get-info"),
+    getSettings: () => ipcRenderer.sendSync("vanta:get-settings"),
     setSettings: s => invoke("set-settings", s),
     resetSettings: () => invoke("reset-settings"),
-    getQuickCss: () => ipcRenderer.sendSync("obsid:get-quickcss"),
+    getQuickCss: () => ipcRenderer.sendSync("vanta:get-quickcss"),
     setQuickCss: css => invoke("set-quickcss", css),
-    onQuickCssChange: cb => { ipcRenderer.on("obsid:quickcss-changed", (_, css) => cb(css)); },
+    onQuickCssChange: cb => { ipcRenderer.on("vanta:quickcss-changed", (_, css) => cb(css)); },
 
-    getThemes: () => ipcRenderer.sendSync("obsid:get-themes"),
-    onThemesChange: cb => { ipcRenderer.on("obsid:themes-changed", () => cb()); },
+    getThemes: () => ipcRenderer.sendSync("vanta:get-themes"),
+    onThemesChange: cb => { ipcRenderer.on("vanta:themes-changed", () => cb()); },
     writeTheme: (file, css) => invoke("write-theme", file, css),
     trashTheme: file => invoke("trash-theme", file),
     fetchTheme: url => invoke("fetch-theme", url),
@@ -48,24 +48,24 @@ const native: NativeAPI = {
     relaunch: () => invoke("relaunch"),
 } as NativeAPI;
 
-if (process.contextIsolated) contextBridge.exposeInMainWorld("ObsidNative", native);
-else (window as any).ObsidNative = native;
+if (process.contextIsolated) contextBridge.exposeInMainWorld("VantaNative", native);
+else (window as any).VantaNative = native;
 
 // Only run inside Discord's web app (not devtools or other origins).
 if (/^https:\/\/(\w+\.)?discord\.com/.test(location.href)) {
     (async () => {
-        const scripts: RendererScript[] = ipcRenderer.sendSync("obsid:get-renderer");
+        const scripts: RendererScript[] = ipcRenderer.sendSync("vanta:get-renderer");
         for (const { name, code } of scripts) {
             try {
                 // `void 0`: keep the last expression's value from being cloned back.
-                await webFrame.executeJavaScript(`${code};\nvoid 0;\n//# sourceURL=obsid://${name}`);
+                await webFrame.executeJavaScript(`${code};\nvoid 0;\n//# sourceURL=vanta://${name}`);
             } catch (e) {
-                console.error(`[Obsid] Failed to run ${name}:`, e);
+                console.error(`[Vanta] Failed to run ${name}:`, e);
             }
         }
     })();
 }
 
-const PREFIX = "--obsid-original-preload=";
+const PREFIX = "--vanta-original-preload=";
 const original = process.argv.find(a => a.startsWith(PREFIX));
 if (original) require(original.slice(PREFIX.length));

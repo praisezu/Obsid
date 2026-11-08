@@ -3,7 +3,7 @@ import { definePlugin, patcher } from "@api";
 export default definePlugin({
     name: "NoDevToolsWarning",
     description: "Removes the giant \"Hold Up!\" warning Discord prints in DevTools, so the console stays readable.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Developer",
     enabledByDefault: true,
 

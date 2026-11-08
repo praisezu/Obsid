@@ -6,7 +6,7 @@ export interface Logger {
 
 export function makeLogger(tag?: string): Logger {
     const style = "color:#a78bfa;font-weight:bold";
-    const prefix = tag ? `[Obsid:${tag}]` : "[Obsid]";
+    const prefix = tag ? `[Vanta:${tag}]` : "[Vanta]";
     return {
         log: (...a) => console.log(`%c${prefix}`, style, ...a),
         warn: (...a) => console.warn(`%c${prefix}`, style, ...a),

@@ -3,7 +3,7 @@ import { definePlugin, common } from "@api";
 export default definePlugin({
     name: "CharacterCounter",
     description: "Shows how many characters you've typed and the limit (2000, or 4000 with Nitro) above the message box.",
-    authors: ["Obsid"],
+    authors: ["Vanta"],
     category: "Chat",
     options: {
         onlyNearLimit: { type: "boolean", default: false, label: "Only show near the limit", description: "Appear once you've used 80% of the limit." },
@@ -23,7 +23,7 @@ export default definePlugin({
         const show = len > 0 && (!this.settings.onlyNearLimit || len >= limit * 0.8);
         if (!this.el) {
             this.el = document.createElement("div");
-            this.el.className = "obsid-char-counter";
+            this.el.className = "vanta-char-counter";
             this.el.setAttribute("aria-live", "polite");
             Object.assign(this.el.style, {
                 position: "absolute", right: "14px", top: "-22px", zIndex: "1", pointerEvents: "none",

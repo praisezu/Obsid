@@ -9,10 +9,10 @@ const USER_TYPES = new Set([0, 19, 20, 23]);
 /** A plugin that toggles a class on messages matching `test`. */
 function messageClassPlugin(def: { name: string; description: string; category: string; cls: string; css: string; test: (msg: any) => boolean }) {
     return definePlugin({
-        name: def.name, description: def.description, category: def.category, authors: ["Obsid"],
+        name: def.name, description: def.description, category: def.category, authors: ["Vanta"],
         needsWebpack: true,
         start() {
-            this.style = document.head.appendChild(Object.assign(document.createElement("style"), { id: "obsid-" + def.cls, textContent: def.css }));
+            this.style = document.head.appendChild(Object.assign(document.createElement("style"), { id: "vanta-" + def.cls, textContent: def.css }));
             this.unwatch = watchElements(MESSAGE, li => {
                 const msg = messageFromElement(li);
                 if (msg && def.test(msg)) li.classList.add(def.cls);
@@ -27,30 +27,30 @@ export default [
         name: "HighlightMyMessages",
         description: "Gives your own messages a subtle tint so they're easy to spot in busy chats.",
         category: "Appearance",
-        cls: "obsid-mine",
-        css: `.obsid-mine { background: color-mix(in srgb, #8b5cf6 6%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, #8b5cf6 60%, transparent); }`,
+        cls: "vanta-mine",
+        css: `.vanta-mine { background: color-mix(in srgb, #8b5cf6 6%, transparent); box-shadow: inset 2px 0 0 color-mix(in srgb, #8b5cf6 60%, transparent); }`,
         test: msg => msg.author?.id === common.UserStore?.getCurrentUser?.()?.id,
     }),
     messageClassPlugin({
         name: "HideBotMessages",
         description: "Hides messages from bots (and webhooks). Turn off to see them again.",
         category: "Chat",
-        cls: "obsid-bot-msg",
-        css: `.obsid-bot-msg { display: none !important; }`,
+        cls: "vanta-bot-msg",
+        css: `.vanta-bot-msg { display: none !important; }`,
         test: msg => !!msg.author?.bot,
     }),
     messageClassPlugin({
         name: "HideSystemMessages",
         description: "Hides join messages, boosts, pins and other system messages.",
         category: "Chat",
-        cls: "obsid-system-msg",
-        css: `.obsid-system-msg { display: none !important; }`,
+        cls: "vanta-system-msg",
+        css: `.vanta-system-msg { display: none !important; }`,
         test: msg => typeof msg.type === "number" && !USER_TYPES.has(msg.type),
     }),
     cssPlugin({
         name: "TransparentWindow",
         description: "See-through Discord with Windows 11 blur (acrylic or mica). Works best with a theme. May affect window snapping.",
-        authors: ["Obsid"], category: "Appearance",
+        authors: ["Vanta"], category: "Appearance",
         restartNeeded: true,
         options: {
             material: {
@@ -61,7 +61,7 @@ export default [
         },
         css: s => {
             const a = Math.max(10, Math.min(100, Number(s.opacity) || 70)) / 100;
-            const mix = (v: string, fb: string) => `color-mix(in srgb, var(${v}-obsid, ${fb}) ${a * 100}%, transparent)`;
+            const mix = (v: string, fb: string) => `color-mix(in srgb, var(${v}-vanta, ${fb}) ${a * 100}%, transparent)`;
             return `html, body, #app-mount, [class*="appMount_"], [class*="bg_"] { background: transparent !important; }
 :root, .theme-dark, .theme-darker, .theme-midnight, .theme-light, .visual-refresh {
   --background-base-lowest: ${mix("--bbl", "#0b0b0e")} !important; --background-base-lower: ${mix("--bblr", "#121214")} !important;

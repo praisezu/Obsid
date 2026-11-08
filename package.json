@@ -1,11 +1,11 @@
 {
-    "name": "obsid",
-    "version": "0.2.0",
-    "description": "Obsid — a Discord client mod",
+    "name": "vanta",
+    "version": "0.3.0",
+    "description": "Vanta — a Discord client mod",
     "private": true,
     "license": "MIT",
     "repository": "github:praisezu/Obsid",
-    "obsid": {
+    "vanta": {
         "repo": "praisezu/Obsid"
     },
     "scripts": {
@@ -17,7 +17,7 @@
         "uninject": "node scripts/install.js --uninstall",
         "status": "node scripts/install.js --status",
         "package": "node scripts/package.mjs",
-        "build:installer": "cd installer && go build -trimpath -ldflags \"-s -w -H windowsgui\" -o ../dist/ObsidInstaller.exe ."
+        "build:installer": "cd installer && go build -trimpath -ldflags \"-s -w -H windowsgui\" -o ../dist/VantaInstaller.exe ."
     },
     "devDependencies": {
         "@types/node": "^26.6.6",

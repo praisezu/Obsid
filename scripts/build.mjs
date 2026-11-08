@@ -1,4 +1,4 @@
-// Builds Obsid into dist/:  main.js (Electron main), preload.js, renderer.js (runs in Discord's page).
+// Builds Vanta into dist/:  main.js (Electron main), preload.js, renderer.js (runs in Discord's page).
 //   node scripts/build.mjs            one-off build
 //   node scripts/build.mjs --watch    rebuild on change (then Ctrl+R in Discord for renderer changes)
 import * as esbuild from "esbuild";
@@ -12,17 +12,17 @@ const watch = process.argv.includes("--watch");
 const release = process.argv.includes("--release"); // minified, no source maps
 
 const define = {
-    __OBSID_VERSION__: JSON.stringify(pkg.version),
-    __OBSID_REPO__: JSON.stringify(pkg.obsid?.repo ?? "praisezu/Obsid"),
+    __VANTA_VERSION__: JSON.stringify(pkg.version),
+    __VANTA_REPO__: JSON.stringify(pkg.vanta?.repo ?? "praisezu/Obsid"),
 };
 const alias = { "@api": join(root, "src/renderer/api.ts"), "@shared": join(root, "src/shared") };
 
 /** `import plugins from "~plugins"` → every file in src/plugins, sorted. */
 const pluginsModule = {
-    name: "obsid-plugins",
+    name: "vanta-plugins",
     setup(build) {
-        build.onResolve({ filter: /^~plugins$/ }, () => ({ path: "plugins", namespace: "obsid-plugins" }));
-        build.onLoad({ filter: /.*/, namespace: "obsid-plugins" }, () => {
+        build.onResolve({ filter: /^~plugins$/ }, () => ({ path: "plugins", namespace: "vanta-plugins" }));
+        build.onLoad({ filter: /.*/, namespace: "vanta-plugins" }, () => {
             const dir = join(root, "src/plugins");
             const files = readdirSync(dir).filter(f => /\.(ts|js)$/.test(f) && !f.endsWith(".d.ts")).sort();
             const contents = files.map((f, i) => `import p${i} from ${JSON.stringify(join(dir, f))};`).join("\n")
