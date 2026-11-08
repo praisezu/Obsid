@@ -1,6 +1,8 @@
 /** Injected at build time by scripts/build.mjs */
 declare const __VANTA_VERSION__: string;
 declare const __VANTA_REPO__: string;
+/** Discord server invite (package.json vanta.discord); empty = no button */
+declare const __VANTA_DISCORD__: string;
 
 declare module "~plugins" {
     import type { PluginDef } from "./renderer/core/plugins";

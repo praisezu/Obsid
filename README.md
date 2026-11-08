@@ -70,6 +70,42 @@ Vanta adds an **Vanta Settings** section to Discord's own **User Settings** side
 
 Press **Ctrl+Shift+O** anywhere to open the same pages in a pop-up without going through Settings.
 
+## Staying installed, safe mode and sync
+
+- **Auto re-install.** Discord updates reset its files, which would drop Vanta. Vanta re-applies itself
+  to any newer Discord version it finds (at startup, every 10 minutes and when Discord quits), and the
+  installer's **Vanta Guard** (on by default; a small background helper that starts at login) re-applies it
+  within seconds when Discord installs an update at startup, then restarts Discord once. The Guard only
+  touches Discord's stock file, never another mod's. Turn it off by unticking "Keep Vanta installed after
+  Discord updates" in the installer, or with `VantaInstaller -install -no-guard`. Its log is
+  `%APPDATA%\Vanta\guard.log`.
+- **Safe mode.** If Discord fails to finish starting twice in a row, Vanta starts without plugins, themes
+  or Quick CSS and tells you why. You can also choose **Restart in safe mode** on the Vanta page, the
+  **Start in safe mode** button in the installer, or `VantaInstaller -safe-mode`.
+- **Cloud Sync.** Sync settings, Quick CSS, themes and imported plugins between computers through a
+  private GitHub Gist on your own account. Paste a token with only the `gist` permission into
+  Settings → Vanta Settings → Cloud Sync. It's stored encrypted with Windows' built-in protection.
+- **Theme editor.** Themes → Create: colour pickers with live preview, saved as a normal `.theme.css`.
+- **Plugin updates.** Imported and store plugins are checked for updates at startup; the Plugins page
+  has **Update all**. The plugin search also finds individual settings.
+
+## Website
+
+`docs/` is the Vanta website (download button, all plugins, the store). It's published by
+`.github/workflows/pages.yml`. One-time setup: repo **Settings → Pages → Source: GitHub Actions**.
+The site will then be at `https://<user>.github.io/<repo>/`.
+
+## Discord server link
+
+Put your invite in `package.json` → `"vanta": { "discord": "https://discord.gg/…" }`. A Discord button
+then shows on the Vanta page and on the website.
+
+## Code signing (optional)
+
+Unsigned installers make Windows SmartScreen warn about an "unknown publisher". To sign
+`VantaInstaller.exe` automatically in releases, buy a code-signing certificate (.pfx) and add two repo
+secrets: `WINDOWS_CERT_PFX_BASE64` (the .pfx, base64-encoded) and `WINDOWS_CERT_PASSWORD`.
+
 ## Plugin Store
 
 **Settings → Vanta Settings → Plugin Store** lists plugins from [`store/`](store/) in this repo.
@@ -98,7 +134,7 @@ in `%APPDATA%\Vanta\plugins\`.
 
 Try it with [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
-## Built-in plugins (111)
+## Built-in plugins (116)
 
 Every plugin is off until you turn it on (except NoTrack, ClearURLs and NoDevToolsWarning), and a
 plugin that's off costs nothing. Most appearance plugins are pure CSS, and plugins that react to
@@ -107,9 +143,9 @@ new messages share one page watcher, so turning many on doesn't slow Discord dow
 | Category | Plugins |
 | --- | --- |
 | Privacy | NoTrack, ClearURLs, SilentTyping, AnonymiseFileNames, BlurMedia, BlurNames |
-| Chat | SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
+| Chat | NoBlockedMessages, SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history, saved log), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
 | Appearance | CursorPet, KeyboardSounds, CrispText, HideMentionBars, TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
-| Utility | CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
+| Utility | PlatformIndicators, HiddenChannels, FriendsSince, PinDMs, CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
 | Developer | ThemeAttributes, ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
 
 Each plugin's description and options are in **Settings → Vanta Settings → Plugins**. Plugins tagged

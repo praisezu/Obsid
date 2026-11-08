@@ -14,6 +14,8 @@ import type { BackupData, BackupParts, RendererScript, ThemeFile } from "@shared
 import { parseMeta, safeName } from "./util";
 import { updaterInfo, updaterCheck, updaterApply } from "./updater";
 import { installCspPatch } from "./csp";
+import { startSelfHeal } from "./selfHeal";
+import { createCloud } from "./cloud";
 import { bdThemes, bdInstallTheme } from "./bdStore";
 import { storeIndex, storeDownload } from "./pluginStore";
 
@@ -32,6 +34,7 @@ function main() {
     const QUICKCSS_FILE = path.join(DATA_DIR, "quickCss.css");
     const USER_PLUGINS_DIR = path.join(DATA_DIR, "plugins");
     const THEMES_DIR = path.join(DATA_DIR, "themes");
+    const PLUGIN_DATA_DIR = path.join(DATA_DIR, "plugin-data");
     const VERSION = __VANTA_VERSION__;
     const MAX_PLUGIN_SIZE = 2 * 1024 * 1024;
 
@@ -44,7 +47,24 @@ function main() {
     });
 
     migrateFromObsid();
-    for (const d of [USER_PLUGINS_DIR, THEMES_DIR]) fs.mkdirSync(d, { recursive: true });
+    startSelfHeal(path.join(DIST, "main.js"), log);
+    for (const d of [USER_PLUGINS_DIR, THEMES_DIR, PLUGIN_DATA_DIR]) fs.mkdirSync(d, { recursive: true });
+
+    /*
+     * Safe mode. Every launch bumps a counter that the page resets once Discord has fully loaded.
+     * Two launches in a row that never got there (Discord crashed or froze) → this launch starts
+     * with no plugins, themes or Quick CSS. It also turns on manually ("Restart in safe mode").
+     */
+    const BOOT_FILE = path.join(DATA_DIR, "boot.json");
+    const boot: { pending: number; safe: boolean; reason?: string } = (() => {
+        try { return { pending: 0, safe: false, ...JSON.parse(fs.readFileSync(BOOT_FILE, "utf8")) }; } catch { return { pending: 0, safe: false }; }
+    })();
+    boot.pending = (boot.pending || 0) + 1;
+    if (!boot.safe && boot.pending >= 3) { boot.safe = true; boot.reason = "crash"; }
+    const SAFE_MODE = boot.safe;
+    const saveBoot = () => { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(BOOT_FILE, JSON.stringify(boot)); } catch { } };
+    saveBoot();
+    if (SAFE_MODE) log("Starting in SAFE MODE:", boot.reason ?? "manual");
     if (!fs.existsSync(QUICKCSS_FILE)) fs.writeFileSync(QUICKCSS_FILE, "/* Vanta Quick CSS */\n");
 
     /** Vanta used to be called Obsid: copy its settings, plugins, themes and Quick CSS over once. */
@@ -115,7 +135,8 @@ function main() {
     function rendererScripts(): RendererScript[] {
         return [
             { name: "renderer.js", code: readText(path.join(DIST, "renderer.js")) },
-            ...listFiles(USER_PLUGINS_DIR, ".js").map(f => ({
+            // In safe mode, imported plugins aren't even loaded.
+            ...(SAFE_MODE ? [] : listFiles(USER_PLUGINS_DIR, ".js")).map(f => ({
                 name: "user-plugins/" + f,
                 code: wrapUserPlugin(f, readText(path.join(USER_PLUGINS_DIR, f))),
             })),
@@ -148,7 +169,34 @@ function main() {
         e.returnValue = {
             version: VERSION, repo: __VANTA_REPO__, root: ROOT, dataDir: DATA_DIR, pluginsDir: USER_PLUGINS_DIR, themesDir: THEMES_DIR,
             electron: process.versions.electron, chrome: process.versions.chrome, discord: app.getVersion(),
+            safeMode: SAFE_MODE, safeModeReason: SAFE_MODE ? (boot.reason ?? "manual") : null,
         };
+    });
+
+    // Discord finished loading: this launch was healthy.
+    handle("boot-ok", () => { boot.pending = 0; saveBoot(); });
+    // Turn safe mode on (takes effect on the next launch) or off.
+    handle("set-safe-mode", (_, on) => { boot.safe = !!on; boot.reason = on ? "manual" : undefined; boot.pending = 0; saveBoot(); });
+
+    // Cloud sync (private GitHub Gist; token encrypted with safeStorage)
+    const cloud = createCloud(DATA_DIR);
+    handle("cloud-status", () => cloud.status());
+    handle("cloud-sign-in", (_, t) => cloud.signIn(String(t)));
+    handle("cloud-sign-out", () => cloud.signOut());
+    handle("cloud-push", (_, data) => cloud.push(data));
+    handle("cloud-pull", () => cloud.pull());
+    handle("cloud-remote-updated", () => cloud.remoteUpdated());
+
+    // Small per-plugin storage (JSON files) for plugins that keep data between restarts.
+    const dataFile = (key: string) => {
+        if (!/^[\w.\-]{1,64}$/.test(String(key))) throw new Error("Invalid storage key");
+        return path.join(PLUGIN_DATA_DIR, key + ".json");
+    };
+    handle("data-get", (_, key) => { try { return JSON.parse(fs.readFileSync(dataFile(key), "utf8")); } catch { return null; } });
+    handle("data-set", (_, key, value) => {
+        const json = JSON.stringify(value);
+        if (json.length > 20 * 1024 * 1024) throw new Error("Too much data (over 20 MB)");
+        writeAtomic(dataFile(key), json);
     });
 
     handle("set-settings", (_, s) => writeAtomic(SETTINGS_FILE, JSON.stringify(s, null, 4)));

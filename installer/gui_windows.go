@@ -39,6 +39,7 @@ func runGUI() int {
 		table                    *walk.TableView
 		rbGitHub, rbLocal        *walk.RadioButton
 		restartCB                *walk.CheckBox
+		guardCB                  *walk.CheckBox
 		installBtn, uninstallBtn *walk.PushButton
 		statusLbl                *walk.Label
 		progress                 *walk.ProgressBar
@@ -109,7 +110,7 @@ func runGUI() int {
 		busy = true
 		updateButtons()
 		progress.SetVisible(true)
-		src, restart := source(), restartCB.Checked()
+		src, restart, keep := source(), restartCB.Checked(), guardCB.Checked()
 		go func() {
 			var err error
 			if install {
@@ -117,8 +118,18 @@ func runGUI() int {
 				if e, err = src.Prepare(setStatus); err == nil {
 					err = InstallInto(b, e, restart, setStatus)
 				}
+				if err == nil {
+					if keep {
+						if gErr := EnableGuard(b.Key, e); gErr != nil {
+							guardLog("couldn't enable guard: %v", gErr)
+						}
+					} else {
+						DisableGuard(b.Key)
+					}
+				}
 			} else {
 				err = UninstallFrom(b, restart, setStatus)
+				DisableGuard(b.Key)
 			}
 			mw.Synchronize(func() {
 				busy = false
@@ -198,12 +209,24 @@ func runGUI() int {
 				},
 			},
 			CheckBox{AssignTo: &restartCB, Text: "Close and reopen Discord after changes", Checked: true},
+			CheckBox{AssignTo: &guardCB, Text: "Keep Vanta installed after Discord updates (runs Vanta Guard in the background)", Checked: true},
 			Composite{
 				Layout: HBox{MarginsZero: true, Spacing: 8},
 				Children: []Widget{
 					PushButton{AssignTo: &installBtn, Text: "Install", MinSize: Size{Width: 110}, OnClicked: func() { run(true) }},
 					PushButton{AssignTo: &uninstallBtn, Text: "Uninstall", MinSize: Size{Width: 110}, OnClicked: func() { run(false) }},
 					HSpacer{},
+					PushButton{Text: "Start in safe mode", OnClicked: func() {
+						b := selected()
+						if b == nil {
+							return
+						}
+						if err := StartSafeMode(b); err != nil {
+							walk.MsgBox(mw, "Vanta Installer", err.Error(), walk.MsgBoxIconError)
+						} else {
+							statusLbl.SetText(b.Name + " restarted with Vanta in safe mode.")
+						}
+					}},
 					PushButton{Text: "Open Vanta folder", OnClicked: func() { openFolder(DataDir()) }},
 				},
 			},

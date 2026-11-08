@@ -4,6 +4,7 @@
  * The same things are on window.Vanta for imported (.js) plugins.
  */
 export { watchElements } from "./core/dom";
+export { storage } from "./core/storage";
 export { onFlux } from "./core/flux";
 export { messageFromElement, messageIdsFromElement, messageLink, copyText, SEND_URL, SEND_OR_EDIT_URL } from "./core/messages";
 export { definePlugin, cssPlugin, plugins, isPluginEnabled, setPluginEnabled, type PluginDef, type PluginInstance, type PluginOption } from "./core/plugins";

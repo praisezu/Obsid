@@ -2,6 +2,7 @@ import { native } from "../core/native";
 import { plugins, isPluginEnabled, setPluginEnabled, type PluginInstance } from "../core/plugins";
 import { saveSettings, saveSettingsNow } from "../core/settings";
 import { pluginStore } from "../pluginStore";
+import { checkPluginUpdates, knownUpdates, updateAll } from "../pluginUpdates";
 import { ui, h } from "../ui/components";
 
 ui.registerPage({
@@ -29,10 +30,11 @@ ui.registerPage({
                 if (st.filter === "installed" && !p.file) return false;
                 if (st.category && (p.category || "Other") !== st.category) return false;
                 if (!q) return true;
-                return [p.name, p.description, p.category, ...(p.authors || [])].join(" ").toLowerCase().includes(q);
+                // Settings search: also match each option's label and description
+                return [p.name, p.description, p.category, ...(p.authors || []), ...optionText(p)].join(" ").toLowerCase().includes(q);
             });
             count.textContent = `${list.length} of ${all.length}`;
-            grid.replaceChildren(...list.map(p => pluginCard(p, renderGrid)));
+            grid.replaceChildren(...list.map(p => pluginCard(p, renderGrid, q)));
             if (!list.length)
                 grid.replaceChildren(h("div", { style: { gridColumn: "1 / -1" } },
                     ui.empty(st.filter === "installed" && !q ? "You haven't imported any plugins yet." :
@@ -42,7 +44,19 @@ ui.registerPage({
         window.addEventListener("vanta:plugins", onPlugins);
         ctx.onDispose(() => window.removeEventListener("vanta:plugins", onPlugins));
 
-        const search = ui.searchInput("Search plugins", v => { st.query = v; renderGrid(); });
+        // "N plugin updates available" banner
+        const updatesBox = h("div", {});
+        const renderUpdates = () => {
+            const u = knownUpdates();
+            updatesBox.replaceChildren(...(u.length ? [ui.note("", h("b", {}, `${u.length} plugin update${u.length === 1 ? "" : "s"} available: `), u.map(x => x.name).join(", "), " ",
+                ui.button("Update all", { small: true, variant: "primary", icon: "download", onClick: async () => { await updateAll(); renderUpdates(); renderGrid(); } }))] : []));
+        };
+        window.addEventListener("vanta:plugin-updates", renderUpdates);
+        ctx.onDispose(() => window.removeEventListener("vanta:plugin-updates", renderUpdates));
+        renderUpdates();
+        checkPluginUpdates().then(renderUpdates);
+
+        const search = ui.searchInput("Search plugins and settings", v => { st.query = v; renderGrid(); });
         search.querySelector("input")!.value = st.query;
 
         const categories = [...new Set([...plugins.values()].map(p => p.category || "Other"))].sort();
@@ -58,6 +72,7 @@ ui.registerPage({
                     ui.pageHead("Plugins", "Turn features on and off. Import your own from a file or a link.")),
                 ui.button("Import plugin", { variant: "primary", icon: "plus", onClick: () => pluginStore.openImportDialog() }),
             ),
+            updatesBox,
             h("div", { class: "vanta-toolbar" },
                 search,
                 catSelect,
@@ -88,7 +103,12 @@ ui.registerPage({
     },
 });
 
-function pluginCard(p: PluginInstance, rerender: () => void) {
+const optionText = (p: PluginInstance) => Object.values(p.options || {}).flatMap(o => [o.label ?? "", o.description ?? ""]);
+
+function pluginCard(p: PluginInstance, rerender: () => void, q = "") {
+    // When the search matched a setting (not the plugin itself), say which one
+    const settingHit = q && ![p.name, p.description, p.category].join(" ").toLowerCase().includes(q)
+        ? Object.values(p.options || {}).find(o => [o.label, o.description].join(" ").toLowerCase().includes(q)) : null;
     const on = isPluginEnabled(p.name);
     const hasOptions = Object.keys(p.options || {}).length > 0 || typeof p.settingsPanel === "function";
     const source = pluginStore.sourceOf(p);
@@ -112,6 +132,7 @@ function pluginCard(p: PluginInstance, rerender: () => void) {
             }),
         ),
         h("div", { class: "vanta-item-desc" }, p.description || "No description."),
+        settingHit ? h("div", { class: "vanta-item-desc", style: { color: "var(--vanta-accent)" } }, "Setting: " + (settingHit.label || settingHit.description)) : null,
         p.error ? h("div", { class: "vanta-item-desc", style: { color: "var(--o-danger)" } }, p.error) : null,
         h("div", { class: "vanta-item-foot" },
             h("span", {}, [p.category, p.authors?.length ? "by " + p.authors.join(", ") : null].filter(Boolean).join(" · ")),

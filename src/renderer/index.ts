@@ -12,6 +12,7 @@ import { patcher } from "./core/patcher";
 import { plugins, registerPlugin, removePlugin, isPluginEnabled, setPluginEnabled, startAll } from "./core/plugins";
 import { net } from "./core/net";
 import { quickCss } from "./core/quickCss";
+import { storage } from "./core/storage";
 import { settings, saveSettings } from "./core/settings";
 import { onDomReady, sleep, managedStyle } from "./core/utils";
 import { webpack } from "./core/webpack";
@@ -25,9 +26,12 @@ import "./pages/store";
 import "./pages/themes";
 import "./pages/updater";
 import { startAutoUpdate, checkForUpdates } from "./autoUpdate";
+import "./pages/cloud";
 import "./pages/backup";
 import { settingsSidebar } from "./settingsSidebar";
 import { quickPanel } from "./quickPanel";
+import { inSafeMode, showSafeModeNotice } from "./safeMode";
+import { startupPluginUpdateCheck } from "./pluginUpdates";
 
 import builtinPlugins from "~plugins";
 
@@ -44,7 +48,7 @@ if (w.Vanta) {
         version: __VANTA_VERSION__,
         native, logger, makeLogger,
         settings, saveSettings,
-        webpack, patcher, net, common, quickCss, themes, pluginStore,
+        webpack, patcher, net, common, quickCss, themes, pluginStore, storage,
         utils: { onDomReady, sleep, managedStyle },
         plugins,
         /** For imported .js plugins: Vanta.definePlugin({...}) registers immediately. */
@@ -58,9 +62,13 @@ if (w.Vanta) {
             booted = true;
             startAll();
             webpack.ready.then(() => {
+                // Reaching here means Discord loaded fine: reset crash detection (after a short grace period).
+                setTimeout(() => native.bootOk(), 8000);
+                if (inSafeMode()) { showSafeModeNotice(); return; }
                 if (settings.vanta.startupToast)
                     ui.toast(`Vanta ${__VANTA_VERSION__} loaded${settings.vanta.quickPanel ? " · Ctrl+Shift+O for settings" : ""}`);
                 startAutoUpdate();
+                if (settings.vanta.autoCheckUpdates) setTimeout(startupPluginUpdateCheck, 20000);
             });
         },
     };

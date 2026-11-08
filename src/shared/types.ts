@@ -10,6 +10,9 @@ export interface VantaInfo {
     electron: string;
     chrome: string;
     discord: string;
+    /** Started without plugins/themes (after crashes, or turned on by the user) */
+    safeMode: boolean;
+    safeModeReason: "crash" | "manual" | null;
 }
 
 export interface ThemeFile {
@@ -157,4 +160,19 @@ export interface NativeAPI {
     openPluginsDir(): Promise<string>;
     toggleDevTools(): Promise<void>;
     relaunch(): Promise<void>;
+
+    /** Tells Vanta this launch loaded fine (resets crash detection). */
+    bootOk(): Promise<void>;
+    /** Safe mode for the next launch (true) or back to normal (false). */
+    setSafeMode(on: boolean): Promise<void>;
+    /** Cloud sync (GitHub Gist) */
+    cloudStatus(): Promise<{ signedIn: boolean; user: string | null; gistId: string | null; lastSync: string | null }>;
+    cloudSignIn(token: string): Promise<{ user: string }>;
+    cloudSignOut(): Promise<void>;
+    cloudPush(data: unknown): Promise<{ updated: string }>;
+    cloudPull(): Promise<{ data: any; updated: string } | null>;
+    cloudRemoteUpdated(): Promise<string | null>;
+    /** Per-plugin JSON storage */
+    dataGet<T = any>(key: string): Promise<T | null>;
+    dataSet(key: string, value: unknown): Promise<void>;
 }

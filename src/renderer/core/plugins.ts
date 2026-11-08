@@ -2,6 +2,7 @@ import { makeLogger, logger, type Logger } from "./logger";
 import { settings, saveSettings, type PluginSettings } from "./settings";
 import { ready as webpackReady } from "./webpack";
 import { onDomReady } from "./utils";
+import { native } from "./native";
 
 export type OptionType = "boolean" | "string" | "number" | "text" | "select";
 
@@ -117,6 +118,7 @@ export function registerPlugin(def: PluginDef): PluginInstance {
  */
 export async function startPlugin(p: PluginInstance) {
     if (p.started) return true;
+    if (native.info.safeMode) return false; // safe mode: nothing runs
     if (p.needsWebpack) await webpackReady;
     const delays = p.needsWebpack ? [1000, 2000, 3000, 4000, 5000, 5000] : [];
     for (let attempt = 0; ; attempt++) {

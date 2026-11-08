@@ -14,6 +14,10 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # Optional code signing: add these two repo secrets to sign VantaInstaller.exe (see README)
+      CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+      CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +67,15 @@ jobs:
           GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$V" -o ../release/VantaInstaller.exe .
           GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-linux .
           GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-macos .
+
+      - name: Sign Windows installer
+        if: env.CERT_PFX_BASE64 != ''
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq osslsigncode
+          echo "$CERT_PFX_BASE64" | base64 -d > cert.pfx
+          osslsigncode sign -pkcs12 cert.pfx -pass "$CERT_PASSWORD" -n "Vanta Installer" -i "https://github.com/${GITHUB_REPOSITORY}" -t http://timestamp.digicert.com -in release/VantaInstaller.exe -out release/VantaInstaller-signed.exe
+          mv release/VantaInstaller-signed.exe release/VantaInstaller.exe
+          rm cert.pfx
 
       - name: Publish release
         uses: softprops/action-gh-release@v2

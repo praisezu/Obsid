@@ -1,7 +1,7 @@
 // See deleted and edited messages. Deleted messages stay in chat (marked red) instead of vanishing,
 // edits show the earlier versions underneath, and everything is also kept in a log.
 // Works by looking at Discord's message events before they're applied.
-import { definePlugin, common, ui, h, patcher, watchElements, managedStyle, messageIdsFromElement } from "@api";
+import { definePlugin, common, ui, h, patcher, watchElements, managedStyle, messageIdsFromElement, storage } from "@api";
 
 const EPHEMERAL = 1 << 6;
 
@@ -23,12 +23,13 @@ export default definePlugin({
     category: "Chat",
     needsWebpack: true,
     options: {
-        keepDeleted: { type: "boolean", default: true, label: "Keep deleted messages in chat", description: "Marked in red. They disappear when you reload Discord." },
+        keepDeleted: { type: "boolean", default: true, label: "Keep deleted messages in chat", description: "Marked in red. Discord removes them from chat when you reload; they stay in the log." },
         showEdits: { type: "boolean", default: true, label: "Show edit history under messages" },
         ignoreSelf: { type: "boolean", default: true, label: "Ignore my own messages", description: "Your own deletes always go through normally either way." },
         ignoreBots: { type: "boolean", default: false, label: "Ignore bots" },
         toast: { type: "boolean", default: false, label: "Notify on delete", description: "Show a small notification when a message is deleted." },
-        max: { type: "number", default: 300, label: "Max log entries" },
+        persist: { type: "boolean", default: true, label: "Keep the log after restarting", description: "Saved on your computer only (in the Vanta folder)." },
+        max: { type: "number", default: 1000, label: "Max log entries", description: "Oldest entries are dropped after this many." },
     },
 
     log: [] as any[],
@@ -54,9 +55,13 @@ export default definePlugin({
         return false;
     },
     add(entry: any) {
-        this.log.unshift({ ...entry, at: new Date().toLocaleTimeString() });
-        const max = Math.max(10, Number(this.settings.max) || 300);
+        this.log.unshift({ ...entry, at: new Date().toLocaleString() });
+        const max = Math.max(10, Number(this.settings.max) || 1000);
         if (this.log.length > max) this.log.length = max;
+        this.save();
+    },
+    save() {
+        if (this.settings.persist) storage.set("MessageLogger", this.log);
     },
 
     /** Should this delete be kept on screen instead of applied? */
@@ -95,8 +100,14 @@ export default definePlugin({
         }
     },
 
-    start() {
+    async start() {
         const { FluxDispatcher, MessageStore } = common;
+        // Bring back the saved log (only once per session; later starts keep what's in memory)
+        if (this.settings.persist && !this.loaded) {
+            const saved = await storage.get<any[]>("MessageLogger");
+            if (Array.isArray(saved)) this.log = [...this.log, ...saved].slice(0, Math.max(10, Number(this.settings.max) || 1000));
+        }
+        this.loaded = true;
         if (!FluxDispatcher || !MessageStore) throw new Error("Couldn't find Discord's message modules");
         this.style = managedStyle("vanta-message-logger");
         this.style.set(CSS);
@@ -159,8 +170,8 @@ export default definePlugin({
         return h("div", { style: { display: "flex", flexDirection: "column", gap: "10px" } },
             h("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
                 h("div", { class: "vanta-row-title", style: { flex: "1" } }, `Log (${this.log.length})`),
-                ui.button("Clear", { small: true, variant: "ghost", icon: "trash", onClick: () => { this.log.length = 0; render(); } })),
+                ui.button("Clear", { small: true, variant: "ghost", icon: "trash", onClick: () => { this.log.length = 0; storage.setNow("MessageLogger", []); render(); } })),
             list,
-            h("div", { class: "vanta-row-desc" }, "The log lives in memory only and is cleared when Discord restarts."));
+            h("div", { class: "vanta-row-desc" }, this.settings.persist ? "The log is saved on your computer and kept after restarts." : "The log lives in memory only and is cleared when Discord restarts."));
     },
 });

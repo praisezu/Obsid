@@ -51,6 +51,16 @@ const native: NativeAPI = {
     openPluginsDir: () => invoke("open-path", "plugins"),
     toggleDevTools: () => invoke("toggle-devtools"),
     relaunch: () => invoke("relaunch"),
+    bootOk: () => invoke("boot-ok"),
+    setSafeMode: on => invoke("set-safe-mode", on),
+    cloudStatus: () => invoke("cloud-status"),
+    cloudSignIn: token => invoke("cloud-sign-in", token),
+    cloudSignOut: () => invoke("cloud-sign-out"),
+    cloudPush: data => invoke("cloud-push", data),
+    cloudPull: () => invoke("cloud-pull"),
+    cloudRemoteUpdated: () => invoke("cloud-remote-updated"),
+    dataGet: key => invoke("data-get", key),
+    dataSet: (key, value) => invoke("data-set", key, value),
 } as NativeAPI;
 
 if (process.contextIsolated) contextBridge.exposeInMainWorld("VantaNative", native);

@@ -116,6 +116,7 @@ export const themes = {
     apply() {
         onDomReady(() => {
             const want = new Map<string, string>();
+            if (native.info.safeMode) { for (const [, el] of styles) el.remove(); styles.clear(); quickCss.apply(); return; }
             for (const t of this.local) if (this.isEnabled(t.file)) want.set("local:" + t.file, t.css);
             for (const o of cfg.online) {
                 const s = this.online.get(o.url);

@@ -7,7 +7,7 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 export const quickCss = {
     el: null as HTMLStyleElement | null,
     css: native.getQuickCss() || "",
-    get enabled() { return settings.themes.quickCssEnabled !== false; },
+    get enabled() { return settings.themes.quickCssEnabled !== false && !native.info.safeMode; },
 
     /** Writes the current CSS into the page (or clears it while Quick CSS is switched off). */
     apply() {

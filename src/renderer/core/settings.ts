@@ -15,6 +15,8 @@ export interface Settings {
         autoUpdate: boolean;
         /** Set right before an automatic restart; shown as "updated to x.x.x" after it */
         pendingUpdate?: { from: string; to: string; notes?: string; at: number } | null;
+        /** Cloud sync: upload automatically after changes */
+        cloudAuto?: boolean;
     };
     themes: { enabled: string[]; online: { url: string; enabled: boolean }[]; quickCssEnabled: boolean; /** BetterDiscord theme id → installed file */ bd?: Record<string, string> };
     /** installed store plugins: file name → where it came from and the reviewed hash */
@@ -38,7 +40,7 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 /** Debounced write to %APPDATA%/Vanta/settings.json */
 export function saveSettings() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => native.setSettings(settings), 250);
+    saveTimer = setTimeout(() => { native.setSettings(settings); window.dispatchEvent(new CustomEvent("vanta:settings-saved")); }, 250);
 }
 
 /** Writes settings right now (use before restarting Discord). */

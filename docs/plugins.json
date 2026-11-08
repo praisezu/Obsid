@@ -1,0 +1,587 @@
+{
+  "version": "0.4.0",
+  "repo": "praisezu/Vanta",
+  "discord": "",
+  "plugins": [
+    {
+      "name": "AccentColor",
+      "description": "Change Discord's blurple accent (buttons, links, toggles) to any colour.",
+      "category": "Appearance"
+    },
+    {
+      "name": "AlwaysShowTimestamps",
+      "description": "Shows the time on every message in a group, not just when you hover.",
+      "category": "Appearance"
+    },
+    {
+      "name": "AlwaysTrustLinks",
+      "description": "Skips the \"Leaving Discord\" warning and opens links straight away. (English Discord only.)",
+      "category": "Utility"
+    },
+    {
+      "name": "AnonymiseFileNames",
+      "description": "Renames files you upload so their original names (like IMG_2041 or your-real-name.pdf) aren't shared.",
+      "category": "Privacy"
+    },
+    {
+      "name": "AutoCapitalize",
+      "description": "Capitalizes the first letter of your messages (and optionally adds a full stop).",
+      "category": "Chat"
+    },
+    {
+      "name": "BetterTitle",
+      "description": "Cleaner window title: drops the \"Discord |\" prefix and can show your unread count first.",
+      "category": "Utility"
+    },
+    {
+      "name": "BlurMedia",
+      "description": "Blurs images and videos in chat until you hover over them. Handy when sharing your screen.",
+      "category": "Privacy"
+    },
+    {
+      "name": "BlurNames",
+      "description": "Streamer-safe: blurs names and previews in your DM list and member list until you hover them.",
+      "category": "Privacy"
+    },
+    {
+      "name": "CallTimer",
+      "description": "Shows how long you've been in a voice call, above your user panel.",
+      "category": "Utility"
+    },
+    {
+      "name": "ChannelHeaderCleanup",
+      "description": "Hides buttons you don't use in the channel header: calls, pins, invite.",
+      "category": "Appearance"
+    },
+    {
+      "name": "ChannelTypingIndicator",
+      "description": "Shows animated dots next to channels and DMs where someone is typing.",
+      "category": "Chat"
+    },
+    {
+      "name": "CharacterCounter",
+      "description": "Shows how many characters you've typed and the limit (2000, or 4000 with Nitro) above the message box.",
+      "category": "Chat"
+    },
+    {
+      "name": "ChatBackground",
+      "description": "Put an image behind your chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "ChatBarCleanup",
+      "description": "Hides chat bar buttons you never use: gift, GIF, stickers, apps and more.",
+      "category": "Appearance"
+    },
+    {
+      "name": "ClearURLs",
+      "description": "Strips tracking parameters (utm_*, fbclid, si, …) from links in messages you send.",
+      "category": "Privacy"
+    },
+    {
+      "name": "CollapseLongMessages",
+      "description": "Folds very long messages with a \"Show more\" button.",
+      "category": "Chat"
+    },
+    {
+      "name": "ConfirmCalls",
+      "description": "Asks before starting a voice or video call, so you don't ring someone by accident.",
+      "category": "Utility"
+    },
+    {
+      "name": "ConsoleShortcuts",
+      "description": "Adds shortcuts to the DevTools console for plugin development: wp, findByProps, findByCode, common, Vanta.",
+      "category": "Developer"
+    },
+    {
+      "name": "CopyCodeBlocks",
+      "description": "Adds a Copy button to code blocks in messages.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyEmojiMarkdown",
+      "description": "Shift+click a custom emoji in chat to copy its code (like <:pog:1234>) so you can use it elsewhere.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyHoveredMessage",
+      "description": "Hover a message and press Ctrl+C (with nothing selected) to copy its text.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyIds",
+      "description": "Ctrl+Shift+click a message to copy its ID. Add Alt to copy the author's user ID instead.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyImageLink",
+      "description": "Shift+click an image in chat to copy its link.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyInlineCode",
+      "description": "Click `inline code` in a message to copy it.",
+      "category": "Utility"
+    },
+    {
+      "name": "CopyMessageLink",
+      "description": "Ctrl+Alt+click a message to copy a link to it.",
+      "category": "Utility"
+    },
+    {
+      "name": "CrispText",
+      "description": "Sharper, thinner text rendering (grayscale anti-aliasing).",
+      "category": "Appearance"
+    },
+    {
+      "name": "CursorPet",
+      "description": "A tiny void orb that follows your mouse around and dozes off when you stop moving.",
+      "category": "Appearance"
+    },
+    {
+      "name": "CustomFont",
+      "description": "Use any font installed on your computer for Discord's text and code.",
+      "category": "Appearance"
+    },
+    {
+      "name": "CustomRPC",
+      "description": "Show any \"Playing…\" status you like on your profile. Needs an Application ID from discord.com/developers.",
+      "category": "Utility"
+    },
+    {
+      "name": "DevToolsKeybind",
+      "description": "Ctrl+Shift+I or F12 opens DevTools (Discord blocks these by default).",
+      "category": "Developer"
+    },
+    {
+      "name": "DimWhenUnfocused",
+      "description": "Dims Discord when it's not the active window.",
+      "category": "Appearance"
+    },
+    {
+      "name": "DoubleClickActions",
+      "description": "Double-click a message to reply to it, or double-click your own message to edit it.",
+      "category": "Chat"
+    },
+    {
+      "name": "F5Reload",
+      "description": "F5 reloads Discord, like a browser (Ctrl+R still works too).",
+      "category": "Utility"
+    },
+    {
+      "name": "FixEmbeds",
+      "description": "Swaps Twitter/X, Instagram, TikTok, Reddit, Bluesky and Pixiv links for versions that show a proper preview in Discord.",
+      "category": "Chat"
+    },
+    {
+      "name": "FluxLogger",
+      "description": "Logs Discord's internal events (Flux actions) to the DevTools console. For plugin developers.",
+      "category": "Developer"
+    },
+    {
+      "name": "FocusMode",
+      "description": "Press Ctrl+Alt+F to hide the server list, channel list and member list, leaving just the chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "FriendsSince",
+      "description": "Shows when you became friends with someone on their profile.",
+      "category": "Utility"
+    },
+    {
+      "name": "GrayscaleMode",
+      "description": "Turns Discord black and white. Less distracting when you're trying to focus.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HiddenChannels",
+      "description": "Shows which channels in a server you can't see (names, categories and topics), in a read-only list.",
+      "category": "Utility"
+    },
+    {
+      "name": "HideActiveNow",
+      "description": "Hides the \"Active Now\" column on the Friends page.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideAttachButton",
+      "description": "Hides the + (upload) button in the message box. Drag-and-drop and paste still work.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideAudioMenus",
+      "description": "Hides the little arrows next to Mute and Deafen in your user panel.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideBadgeCounts",
+      "description": "Hides red mention/unread number badges on servers and DMs (the unread dot stays).",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideBotMessages",
+      "description": "Hides messages from bots (and webhooks). Turn off to see them again.",
+      "category": "Chat"
+    },
+    {
+      "name": "HideGifTag",
+      "description": "Removes the little \"GIF\" label on GIFs in chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideLinkEmbeds",
+      "description": "Hides link previews (embeds) under messages. Images and videos you upload still show.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideMentionBars",
+      "description": "Hides the \"new mentions\" bars at the top and bottom of chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideMessagesWith",
+      "description": "Hides messages containing words or phrases you never want to see (spoilers, slurs, topics).",
+      "category": "Chat"
+    },
+    {
+      "name": "HideProfileFlair",
+      "description": "Hides avatar decorations, server tags and profile effects for a cleaner chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideReactions",
+      "description": "Hides reactions under messages.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideReplyPreviews",
+      "description": "Hides the quoted line above replies. You still see who replied, just less clutter.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideRoleIcons",
+      "description": "Hides the small role icons next to names.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideStatuses",
+      "description": "Hides what people are playing and their custom statuses in the member and DM lists.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideStickers",
+      "description": "Hides stickers in chat (or blurs them until hovered).",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideSystemMessages",
+      "description": "Hides join messages, boosts, pins and other system messages.",
+      "category": "Chat"
+    },
+    {
+      "name": "HideTypingIndicator",
+      "description": "Hides \"someone is typing…\" under the message box.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HideUpsells",
+      "description": "Removes Nitro, Shop and Quests links from your DM list, plus the gift button.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HighlightMyMessages",
+      "description": "Gives your own messages a subtle tint so they're easy to spot in busy chats.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HighlightUsers",
+      "description": "Gives messages from people you choose a coloured background, so you never miss them.",
+      "category": "Chat"
+    },
+    {
+      "name": "HoverBarCleanup",
+      "description": "Trims the buttons that appear when you hover a message.",
+      "category": "Appearance"
+    },
+    {
+      "name": "HoverReactKeys",
+      "description": "Hover a message and press 1, 2 or 3 to add one of your quick reactions. No clicking.",
+      "category": "Chat"
+    },
+    {
+      "name": "IgnoreUsers",
+      "description": "Hides messages from people you list, without blocking them. Paste user IDs (Ctrl+Shift+Alt+click a message with CopyIds).",
+      "category": "Chat"
+    },
+    {
+      "name": "ImageFilename",
+      "description": "Hover an image or video in chat to see its file name.",
+      "category": "Utility"
+    },
+    {
+      "name": "ImageZoom",
+      "description": "When you open an image, scroll to zoom in where your mouse is. Click to reset.",
+      "category": "Utility"
+    },
+    {
+      "name": "InlineCalc",
+      "description": "Write {= 12*4 + 3} in a message and it's replaced with the answer when you send.",
+      "category": "Chat"
+    },
+    {
+      "name": "KeyboardSounds",
+      "description": "Soft typewriter clicks while you type in the message box. Generated live, no sound files.",
+      "category": "Appearance"
+    },
+    {
+      "name": "KeywordAlerts",
+      "description": "Get notified when a message anywhere mentions words you care about, like your name or a game.",
+      "category": "Chat"
+    },
+    {
+      "name": "MediaCorners",
+      "description": "Change how rounded images and videos in chat are.",
+      "category": "Appearance"
+    },
+    {
+      "name": "MemberCount",
+      "description": "Shows how many members a server has, and how many are online, at the top of the member list.",
+      "category": "Utility"
+    },
+    {
+      "name": "MentionHighlight",
+      "description": "Pick your own colour for messages that mention you.",
+      "category": "Appearance"
+    },
+    {
+      "name": "MessageLogger",
+      "description": "See deleted and edited messages. Deleted ones stay in chat marked red, edits show what they said before, and everything goes into a log.",
+      "category": "Chat"
+    },
+    {
+      "name": "MuteNewServers",
+      "description": "When you join a server, it's muted with @everyone and role pings suppressed, so new servers don't flood you.",
+      "category": "Utility"
+    },
+    {
+      "name": "NetworkLogger",
+      "description": "Logs every API request Discord makes to the DevTools console. For plugin developers.",
+      "category": "Developer"
+    },
+    {
+      "name": "NoBlockedMessages",
+      "description": "Messages from people you've blocked disappear completely, instead of showing as \"blocked message\".",
+      "category": "Chat"
+    },
+    {
+      "name": "NoChatAvatars",
+      "description": "Removes avatars from chat for a compact, IRC-like look.",
+      "category": "Appearance"
+    },
+    {
+      "name": "NoDevToolsWarning",
+      "description": "Removes the giant \"Hold Up!\" warning Discord prints in DevTools, so the console stays readable.",
+      "category": "Developer"
+    },
+    {
+      "name": "NoJumboEmoji",
+      "description": "Messages that are only emoji show them at normal size instead of huge.",
+      "category": "Appearance"
+    },
+    {
+      "name": "NoReplyMention",
+      "description": "Never @mention the person you're replying to (the reply ping toggle is forced off).",
+      "category": "Chat"
+    },
+    {
+      "name": "NotificationVolume",
+      "description": "Makes Discord's notification and UI sounds quieter (or louder, up to normal) without touching call volume.",
+      "category": "Utility"
+    },
+    {
+      "name": "NoTrack",
+      "description": "Blocks Discord's analytics (science/metrics) requests and Sentry crash reporting.",
+      "category": "Privacy"
+    },
+    {
+      "name": "OnlineFriendsCount",
+      "description": "Shows how many friends are online next to \"Friends\" in your DM list.",
+      "category": "Utility"
+    },
+    {
+      "name": "OpenInApp",
+      "description": "Spotify and Steam links open in their desktop apps instead of your browser.",
+      "category": "Utility"
+    },
+    {
+      "name": "PictureInPicture",
+      "description": "Adds a picture-in-picture button to videos in chat so you can keep watching while you scroll.",
+      "category": "Utility"
+    },
+    {
+      "name": "PinDMs",
+      "description": "Pin your favourite DMs: hover a DM and click the pin, and it stays in a row at the top of your DM list.",
+      "category": "Utility"
+    },
+    {
+      "name": "PlatformIndicators",
+      "description": "Shows whether people are on desktop, phone or web, next to their names in chat, the member list and DMs.",
+      "category": "Utility"
+    },
+    {
+      "name": "ReadableWidth",
+      "description": "Keeps chat lines from stretching across ultrawide screens.",
+      "category": "Appearance"
+    },
+    {
+      "name": "ReadAllNotifications",
+      "description": "Adds a \"Read all\" button above your server list that clears every unread server at once.",
+      "category": "Utility"
+    },
+    {
+      "name": "ReduceMotion",
+      "description": "Turns off animations and transitions. Makes Discord feel snappier on slow PCs.",
+      "category": "Appearance"
+    },
+    {
+      "name": "RelationshipNotifier",
+      "description": "Tells you when someone unfriends you, cancels a friend request, or removes you from a server or group chat.",
+      "category": "Utility"
+    },
+    {
+      "name": "ReverseImageSearch",
+      "description": "Alt+Shift+click an image in chat to look it up with Google Lens, Bing, Yandex or TinEye.",
+      "category": "Utility"
+    },
+    {
+      "name": "SafeMentions",
+      "description": "Stops your messages from pinging @everyone, @here or roles by accident (the text still shows).",
+      "category": "Chat"
+    },
+    {
+      "name": "SendGuard",
+      "description": "Stops a message from sending if it contains words you list (an old password, a slur, a name), so you can fix it.",
+      "category": "Chat"
+    },
+    {
+      "name": "ServerHotkeys",
+      "description": "Alt+1 … Alt+9 jumps to your first nine servers (in sidebar order).",
+      "category": "Utility"
+    },
+    {
+      "name": "ServerListCleanup",
+      "description": "Hides the Add a Server and Discover buttons and the separator lines in the server list.",
+      "category": "Appearance"
+    },
+    {
+      "name": "ShowMeYourName",
+      "description": "Shows people's @username next to their display name in chat, so you always know who's who.",
+      "category": "Chat"
+    },
+    {
+      "name": "Signature",
+      "description": "Adds a signature line to the end of messages you send.",
+      "category": "Chat"
+    },
+    {
+      "name": "SilentMessages",
+      "description": "Sends your messages as @silent so they don't push-notify anyone (mentions still show up).",
+      "category": "Chat"
+    },
+    {
+      "name": "SilentTyping",
+      "description": "Hides your typing indicator from other people.",
+      "category": "Privacy"
+    },
+    {
+      "name": "SmartPunctuation",
+      "description": "Typographer's touches: -- becomes —, ... becomes …, -> becomes →.",
+      "category": "Chat"
+    },
+    {
+      "name": "SpoilerUploads",
+      "description": "Marks every file you upload as a spoiler.",
+      "category": "Chat"
+    },
+    {
+      "name": "SuppressEmbeds",
+      "description": "Sends links without a preview underneath (like wrapping every link in < >).",
+      "category": "Chat"
+    },
+    {
+      "name": "TextEffects",
+      "description": "Start a message with !owo, !mock, !up, !rev, !wide, !small, !clap or !spoil to transform it.",
+      "category": "Chat"
+    },
+    {
+      "name": "TextReplace",
+      "description": "Automatically replaces words or patterns in messages you send, using your own rules.",
+      "category": "Chat"
+    },
+    {
+      "name": "ThemeAttributes",
+      "description": "For theme makers: adds data-author-id, data-is-self and data-is-bot to messages so themes can style them.",
+      "category": "Developer"
+    },
+    {
+      "name": "ThemeHelper",
+      "description": "For theme makers: Ctrl+Alt+Shift+click anything to copy a selector for it that survives Discord updates.",
+      "category": "Developer"
+    },
+    {
+      "name": "ThinScrollbars",
+      "description": "Slimmer scrollbars everywhere, or none at all.",
+      "category": "Appearance"
+    },
+    {
+      "name": "TimestampShortcuts",
+      "description": "Type {now}, {in 2h}, {at 9pm} or {tomorrow 18:00} and it becomes a timestamp everyone sees in their own time zone.",
+      "category": "Chat"
+    },
+    {
+      "name": "TitleBarCleanup",
+      "description": "Hides the Help and Inbox buttons in the top bar.",
+      "category": "Appearance"
+    },
+    {
+      "name": "Translate",
+      "description": "Hover a message and press Ctrl+Alt+T to translate it. The text is sent to Google Translate.",
+      "category": "Chat"
+    },
+    {
+      "name": "TransparentWindow",
+      "description": "See-through Discord with Windows 11 blur (acrylic or mica). Works best with a theme. May affect window snapping.",
+      "category": "Appearance"
+    },
+    {
+      "name": "Unindent",
+      "description": "Removes extra indentation from code blocks you send, so pasted code isn't pushed to the right.",
+      "category": "Chat"
+    },
+    {
+      "name": "VideoTweaks",
+      "description": "Sets a default volume for videos in chat (no more full-blast clips), and can loop them.",
+      "category": "Utility"
+    },
+    {
+      "name": "ViewFullImages",
+      "description": "Ctrl+click any avatar, server icon, emoji, banner or image to open it at full size in your browser.",
+      "category": "Utility"
+    },
+    {
+      "name": "ViewRaw",
+      "description": "Ctrl+middle-click a message to see its raw text (with markdown) and copy it.",
+      "category": "Utility"
+    },
+    {
+      "name": "VoiceChannelAlerts",
+      "description": "Tells you when people join or leave the voice channel you're in, and can say it out loud.",
+      "category": "Utility"
+    },
+    {
+      "name": "YouTubeShortLinks",
+      "description": "Turns youtube.com/watch?v=… links into short youtu.be links (keeps the timestamp).",
+      "category": "Chat"
+    }
+  ]
+}

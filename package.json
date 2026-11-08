@@ -6,7 +6,8 @@
     "license": "MIT",
     "repository": "github:praisezu/Vanta",
     "vanta": {
-        "repo": "praisezu/Vanta"
+        "repo": "praisezu/Vanta",
+        "discord": ""
     },
     "scripts": {
         "build": "node scripts/build.mjs",

@@ -14,6 +14,7 @@ const release = process.argv.includes("--release"); // minified, no source maps
 const define = {
     __VANTA_VERSION__: JSON.stringify(pkg.version),
     __VANTA_REPO__: JSON.stringify(pkg.vanta?.repo ?? "praisezu/Vanta"),
+    __VANTA_DISCORD__: JSON.stringify(pkg.vanta?.discord ?? ""),
 };
 const alias = { "@api": join(root, "src/renderer/api.ts"), "@shared": join(root, "src/shared") };
 

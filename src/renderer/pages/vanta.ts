@@ -2,6 +2,7 @@ import { native } from "../core/native";
 import { plugins } from "../core/plugins";
 import { themes } from "../themes";
 import { ui, h } from "../ui/components";
+import { inSafeMode, safeModeCard, restartInSafeMode } from "../safeMode";
 
 function folderRow(title: string, path: string, which: "data" | "plugins" | "themes" | "root") {
     return ui.row({
@@ -23,6 +24,7 @@ ui.registerPage({
         const errors = all.filter(p => p.error).length;
 
         return h("div", { class: "vanta-page" },
+            inSafeMode() ? safeModeCard() : null,
             ui.card({ class: "vanta-hero" },
                 ui.logo(64),
                 h("div", { style: { flex: "1", minWidth: "0" } },
@@ -34,7 +36,9 @@ ui.registerPage({
                         errors ? h("span", { class: "vanta-stat", style: { color: "var(--o-danger)" } }, `${errors} plugin error${errors > 1 ? "s" : ""}`) : null,
                     ),
                 ),
-                ui.button("GitHub", { variant: "ghost", icon: "globe", onClick: () => native.openUrl(`https://github.com/${info.repo}`) }),
+                h("div", { style: { display: "flex", flexDirection: "column", gap: "6px" } },
+                    ui.button("GitHub", { variant: "ghost", icon: "globe", onClick: () => native.openUrl(`https://github.com/${info.repo}`) }),
+                    __VANTA_DISCORD__ ? ui.button("Discord", { variant: "ghost", icon: "orb", onClick: () => native.openUrl(__VANTA_DISCORD__) }) : null),
             ),
 
             ui.section("Quick actions",
@@ -43,6 +47,7 @@ ui.registerPage({
                     ui.button("Restart Discord", { icon: "power", onClick: () => native.relaunch() }),
                     ui.button("DevTools", { icon: "terminal", onClick: () => native.toggleDevTools() }),
                     ui.button("Edit Quick CSS", { icon: "code", onClick: () => ctx.navigate("themes", { tab: "quickcss" }) }),
+                    inSafeMode() ? null : ui.button("Restart in safe mode", { icon: "warn", title: "Start Discord once without plugins, themes or Quick CSS", onClick: async () => { if (await ui.confirm({ title: "Restart in safe mode?", body: "Discord restarts with all plugins, themes and Quick CSS turned off, so you can fix whatever is causing trouble.", confirmText: "Restart in safe mode" })) restartInSafeMode(); } }),
                 ),
             ),
 

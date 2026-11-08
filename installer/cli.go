@@ -15,6 +15,8 @@ import (
 
 type cliOptions struct {
 	install, uninstall, status, noRestart bool
+	guard, guardOnce, noGuard             bool
+	safeMode                              bool
 	branch, local                         string
 }
 
@@ -25,17 +27,25 @@ func parseFlags() (cliOptions, bool) {
 	fs.BoolVar(&o.uninstall, "uninstall", false, "remove Vanta")
 	fs.BoolVar(&o.status, "status", false, "show which Discord installs have Vanta")
 	fs.BoolVar(&o.noRestart, "no-restart", false, "don't close and reopen Discord")
+	fs.BoolVar(&o.guard, "guard", false, "run Vanta Guard (re-applies Vanta after Discord updates) in the background")
+	fs.BoolVar(&o.guardOnce, "guard-once", false, "check once and re-apply Vanta where Discord updates removed it")
+	fs.BoolVar(&o.noGuard, "no-guard", false, "with -install: don't keep Vanta installed after Discord updates")
+	fs.BoolVar(&o.safeMode, "safe-mode", false, "restart Discord with Vanta in safe mode (no plugins, themes or Quick CSS)")
 	fs.StringVar(&o.branch, "branch", "stable", "stable, ptb, canary, development or all")
 	fs.StringVar(&o.local, "local", "", "install from a local Vanta folder (dev build) instead of GitHub")
 	cli := false
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		os.Exit(2)
 	}
-	cli = o.install || o.uninstall || o.status
+	cli = o.install || o.uninstall || o.status || o.guard || o.guardOnce || o.safeMode
 	return o, cli
 }
 
 func runCLI(o cliOptions) int {
+	if o.guard || o.guardOnce {
+		RunGuard(o.guardOnce)
+		return 0
+	}
 	fmt.Printf("Vanta Installer %s\n\n", Version)
 	src := Source{Local: o.local}
 	entry := MainEntryFor(AppDir())
@@ -69,6 +79,17 @@ func runCLI(o cliOptions) int {
 	}
 	status := func(s string) { fmt.Println("  " + s) }
 
+	if o.safeMode {
+		for _, b := range targets {
+			if err := StartSafeMode(b); err != nil {
+				fmt.Printf("Error with %s: %v\n", b.Name, err)
+				return 1
+			}
+			fmt.Printf("%s restarted with Vanta in safe mode.\n", b.Name)
+		}
+		return 0
+	}
+
 	if o.install {
 		var err error
 		if entry, err = src.Prepare(status); err != nil {
@@ -89,7 +110,15 @@ func runCLI(o cliOptions) int {
 			code = 1
 		} else if o.install {
 			fmt.Printf("Vanta installed into %s.\n", b.Name)
+			if !o.noGuard {
+				if err := EnableGuard(b.Key, entry); err != nil {
+					fmt.Println("  (Couldn't turn on auto re-install:", err, ")")
+				} else {
+					fmt.Println("  Auto re-install is on: Vanta Guard re-applies Vanta after Discord updates.")
+				}
+			}
 		} else {
+			DisableGuard(b.Key)
 			fmt.Printf("Vanta removed from %s.\n", b.Name)
 		}
 	}
