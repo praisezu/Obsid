@@ -1,0 +1,14 @@
+{
+    "name": "obsid",
+    "version": "0.1.0",
+    "description": "Obsid — a lightweight Discord client mod",
+    "private": true,
+    "license": "MIT",
+    "scripts": {
+        "inject": "node scripts/install.js",
+        "uninject": "node scripts/install.js --uninstall",
+        "status": "node scripts/install.js --status",
+        "check": "node scripts/check.js",
+        "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/build.ps1"
+    }
+}
