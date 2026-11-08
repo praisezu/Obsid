@@ -31,6 +31,7 @@ import "./pages/backup";
 import { settingsSidebar } from "./settingsSidebar";
 import { quickPanel } from "./quickPanel";
 import { inSafeMode, showSafeModeNotice } from "./safeMode";
+import { startWindowControls } from "./windowControls";
 import { startupPluginUpdateCheck } from "./pluginUpdates";
 
 import builtinPlugins from "~plugins";
@@ -60,6 +61,7 @@ if (w.Vanta) {
         __boot() {
             if (booted) return;
             booted = true;
+            startWindowControls();
             startAll();
             webpack.ready.then(() => {
                 // Reaching here means Discord loaded fine: reset crash detection (after a short grace period).

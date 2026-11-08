@@ -1,5 +1,5 @@
 {
-  "version": "0.5.2",
+  "version": "0.5.3",
   "repo": "praisezu/Vanta",
   "discord": "https://discord.gg/Eh6fSPnznj",
   "plugins": [
@@ -52,6 +52,11 @@
       "name": "CallTimer",
       "description": "Shows how long you've been in a voice call, above your user panel.",
       "category": "Utility"
+    },
+    {
+      "name": "Capri",
+      "description": "Capri, the desktop mate, lives in your Discord window. Drag and throw her, drop her on the message box to sit, and she talks, naps and vibes to your music. Art from the Capri Desktop project.",
+      "category": "Appearance"
     },
     {
       "name": "ChannelHeaderCleanup",
