@@ -3,198 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vanta, a Discord client mod</title>
-<meta name="description" content="Vanta adds 100+ plugins, themes, a plugin store and auto-updates to the Discord desktop app.">
-<link rel="icon" type="image/png" href="logo.png">
+<title>Vanta</title>
+<meta name="description" content="Vanta is a Discord client mod with 100+ plugins, BetterDiscord themes, a plugin store and automatic updates.">
+<link rel="icon" type="image/png" href="/logo.png">
 <meta property="og:title" content="Vanta">
-<meta property="og:description" content="A Discord client mod with 100+ plugins, BetterDiscord themes, a plugin store and auto-updates.">
-<meta property="og:image" content="logo.png">
-<style>
-  :root {
-    --bg: #050407; --panel: #0d0b12; --card: #121018; --line: #231e2d; --line2: #33293f;
-    --text: #ece9f2; --muted: #9b93a9; --accent: #8b5cf6; --accent2: #c4b5fd; --ok: #4ade80;
-    --radius: 14px; color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
-  a { color: var(--accent2); }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-  header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-  header .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
-  header img { width: 32px; height: 32px; image-rendering: pixelated; }
-  header b { font-size: 18px; letter-spacing: .02em; }
-  header nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
-  header nav a { color: var(--muted); text-decoration: none; }
-  header nav a:hover { color: var(--text); }
-  .hero { position: relative; overflow: hidden; padding: 84px 0 64px; text-align: center; }
-  .hero::before { content: ""; position: absolute; inset: -40% -10% auto; height: 520px; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(139,92,246,.28), transparent 70%); }
-  .hero img { position: relative; width: 168px; height: 168px; image-rendering: pixelated; }
-  .hero h1 { position: relative; margin: 10px 0 8px; font-size: clamp(40px, 7vw, 64px); line-height: 1.05; letter-spacing: -.02em; }
-  .hero p { position: relative; max-width: 620px; margin: 0 auto 28px; color: var(--muted); font-size: 18px; }
-  .cta { position: relative; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 10px; font-weight: 600; text-decoration: none;
-    background: var(--card); color: var(--text); border: 1px solid var(--line2); }
-  .btn:hover { border-color: var(--accent); }
-  .btn.primary { background: var(--accent); border-color: transparent; color: #fff; }
-  .btn.primary:hover { background: #7c4ef0; }
-  .btn:focus-visible, input:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
-  .small { color: var(--muted); font-size: 13px; margin-top: 12px; position: relative; }
-  section { padding: 56px 0; border-top: 1px solid var(--line); }
-  h2 { font-size: 28px; margin: 0 0 6px; letter-spacing: -.01em; }
-  .lead { color: var(--muted); margin: 0 0 26px; }
-  .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-  .feature { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
-  .feature h3 { margin: 0 0 6px; font-size: 16px; }
-  .feature p { margin: 0; color: var(--muted); font-size: 14px; }
-  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .toolbar input { flex: 1; min-width: 220px; height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); color: var(--text); font: inherit; }
-  .chip { height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--panel); color: var(--muted); font: 600 14px inherit; cursor: pointer; }
-  .chip[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: transparent; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-  .plugin { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-  .plugin h3 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .plugin p { margin: 0; color: var(--muted); font-size: 13.5px; }
-  .tag { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(139,92,246,.16); color: var(--accent2); }
-  .tag.ok { background: rgba(74,222,128,.14); color: var(--ok); }
-  .count { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
-  .steps { counter-reset: s; display: grid; gap: 12px; padding: 0; list-style: none; }
-  .steps li { counter-increment: s; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; }
-  .steps li::before { content: counter(s); position: absolute; left: 16px; top: 13px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-    background: rgba(139,92,246,.18); color: var(--accent2); font-weight: 700; font-size: 14px; }
-  code { font-family: Consolas, ui-monospace, monospace; font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
-  footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 13px; }
-  footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
-  .empty { color: var(--muted); padding: 24px; text-align: center; border: 1px dashed var(--line2); border-radius: 12px; grid-column: 1 / -1; }
-  @media (max-width: 640px) { header nav { display: none; } .hero { padding-top: 56px; } }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-</style>
+<meta property="og:description" content="The sleekest Discord client mod. 100+ plugins, themes, a plugin store and auto-updates.">
+<meta property="og:image" content="https://tryvanta.dev/logo.png">
+<meta name="theme-color" content="#9b6bff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <img src="logo.png" alt=""><b>Vanta</b>
-    <nav aria-label="Sections"><a href="#features">Features</a><a href="#plugins">Plugins</a><a href="#store">Store</a><a href="#install">Install</a><a id="nav-github" href="#">GitHub</a></nav>
-  </div>
-</header>
-
 <main>
   <div class="hero">
     <div class="wrap">
-      <img src="logo.png" alt="Vanta logo">
-      <h1>Vanta</h1>
-      <p>A Discord client mod with <b id="count-hero">100+</b> plugins, BetterDiscord themes, a plugin store and automatic updates. Fast, and nothing runs unless you turn it on.</p>
+      <h1 class="mark"><img src="/logo.png" alt=""><span>Vanta</span></h1>
+      <p class="tagline">The sleekest Discord client mod</p>
+      <p class="sub"><b data-count>100+</b> plugins, BetterDiscord themes and a plugin store, right inside Discord's settings. Nothing runs until you turn it on.</p>
       <div class="cta">
-        <a class="btn primary" id="download" href="#">Download for Windows</a>
-        <a class="btn" id="github" href="#">View on GitHub</a>
-        <a class="btn" id="discord" href="#" hidden>Join the Discord</a>
+        <a class="btn primary" href="/download/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download Vanta</a>
+        <a class="btn" data-link="discord" href="#" hidden><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1a15.7 15.7 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.2C1.7 9.3 1 13.3 1.3 17.2a17 17 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a17 17 0 0 0 5.2-2.6c.4-4.6-.7-8.5-3.1-12ZM8.5 14.8c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2Zm7 0c-1 0-1.9-1-1.9-2.2s.8-2.2 1.9-2.2 1.9 1 1.9 2.2-.8 2.2-1.9 2.2Z"/></svg>Join our Discord</a>
+        <a class="btn" data-link="github" href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>View on GitHub</a>
       </div>
-      <div class="small" id="version">Free and open source · MIT license</div>
+      <p class="note">Version <span data-version>0.5</span> · Free and open source</p>
     </div>
   </div>
 
-  <section id="features">
-    <div class="wrap">
-      <h2>What you get</h2>
-      <p class="lead">Everything lives in its own section of Discord's settings.</p>
-      <div class="features">
-        <div class="feature"><h3>100+ plugins</h3><p>See deleted and edited messages, translate, read all, hide clutter, custom status, platform icons and much more.</p></div>
-        <div class="feature"><h3>Themes</h3><p>Browse and install BetterDiscord themes in one click, or make your own with the built-in theme editor.</p></div>
-        <div class="feature"><h3>Plugin Store</h3><p>Official plugins plus community plugins, each checked before it's listed and locked to the reviewed version.</p></div>
-        <div class="feature"><h3>Stays installed</h3><p>Vanta Guard puts Vanta back automatically after Discord updates itself.</p></div>
-        <div class="feature"><h3>Safe mode</h3><p>If a plugin ever breaks Discord, Vanta starts without plugins so you can fix it.</p></div>
-        <div class="feature"><h3>Cloud sync</h3><p>Keep your setup the same on every PC with a private GitHub Gist on your own account.</p></div>
-        <div class="feature"><h3>Auto-updates</h3><p>New versions install themselves and tell you what changed.</p></div>
-        <div class="feature"><h3>Light on your PC</h3><p>Plugins that are off cost nothing; most appearance tweaks are pure CSS.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="plugins">
-    <div class="wrap">
-      <h2>Built-in plugins</h2>
-      <p class="lead">Every one is off until you switch it on.</p>
-      <div class="toolbar" role="search">
-        <input id="q" type="search" placeholder="Search plugins" aria-label="Search plugins">
-        <div id="cats" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      </div>
-      <p class="count" id="count" aria-live="polite"></p>
-      <div class="grid" id="list"><div class="empty">Loading plugins…</div></div>
-    </div>
-  </section>
-
-  <section id="store">
-    <div class="wrap">
-      <h2>Plugin Store</h2>
-      <p class="lead">Install these from <b>Settings → Vanta Settings → Plugin Store</b>. Only plugins with the green Official badge are made by Vanta. <a id="submit" href="#">Submit your own</a>.</p>
-      <div class="grid" id="store-list"><div class="empty">Loading the store…</div></div>
-    </div>
-  </section>
-
-  <section id="install">
-    <div class="wrap">
-      <h2>Install</h2>
-      <ol class="steps">
-        <li>Download <b>VantaInstaller.exe</b> and run it. Windows may warn about an unknown publisher; choose <i>More info → Run anyway</i>.</li>
-        <li>Pick your Discord and click <b>Install</b>. Discord restarts with Vanta.</li>
-        <li>Open <b>Settings → Vanta Settings</b>, or press <code>Ctrl+Shift+O</code> anywhere.</li>
-      </ol>
-      <p class="small" style="text-align:left">macOS and Linux: download the installer for your system and run <code>VantaInstaller -install</code> in a terminal.</p>
-    </div>
-  </section>
-</main>
-
-<footer>
   <div class="wrap">
-    <span>Vanta isn't affiliated with Discord. Client mods break Discord's Terms of Service; use at your own risk.</span>
-    <span><a id="foot-github" href="#">Source on GitHub</a> · MIT license</span>
+    <div class="features">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg></div>
+        <h3>Easy install</h3><p>One click with the graphical installer. It finds every Discord install for you.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        <h3><span data-count>100+</span> plugins built in</h3><p>See deleted messages, read all, translate, hide clutter and lots more. Just switch on what you like.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-1-.8-1.4-.8-2.3 0-.9.7-1.4 1.6-1.4H17a4 4 0 0 0 4-4c0-4.9-4-8.8-9-8.8Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15.5" cy="8" r="1"/></svg></div>
+        <h3>Themes</h3><p>Install BetterDiscord themes in one click, or build your own with the live theme editor.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+        <h3>Stays installed</h3><p>Vanta Guard puts Vanta back after Discord updates, and safe mode rescues you if a plugin breaks.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12l2 5H4l2-5Z"/><path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M9 11a3 3 0 0 0 6 0"/></svg></div>
+        <h3>Plugin store</h3><p>Install community plugins or import your own from a file or link. Each store plugin is checked first.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg></div>
+        <h3>Fast and up to date</h3><p>Plugins you leave off cost nothing. Updates install themselves and tell you what changed.</p></div>
+    </div>
   </div>
-</footer>
-
-<script>
-(async () => {
-  const $ = id => document.getElementById(id);
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  let data = { plugins: [], repo: "praisezu/Vanta", version: "" };
-  try { data = await (await fetch("plugins.json", { cache: "no-store" })).json(); } catch {}
-  const gh = `https://github.com/${data.repo}`;
-  for (const id of ["github", "nav-github", "foot-github"]) $(id).href = gh;
-  $("download").href = `${gh}/releases/latest/download/VantaInstaller.exe`;
-  $("submit").href = `${gh}/blob/main/store/README.md`;
-  if (data.discord) { $("discord").href = data.discord; $("discord").hidden = false; }
-  if (data.version) $("version").textContent = `Version ${data.version} · Free and open source · MIT license`;
-  $("count-hero").textContent = data.plugins.length || "100+";
-
-  // Built-in plugin list with search + category filter
-  const cats = ["All", ...[...new Set(data.plugins.map(p => p.category))].sort()];
-  let cat = "All";
-  const renderCats = () => {
-    $("cats").innerHTML = cats.map(c => `<button class="chip" type="button" aria-pressed="${c === cat}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
-    for (const b of $("cats").querySelectorAll("button")) b.onclick = () => { cat = b.dataset.c; renderCats(); render(); };
-  };
-  const render = () => {
-    const q = $("q").value.trim().toLowerCase();
-    const list = data.plugins.filter(p => (cat === "All" || p.category === cat) && (!q || (p.name + " " + p.description).toLowerCase().includes(q)));
-    $("count").textContent = `${list.length} of ${data.plugins.length} plugins`;
-    $("list").innerHTML = list.length
-      ? list.map(p => `<article class="plugin"><h3>${esc(p.name)} <span class="tag">${esc(p.category)}</span></h3><p>${esc(p.description)}</p></article>`).join("")
-      : `<div class="empty">No plugins match.</div>`;
-  };
-  $("q").oninput = render;
-  renderCats(); render();
-
-  // Store, straight from the repo
-  try {
-    const store = await (await fetch(`https://raw.githubusercontent.com/${data.repo}/main/store/plugins.json`, { cache: "no-store" })).json();
-    const items = store.plugins || [];
-    $("store-list").innerHTML = items.length ? items.map(p => {
-      const official = p.path.startsWith("store/official/");
-      return `<article class="plugin"><h3>${esc(p.name)} <span class="tag ${official ? "ok" : ""}">${official ? "Official" : "Community"}</span></h3><p>${esc(p.description)}</p><p style="margin-top:6px">by ${esc(official ? "Vanta" : p.author)} · v${esc(p.version)}</p></article>`;
-    }).join("") : `<div class="empty">The store is empty for now.</div>`;
-  } catch { $("store-list").innerHTML = `<div class="empty">Couldn't load the store right now.</div>`; }
-})();
-</script>
+</main>
+<script src="/site.js"></script>
 </body>
 </html>

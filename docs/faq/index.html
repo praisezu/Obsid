@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanta FAQ</title>
+<meta name="description" content="Answers to common questions about Vanta.">
+<link rel="icon" type="image/png" href="/logo.png">
+<meta name="theme-color" content="#9b6bff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <h1>Support &amp; FAQ</h1>
+    <p>Can't find your answer? Ask in our <a data-link="discord" href="#">Discord server</a> or open an issue on <a data-link="github" href="#">GitHub</a>.</p>
+  </div>
+  <div class="section">
+    <details open><summary>Will I get banned for using Vanta?</summary><div>
+      <p>Client mods are against Discord's Terms of Service, so there's always some risk. In practice Discord doesn't go after people for using client mods. Avoid plugins that automate your account, and you'll be fine.</p></div></details>
+    <details><summary>Vanta disappeared after Discord updated</summary><div>
+      <p>Discord replaces its files when it updates. Vanta re-applies itself, and Vanta Guard (ticked by default in the installer) does it within seconds. If it's still gone, run the installer again and click <b>Install</b>.</p></div></details>
+    <details><summary>Discord won't start or keeps crashing</summary><div>
+      <p>If Discord fails to start twice in a row, Vanta starts in safe mode with no plugins or themes, and tells you why. You can also click <b>Start in safe mode</b> in the installer, then turn off the plugin that's causing it.</p></div></details>
+    <details><summary>Can I use BetterDiscord themes?</summary><div>
+      <p>Yes. Open <b>Themes → Online</b> to browse and install them in one click, or drop any <code>.theme.css</code> file into your themes folder. Only one theme is on at a time.</p></div></details>
+    <details><summary>How do I install a plugin that isn't built in?</summary><div>
+      <p>Use the <a href="/store/">Plugin Store</a>, or go to <b>Plugins → Import</b> and pick a file or paste a link. Only install plugins from people you trust.</p></div></details>
+    <details><summary>How do I keep my settings on another PC?</summary><div>
+      <p>Turn on <b>Cloud Sync</b> in Vanta's settings. It saves your settings, Quick CSS, themes and plugins to a private GitHub Gist on your own account.</p></div></details>
+    <details><summary>How do I update Vanta?</summary><div>
+      <p>You don't have to. Vanta checks for updates when Discord starts, installs them, and shows you what changed.</p></div></details>
+    <details><summary>How do I uninstall Vanta?</summary><div>
+      <p>Run the installer and click <b>Uninstall</b>. Discord goes back to normal, and Vanta Guard is removed too.</p></div></details>
+  </div>
+</main>
+<script src="/site.js"></script>
+</body>
+</html>

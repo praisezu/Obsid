@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanta Plugin Store</title>
+<meta name="description" content="Official and community plugins for Vanta.">
+<link rel="icon" type="image/png" href="/logo.png">
+<meta name="theme-color" content="#9b6bff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <h1>Plugin Store</h1>
+    <p>Extra plugins you can install from <b>Settings → Vanta Settings → Plugin Store</b>. Made a plugin? <a data-link="submit" href="#">Submit it</a>.</p>
+  </div>
+  <div class="section">
+    <div class="warn">Only plugins with the green <b>Official</b> badge are made by Vanta. Community plugins are checked before they're listed, but they're written by other people, and an author name that says "Vanta" doesn't make a plugin official.</div>
+    <div class="grid" id="list"><div class="empty">Loading the store…</div></div>
+  </div>
+</main>
+<script src="/site.js"></script>
+<script>
+  Vanta.then(async ({ repo, esc }) => {
+    const list = document.getElementById("list");
+    try {
+      const store = await (await fetch(`https://raw.githubusercontent.com/${repo || "praisezu/Vanta"}/main/store/plugins.json`, { cache: "no-store" })).json();
+      const items = store.plugins || [];
+      list.innerHTML = items.length ? items.map(p => {
+        const official = p.path.startsWith("store/official/");
+        return `<article class="plugin"><h3>${esc(p.name)} <span class="tag ${official ? "ok" : ""}">${official ? "Official" : "Community"}</span></h3><p>${esc(p.description)}</p><p class="by">by ${esc(official ? "Vanta" : p.author)} · v${esc(p.version)}</p></article>`;
+      }).join("") : `<div class="empty">The store is empty for now.</div>`;
+    } catch { list.innerHTML = `<div class="empty">Couldn't load the store right now.</div>`; }
+  });
+</script>
+</body>
+</html>

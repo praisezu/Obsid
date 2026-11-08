@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanta Plugins</title>
+<meta name="description" content="Every plugin built into Vanta.">
+<link rel="icon" type="image/png" href="/logo.png">
+<meta name="theme-color" content="#9b6bff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <h1>Plugins</h1>
+    <p>Vanta comes with <b data-count>100+</b> plugins. They're all off until you switch them on in <b>Settings → Vanta Settings → Plugins</b>.</p>
+  </div>
+  <div class="section">
+    <div class="toolbar" role="search">
+      <input id="q" type="search" placeholder="Search plugins" aria-label="Search plugins">
+      <div class="chips" id="cats"></div>
+    </div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <div class="grid" id="list"><div class="empty">Loading plugins…</div></div>
+  </div>
+</main>
+<script src="/site.js"></script>
+<script>
+  Vanta.then(({ plugins, esc }) => {
+    const $ = id => document.getElementById(id);
+    const cats = ["All", ...[...new Set(plugins.map(p => p.category))].sort()];
+    let cat = new URLSearchParams(location.search).get("category") || "All";
+    if (!cats.includes(cat)) cat = "All";
+    const renderCats = () => {
+      $("cats").innerHTML = cats.map(c => `<button class="chip" type="button" aria-pressed="${c === cat}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+      for (const b of $("cats").querySelectorAll("button")) b.onclick = () => { cat = b.dataset.c; renderCats(); render(); };
+    };
+    const render = () => {
+      const q = $("q").value.trim().toLowerCase();
+      const list = plugins.filter(p => (cat === "All" || p.category === cat) && (!q || (p.name + " " + p.description).toLowerCase().includes(q)));
+      $("count").textContent = `${list.length} of ${plugins.length} plugins`;
+      $("list").innerHTML = list.length
+        ? list.map(p => `<article class="plugin"><h3>${esc(p.name)} <span class="tag">${esc(p.category)}</span></h3><p>${esc(p.description)}</p></article>`).join("")
+        : `<div class="empty">${plugins.length ? "No plugins match." : "Couldn't load the plugin list."}</div>`;
+    };
+    $("q").oninput = render;
+    renderCats(); render();
+  });
+</script>
+</body>
+</html>
