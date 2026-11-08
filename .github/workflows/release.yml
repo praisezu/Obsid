@@ -1,0 +1,63 @@
+# Push a tag like v0.2.0 to publish a release:
+#   npm version 0.2.0 --no-git-tag-version && git commit -am "Release 0.2.0" && git tag v0.2.0 && git push --follow-tags
+# The release gets obsid.tar.gz (what the installer and in-app updater download) and the installers.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+          cache-dependency-path: installer/go.sum
+
+      - name: Check version matches tag
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if [ "v$PKG" != "${GITHUB_REF_NAME}" ]; then
+            echo "package.json version ($PKG) doesn't match tag (${GITHUB_REF_NAME})"; exit 1
+          fi
+
+      - name: Install
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build Obsid
+        run: npm run build:release && npm run package
+
+      - name: Build installers
+        working-directory: installer
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui -X main.Version=$V" -o ../release/ObsidInstaller.exe .
+          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/ObsidInstaller-linux .
+          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/ObsidInstaller-macos .
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release/obsid.tar.gz
+            release/ObsidInstaller.exe
+            release/ObsidInstaller-linux
+            release/ObsidInstaller-macos

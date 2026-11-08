@@ -1,0 +1,135 @@
+import { makeLogger, logger, type Logger } from "./logger";
+import { settings, saveSettings, type PluginSettings } from "./settings";
+import { ready as webpackReady } from "./webpack";
+
+export type OptionType = "boolean" | "string" | "number" | "text" | "select";
+
+export interface PluginOption {
+    type: OptionType;
+    default: any;
+    label?: string;
+    description?: string;
+    placeholder?: string;
+    /** for type "select" */
+    options?: { value: string; label: string }[];
+}
+
+export interface PluginDef {
+    name: string;
+    description?: string;
+    authors?: string[];
+    category?: string;
+    enabledByDefault?: boolean;
+    /** Wait for Discord's modules before start() */
+    needsWebpack?: boolean;
+    /** Toggling needs a reload instead of start()/stop() */
+    restartNeeded?: boolean;
+    options?: Record<string, PluginOption>;
+    start?(): void | Promise<void>;
+    stop?(): void | Promise<void>;
+    onSettingChange?(key: string, value: unknown): void;
+    /** Extra UI shown in the plugin's Settings pop-up */
+    settingsPanel?(): Node;
+    [key: string]: any;
+}
+
+export interface PluginInstance extends PluginDef {
+    started: boolean;
+    error: string | null;
+    /** set for plugins the user imported */
+    file: string | null;
+    logger: Logger;
+    readonly settings: Record<string, any>;
+}
+
+/**
+ * Typed helper for writing plugins. Inside the object, `this` has `settings`, `logger`, `started`.
+ *   export default definePlugin({ name: "Foo", start() { this.logger.log("hi"); } });
+ */
+export function definePlugin<T extends PluginDef>(plugin: T & ThisType<T & PluginInstance>): T {
+    return plugin;
+}
+
+export const plugins = new Map<string, PluginInstance>();
+let booted = false;
+
+const pluginSettings = (name: string): PluginSettings =>
+    (settings.plugins[name] ??= { enabled: false, options: {} });
+
+export const isPluginEnabled = (name: string) => !!settings.plugins[name]?.enabled;
+
+/** Registers a plugin. Re-registering a user plugin from the same file replaces it (= update). */
+export function registerPlugin(def: PluginDef): PluginInstance {
+    if (!def?.name) throw new Error("Plugin needs a name");
+    const p = def as PluginInstance;
+    p.file = (window as any).Obsid?.__currentFile ?? null;
+    const existing = plugins.get(p.name);
+    if (existing) {
+        if (p.file && existing.file === p.file) {
+            stopPlugin(existing);
+            plugins.delete(p.name);
+        } else {
+            logger.warn(`Duplicate plugin ${p.name} ignored`);
+            return existing;
+        }
+    }
+    const s = settings.plugins[p.name] ??= { enabled: !!p.enabledByDefault, options: {} };
+    s.options ??= {};
+    for (const [key, opt] of Object.entries(p.options || {}))
+        if (!(key in s.options)) s.options[key] = opt.default;
+    p.started = false;
+    p.error = null;
+    p.logger = makeLogger(p.name);
+    Object.defineProperty(p, "settings", { configurable: true, get: () => pluginSettings(p.name).options });
+    plugins.set(p.name, p);
+    if (booted) { saveSettings(); if (s.enabled) startPlugin(p); }
+    window.dispatchEvent(new CustomEvent("obsid:plugins"));
+    return p;
+}
+
+export async function startPlugin(p: PluginInstance) {
+    if (p.started) return true;
+    try {
+        if (p.needsWebpack) await webpackReady;
+        await p.start?.();
+        p.started = true;
+        p.error = null;
+        logger.log(`Started ${p.name}`);
+    } catch (e: any) {
+        p.error = String(e?.message || e);
+        logger.error(`Failed to start ${p.name}:`, e);
+    }
+    return p.started;
+}
+
+export async function stopPlugin(p: PluginInstance) {
+    if (!p.started) return true;
+    try { await p.stop?.(); p.started = false; logger.log(`Stopped ${p.name}`); }
+    catch (e) { logger.error(`Failed to stop ${p.name}:`, e); }
+    return !p.started;
+}
+
+export async function setPluginEnabled(name: string, enabled: boolean) {
+    const p = plugins.get(name);
+    if (!p) return;
+    pluginSettings(name).enabled = enabled;
+    saveSettings();
+    if (!p.restartNeeded) await (enabled ? startPlugin(p) : stopPlugin(p));
+}
+
+/** Stops and forgets a plugin (used when deleting an imported plugin). */
+export async function removePlugin(name: string) {
+    const p = plugins.get(name);
+    if (!p) return;
+    await stopPlugin(p);
+    plugins.delete(name);
+    delete settings.plugins[name];
+    saveSettings();
+    window.dispatchEvent(new CustomEvent("obsid:plugins"));
+}
+
+export function startAll() {
+    booted = true;
+    saveSettings();
+    for (const p of plugins.values()) if (pluginSettings(p.name).enabled) startPlugin(p);
+}

@@ -23,7 +23,8 @@ const BRANCH = opt("--branch", "stable").toLowerCase();
 const DRY = flag("--dry-run");
 const MODE = flag("--uninstall") ? "uninstall" : flag("--status") ? "status" : "install";
 
-const MAIN_ENTRY = path.resolve(__dirname, "..", "src", "main", "index.js");
+// Points Discord at this checkout's build output (run `npm run build` first).
+const MAIN_ENTRY = path.resolve(__dirname, "..", "dist", "main.js");
 const MARKER = "// Obsid injection";
 const DEFAULT_INDEX = "module.exports = require('./core.asar');\n";
 
@@ -102,7 +103,7 @@ function main() {
         return;
     }
 
-    if (!fs.existsSync(MAIN_ENTRY)) throw new Error(`Can't find ${MAIN_ENTRY}`);
+    if (!fs.existsSync(MAIN_ENTRY)) throw new Error(`Can't find ${MAIN_ENTRY}. Run \`npm run build\` first.`);
     if (!injected && !DRY) fs.writeFileSync(backup, current);
 
     write(file, [

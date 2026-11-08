@@ -10,3 +10,9 @@ Thumbs.db
 .idea/
 *.log
 *.tmp
+
+# Go build cache (kept off C:)
+.gocache/
+
+# Build output
+release/
