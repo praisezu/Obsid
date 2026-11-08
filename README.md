@@ -2,6 +2,8 @@
 
 # Vanta
 
+**Website:** [tryvanta.dev](https://tryvanta.dev) · **Discord:** [discord.gg/Eh6fSPnznj](https://discord.gg/Eh6fSPnznj)
+
 > Vanta was called **Obsid** until v0.3.0. Existing Obsid installs update to Vanta automatically and keep
 > their settings, plugins and themes. Plugins written as `Obsid.definePlugin(...)` still work.
 
@@ -93,7 +95,8 @@ Press **Ctrl+Shift+O** anywhere to open the same pages in a pop-up without going
 
 `docs/` is the Vanta website (download button, all plugins, the store). It's published by
 `.github/workflows/pages.yml`. One-time setup: repo **Settings → Pages → Source: GitHub Actions**.
-The site will then be at `https://<user>.github.io/<repo>/`.
+It's served at **https://tryvanta.dev** (`docs/CNAME`). The domain also has to be entered under
+Settings → Pages → Custom domain, with DNS records pointing at GitHub Pages.
 
 ## Discord server link
 

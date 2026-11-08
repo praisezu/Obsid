@@ -4,10 +4,12 @@
     "description": "Vanta — a Discord client mod",
     "private": true,
     "license": "MIT",
+    "homepage": "https://tryvanta.dev",
     "repository": "github:praisezu/Vanta",
     "vanta": {
         "repo": "praisezu/Vanta",
-        "discord": ""
+        "discord": "https://discord.gg/Eh6fSPnznj",
+        "website": "https://tryvanta.dev"
     },
     "scripts": {
         "build": "node scripts/build.mjs",

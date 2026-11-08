@@ -37,6 +37,7 @@ ui.registerPage({
                     ),
                 ),
                 h("div", { style: { display: "flex", flexDirection: "column", gap: "6px" } },
+                    __VANTA_WEBSITE__ ? ui.button("Website", { variant: "ghost", icon: "globe", onClick: () => native.openUrl(__VANTA_WEBSITE__) }) : null,
                     ui.button("GitHub", { variant: "ghost", icon: "globe", onClick: () => native.openUrl(`https://github.com/${info.repo}`) }),
                     __VANTA_DISCORD__ ? ui.button("Discord", { variant: "ghost", icon: "orb", onClick: () => native.openUrl(__VANTA_DISCORD__) }) : null),
             ),
