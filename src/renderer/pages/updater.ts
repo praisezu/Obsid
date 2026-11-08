@@ -1,6 +1,7 @@
 import type { UpdateCheck, UpdaterInfo } from "@shared/types";
 import { native, cleanError } from "../core/native";
 import { ui, h, type Child } from "../ui/components";
+import { checkForUpdates } from "../autoUpdate";
 
 interface State {
     info?: UpdaterInfo;
@@ -69,7 +70,8 @@ ui.registerPage({
             }
 
             parts.push(ui.section("Settings", ui.card({ class: "obsid-rows" },
-                ui.settingRow("autoCheckUpdates", "Check for updates on startup", "Shows a notification when a new version is available."))));
+                ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every few hours."),
+                ui.settingRow("autoUpdate", "Install updates automatically", "Download the update, restart Discord, then tell you which version you're on. Waits until you're out of a voice call."))));
             body.replaceChildren(...(parts.flat(Infinity as 1) as Node[]));
         };
 
@@ -81,12 +83,11 @@ ui.registerPage({
             draw();
         }
 
+        // Same flow as the automatic updater: install, restart Discord, then show the new version.
         async function apply() {
-            try {
-                const r = await native.updaterApply();
-                if (!r.ok) st.error = "Update failed: " + r.output;
-                else { st.applied = r.output; st.check = undefined; st.info = await native.updaterInfo(); }
-            } catch (e) { st.error = cleanError(e); }
+            await checkForUpdates({ manual: true });
+            st.check = undefined;
+            st.info = await native.updaterInfo().catch(() => st.info);
             draw();
         }
 
@@ -95,12 +96,3 @@ ui.registerPage({
         return root;
     },
 });
-
-/** Startup check (when "Check for updates on startup" is on). */
-export async function startupUpdateCheck() {
-    try {
-        const r = await native.updaterCheck();
-        if (r.release) ui.toast(`Obsid ${r.release.tag} is available. Open Settings › Updater.`);
-        else if (r.updates?.length) ui.toast(`Obsid update available (${r.updates.length} new). Open Settings › Updater.`);
-    } catch { }
-}

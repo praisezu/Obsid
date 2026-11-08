@@ -50,6 +50,26 @@ export function definePlugin<T extends PluginDef>(plugin: T & ThisType<T & Plugi
     return plugin;
 }
 
+/**
+ * A plugin that's only CSS. Costs nothing while running: one <style> tag, rebuilt when options change.
+ *   export default cssPlugin({ name, description, options, css: s => `...${s.color}...` });
+ */
+export function cssPlugin(def: PluginDef & { css: string | ((settings: Record<string, any>) => string) }): PluginDef {
+    const id = "obsid-css-" + def.name.replace(/\W+/g, "-").toLowerCase();
+    const render = (self: PluginInstance) => typeof def.css === "function" ? def.css(self.settings) : def.css;
+    let el: HTMLStyleElement | null = null;
+    const apply = (self: PluginInstance) => {
+        el ??= document.head.appendChild(Object.assign(document.createElement("style"), { id }));
+        el.textContent = render(self);
+    };
+    return {
+        ...def,
+        start() { apply(this as PluginInstance); },
+        stop() { el?.remove(); el = null; },
+        onSettingChange() { if ((this as PluginInstance).started) apply(this as PluginInstance); },
+    };
+}
+
 export const plugins = new Map<string, PluginInstance>();
 let booted = false;
 

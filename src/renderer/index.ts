@@ -22,7 +22,8 @@ import { ui } from "./ui/components";
 import "./pages/obsid";
 import "./pages/plugins";
 import "./pages/themes";
-import { startupUpdateCheck } from "./pages/updater";
+import "./pages/updater";
+import { startAutoUpdate, checkForUpdates } from "./autoUpdate";
 import "./pages/backup";
 import { settingsSidebar } from "./settingsSidebar";
 import { quickPanel } from "./quickPanel";
@@ -33,7 +34,7 @@ const w = window as any;
 if (w.Obsid) {
     logger.warn("Obsid is already loaded; skipping");
 } else {
-    for (const p of builtinPlugins) {
+    for (const p of builtinPlugins.flat()) {
         try { registerPlugin(p); } catch (e) { logger.error("Bad plugin", p?.name, e); }
     }
 
@@ -47,7 +48,7 @@ if (w.Obsid) {
         plugins,
         /** For imported .js plugins: Obsid.definePlugin({...}) registers immediately. */
         definePlugin: registerPlugin,
-        removePlugin, isPluginEnabled, setPluginEnabled,
+        removePlugin, isPluginEnabled, setPluginEnabled, checkForUpdates,
         ui: { ...ui, open: quickPanel.show, close: quickPanel.hide, settingsSidebar },
         __currentFile: null as string | null,
         /** Called by the preload after imported plugins have loaded. */
@@ -58,7 +59,7 @@ if (w.Obsid) {
             webpack.ready.then(() => {
                 if (settings.obsid.startupToast)
                     ui.toast(`Obsid ${__OBSID_VERSION__} loaded${settings.obsid.quickPanel ? " · Ctrl+Shift+O for settings" : ""}`);
-                if (settings.obsid.autoCheckUpdates) setTimeout(startupUpdateCheck, 8000);
+                startAutoUpdate();
             });
         },
     };

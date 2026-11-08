@@ -17,7 +17,7 @@ ui.registerPage({
 
         const body = st.tab === "local" ? localTab() : st.tab === "online" ? onlineTab() : quickCssTab(ctx);
         return h("div", { class: "obsid-page" },
-            ui.pageHead("Themes", "Restyle Discord with CSS. BetterDiscord themes (.theme.css) work too."),
+            ui.pageHead("Themes", "Restyle Discord with CSS. BetterDiscord themes (.theme.css) work too. One theme is on at a time; Quick CSS always applies on top."),
             ui.tabs([["local", "Local themes"], ["online", "Online themes"], ["quickcss", "Quick CSS"]], st.tab,
                 id => { st.tab = id; ctx.rerender(); }),
             body,

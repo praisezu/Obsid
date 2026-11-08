@@ -27,7 +27,7 @@ ui.registerPage({
                 ui.logo(64),
                 h("div", { style: { flex: "1", minWidth: "0" } },
                     h("div", { class: "obsid-hero-title" }, "Obsid"),
-                    h("div", { class: "obsid-hero-sub" }, `v${info.version} · Discord ${info.discord} · Electron ${info.electron}`),
+                    h("div", { class: "obsid-hero-sub" }, `v${info.version}`),
                     h("div", { class: "obsid-stats" },
                         h("span", { class: "obsid-stat" }, h("b", {}, String(running)), ` of ${all.length} plugins running`),
                         h("span", { class: "obsid-stat" }, h("b", {}, String(themes.activeCount)), " themes on"),
@@ -50,7 +50,8 @@ ui.registerPage({
                 ui.card({ class: "obsid-rows" },
                     ui.settingRow("startupToast", "Startup notification", "Show a small \"Obsid loaded\" message when Discord starts."),
                     ui.settingRow("quickPanel", "Quick panel shortcut", "Press Ctrl+Shift+O anywhere in Discord to open these settings in a pop-up."),
-                    ui.settingRow("autoCheckUpdates", "Check for updates on startup", "Let you know when a newer version of Obsid is out."),
+                    ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every few hours."),
+                    ui.settingRow("autoUpdate", "Install updates automatically", "Download the update, restart Discord, then tell you which version you're on. Waits until you're out of a voice call."),
                 ),
             ),
 

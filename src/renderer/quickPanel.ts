@@ -59,6 +59,7 @@ export function show(pageId = lastPage) {
                 h("div", { class: "oq-close" }, ui.button("", { variant: "ghost", icon: "close", title: "Close", onClick: hide })),
                 scroll)));
     root = el;
+    el.setAttribute("data-no-focus-lock", "true"); // stay usable if a Discord modal is open underneath
     // Keep Discord from reacting to keys typed inside the panel.
     for (const t of ["keydown", "keypress", "keyup", "paste"])
         el.addEventListener(t, e => { if ((e as KeyboardEvent).key !== "Escape") e.stopPropagation(); });

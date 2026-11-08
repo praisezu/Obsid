@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" width="128" alt="Obsid logo"></p>
+
 # Obsid
 
 A Discord client mod in the spirit of Vencord, written in TypeScript. It has built-in plugins,
@@ -41,18 +43,15 @@ Main-process and preload changes need a full Discord restart; renderer changes o
 
 ### Releasing
 
-Bump the version, tag it, push. GitHub Actions builds everything and publishes the release
-(`obsid.tar.gz` plus the installers for Windows, Linux and macOS):
+Bump the version, commit, then push an annotated tag. Its message becomes the release notes, so keep
+it short. GitHub Actions builds everything and publishes `obsid.tar.gz` plus the installers:
 
 ```bash
-npm version 0.2.0 --no-git-tag-version
-git commit -am "Release 0.2.0"
-git tag v0.2.0
+npm version 0.2.1 --no-git-tag-version
+git commit -am "Obsid 0.2.1"
+git tag -a v0.2.1 -m "Obsid 0.2.1" -m "- Fixed X" -m "- Added Y"
 git push --follow-tags
 ```
-
-> Client mods are against Discord's Terms of Service. Mods like this one are widely used, but use it
-> at your own risk, and avoid plugins that automate your account (self-botting).
 
 ## Settings
 
@@ -84,35 +83,25 @@ in `%APPDATA%\Obsid\plugins\`.
 
 Try it with [`examples/HelloObsid.js`](examples/HelloObsid.js).
 
-## Built-in plugins
+## Built-in plugins (97)
 
-| Plugin | Category | What it does |
-| --- | --- | --- |
-| NoTrack | Privacy | Blocks analytics (`/science`, `/metrics`) and Sentry crash reporting. **On by default** |
-| ClearURLs | Privacy | Strips `utm_*`, `fbclid`, `si` and other trackers from links you send. **On by default** |
-| SilentTyping | Privacy | Hides your typing indicator |
-| AnonymiseFileNames | Privacy | Renames uploads to random names (keeps the extension and `SPOILER_`) |
-| BlurMedia | Privacy | Blurs chat images and videos until hovered, good for screen sharing |
-| NoReplyMention | Chat | Never pings the person you reply to |
-| SilentMessages | Chat | Sends messages as `@silent` (optionally not in DMs) |
-| TextReplace | Chat | Your own find → replace rules (regex supported) applied when you send |
-| TimestampShortcuts | Chat | `{now}`, `{in 2h}`, `{at 9pm}`, `{tomorrow 18:00}` become Discord timestamps |
-| MessageLogger | Chat | Keeps deleted and edited messages; view the log from its Settings |
-| KeywordAlerts | Chat | Notifies you when any message contains your keywords |
-| CharacterCounter | Chat | Shows `123 / 2000` above the message box |
-| ChatBarCleanup | Appearance | Hides chat bar buttons: gift, stickers, apps, GIF, emoji, translate |
-| HideUpsells | Appearance | Hides Nitro, Shop and Quests links and the gift button |
-| HideProfileFlair | Appearance | Hides avatar decorations, server tags, profile effects |
-| CustomFont | Appearance | Any installed font for text and code, plus a chat text size |
-| FocusMode | Appearance | Ctrl+Alt+F hides the server, channel and member lists |
-| ViewFullImages | Utility | Ctrl+click an avatar, icon, emoji or image to open it at full size |
-| ReverseImageSearch | Utility | Alt+Shift+click an image to search Google Lens, Bing, Yandex or TinEye |
-| CopyCodeBlocks | Utility | Copy button on code blocks |
-| AlwaysTrustLinks | Utility | Skips the "Leaving Discord" prompt (English Discord) |
-| NoDevToolsWarning | Developer | Removes the "Hold Up!" console spam. **On by default** |
-| ConsoleShortcuts | Developer | `wp`, `findByProps`, `findByCode`, `common` in the DevTools console |
+Every plugin is off until you turn it on (except NoTrack, ClearURLs and NoDevToolsWarning), and a
+plugin that's off costs nothing. Most appearance plugins are pure CSS, and plugins that react to
+new messages share one page watcher, so turning many on doesn't slow Discord down.
 
-A built-in **Obsidian** theme (violet-black) is copied into your themes folder on first run.
+| Category | Plugins |
+| --- | --- |
+| Privacy | NoTrack, ClearURLs, SilentTyping, AnonymiseFileNames, BlurMedia, BlurNames |
+| Chat | MessageLogger (keeps deleted messages in chat, shows edit history), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
+| Appearance | TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
+| Utility | ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
+| Developer | ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
+
+Each plugin's description and options are in **Settings → Obsid Settings → Plugins**. Plugins tagged
+**Restart** ask whether to restart Discord when you switch them.
+
+A built-in theme ships in `themes/` (Obsidian). Only one theme is on at a time; Quick CSS layers
+on top. Themes that `@import` their CSS from a website (most BetterDiscord themes) work.
 
 ## How it works
 

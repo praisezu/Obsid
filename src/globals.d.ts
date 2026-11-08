@@ -4,6 +4,7 @@ declare const __OBSID_REPO__: string;
 
 declare module "~plugins" {
     import type { PluginDef } from "./renderer/core/plugins";
-    const plugins: PluginDef[];
+    /** Each plugin file exports one plugin, or an array of small related ones. */
+    const plugins: (PluginDef | PluginDef[])[];
     export default plugins;
 }

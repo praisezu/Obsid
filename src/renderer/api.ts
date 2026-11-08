@@ -3,7 +3,10 @@
  *   import { definePlugin, net, ui, common, patcher, webpack } from "@api";
  * The same things are on window.Obsid for imported (.js) plugins.
  */
-export { definePlugin, plugins, isPluginEnabled, setPluginEnabled, type PluginDef, type PluginInstance, type PluginOption } from "./core/plugins";
+export { watchElements } from "./core/dom";
+export { onFlux } from "./core/flux";
+export { messageFromElement, messageIdsFromElement, messageLink, copyText, SEND_URL, SEND_OR_EDIT_URL } from "./core/messages";
+export { definePlugin, cssPlugin, plugins, isPluginEnabled, setPluginEnabled, type PluginDef, type PluginInstance, type PluginOption } from "./core/plugins";
 export { webpack, filters } from "./core/webpack";
 export { patcher } from "./core/patcher";
 export { net, type NetRequest } from "./core/net";

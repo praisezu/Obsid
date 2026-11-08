@@ -73,11 +73,28 @@ export async function updaterCheck(root: string, version: string): Promise<Updat
     return { ...info, updates };
 }
 
-export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string }> {
+/** Runs `npm run build` in a dev checkout so pulled source changes take effect. */
+function npmBuild(root: string) {
+    return new Promise<{ ok: boolean; out: string }>(resolve => {
+        execFile(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "build"],
+            { cwd: root, windowsHide: true, timeout: 180000, shell: process.platform === "win32" },
+            (err, stdout, stderr) => resolve({ ok: !err, out: String(err ? stderr || err.message : stdout).trim() }));
+    });
+}
+
+const readVersion = (root: string, fallback: string) => {
+    try { return JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version || fallback; }
+    catch { return fallback; }
+};
+
+export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string }> {
     if (isGitCheckout(root)) {
         const r = await git(root, "pull", "--ff-only");
         if (!r.ok) return { ok: false, output: r.err };
-        return { ok: true, output: r.out + "\nRun `npm run build`, then restart Discord." };
+        const b = await npmBuild(root);
+        if (!b.ok) return { ok: false, output: "Pulled the update, but `npm run build` failed:\n" + b.out };
+        const commit = (await git(root, "log", "-1", "--format=%h")).out;
+        return { ok: true, output: "Updated and rebuilt. Restart Discord to finish.", version: `${readVersion(root, version)} (${commit})` };
     }
     const r = await latestRelease();
     if (!r?.download || compareVersions(r.tag, version) <= 0) return { ok: false, output: "No newer release found." };
@@ -90,7 +107,7 @@ export async function updaterApply(root: string, version: string): Promise<{ ok:
         fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.writeFileSync(dest, f.data);
     }
-    return { ok: true, output: `Updated to ${r.tag}. Restart Discord to finish.` };
+    return { ok: true, output: `Updated to ${r.tag}. Restart Discord to finish.`, version: r.tag.replace(/^v/i, "") };
 }
 
 /** Minimal ustar/GNU tar reader for regular files. Rejects absolute paths and "..". */

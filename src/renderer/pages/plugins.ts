@@ -1,6 +1,6 @@
 import { native } from "../core/native";
 import { plugins, isPluginEnabled, setPluginEnabled, type PluginInstance } from "../core/plugins";
-import { saveSettings } from "../core/settings";
+import { saveSettings, saveSettingsNow } from "../core/settings";
 import { pluginStore } from "../pluginStore";
 import { ui, h } from "../ui/components";
 
@@ -95,7 +95,7 @@ function pluginCard(p: PluginInstance, rerender: () => void) {
     const tags: Node[] = [];
     if (p.file) tags.push(ui.tag("Imported", "ok", p.file));
     if (p.error) tags.push(ui.tag("Error", "danger", p.error));
-    if (p.restartNeeded) tags.push(ui.tag("Restart", "warn", "Needs a reload to apply"));
+    if (p.restartNeeded) tags.push(ui.tag("Restart", "warn", "Turning this on or off needs a Discord restart"));
     if (p.needsWebpack) tags.push(ui.tag("Internals", "", "Hooks into Discord's code. May break after Discord updates."));
 
     return ui.card({ class: "obsid-item" + (on ? " on" : "") },
@@ -105,7 +105,7 @@ function pluginCard(p: PluginInstance, rerender: () => void) {
                 checked: on, label: `Enable ${p.name}`,
                 onChange: async v => {
                     await setPluginEnabled(p.name, v);
-                    if (p.restartNeeded) ui.toast(`${p.name} will apply after you reload Discord.`);
+                    if (p.restartNeeded) await promptRestart(p.name, v);
                     else if (p.error) ui.toast(`${p.name} failed to start: ${p.error}`, { type: "danger" });
                     rerender();
                 },
@@ -121,6 +121,19 @@ function pluginCard(p: PluginInstance, rerender: () => void) {
             hasOptions ? ui.button("Settings", { small: true, variant: "ghost", icon: "sliders", onClick: () => openOptions(p) }) : null,
         ),
     );
+}
+
+/** For plugins marked restartNeeded: ask to restart Discord so the change takes effect. */
+export async function promptRestart(name: string, enabled: boolean) {
+    const ok = await ui.confirm({
+        title: "Restart Discord?",
+        body: `${name} was turned ${enabled ? "on" : "off"}, but it needs a restart of Discord to take effect. Restart Discord now?`,
+        confirmText: "Restart now",
+        cancelText: "Later",
+    });
+    if (!ok) { ui.toast(`${name} will take effect the next time Discord restarts.`); return; }
+    await saveSettingsNow();
+    native.relaunch();
 }
 
 function openOptions(p: PluginInstance) {

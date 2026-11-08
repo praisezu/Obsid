@@ -39,12 +39,23 @@ export const themes = {
     },
 
     isEnabled: (file: string) => cfg.enabled.includes(file),
+    /** Only one theme can be on at a time: turning one on turns every other theme off. */
     setEnabled(file: string, on: boolean) {
-        cfg.enabled = cfg.enabled.filter(f => f !== file);
-        if (on) cfg.enabled.push(file);
+        if (on) {
+            cfg.enabled = [file];
+            for (const o of cfg.online) o.enabled = false;
+        } else {
+            cfg.enabled = cfg.enabled.filter(f => f !== file);
+        }
         saveSettings();
         this.apply();
         emit();
+    },
+    /** The theme that's on right now, if any. */
+    get active(): { kind: "local" | "online"; id: string } | null {
+        if (cfg.enabled[0]) return { kind: "local", id: cfg.enabled[0] };
+        const o = cfg.online.find(x => x.enabled);
+        return o ? { kind: "online", id: o.url } : null;
     },
 
     async addOnline(rawUrl: string) {
@@ -54,6 +65,9 @@ export const themes = {
         await this.loadOnline(url, true);
         const state = this.online.get(url)!;
         if (state.error) { this.online.delete(url); throw new Error(state.error); }
+        // A newly added theme becomes the active one.
+        cfg.enabled = [];
+        for (const o of cfg.online) o.enabled = false;
         cfg.online.push({ url, enabled: true });
         saveSettings();
         this.apply();
@@ -69,6 +83,10 @@ export const themes = {
     setOnlineEnabled(url: string, on: boolean) {
         const o = cfg.online.find(x => x.url === url);
         if (!o) return;
+        if (on) {
+            cfg.enabled = [];
+            for (const other of cfg.online) other.enabled = false;
+        }
         o.enabled = on;
         saveSettings();
         if (on && !this.online.get(url)?.css) this.loadOnline(url);
@@ -123,6 +141,15 @@ export const themes = {
         return this.local.filter(t => this.isEnabled(t.file)).length + cfg.online.filter(o => o.enabled).length;
     },
 };
+
+// Settings from older versions may have several themes on: keep only the first.
+if (cfg.enabled.length > 1 || (cfg.enabled.length && cfg.online.some(o => o.enabled)) || cfg.online.filter(o => o.enabled).length > 1) {
+    const keepLocal = cfg.enabled[0];
+    cfg.enabled = keepLocal ? [keepLocal] : [];
+    let kept = !!keepLocal;
+    for (const o of cfg.online) { if (o.enabled && !kept) kept = true; else o.enabled = false; }
+    saveSettings();
+}
 
 native.onThemesChange(() => themes.refreshLocal());
 themes.refreshLocal();

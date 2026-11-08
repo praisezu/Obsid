@@ -92,6 +92,9 @@ export interface NativeAPI {
     trashTheme(file: string): Promise<void>;
     fetchTheme(url: string): Promise<string>;
 
+    /** GET an https URL from the main process (not subject to Discord's CSP). */
+    fetchText(url: string): Promise<string>;
+
     pluginPickFile(): Promise<FetchedPlugin | null>;
     pluginFetch(url: string): Promise<FetchedPlugin>;
     pluginInstall(fileName: string, code: string): Promise<string>;
@@ -102,7 +105,7 @@ export interface NativeAPI {
 
     updaterInfo(): Promise<UpdaterInfo>;
     updaterCheck(): Promise<UpdateCheck>;
-    updaterApply(): Promise<{ ok: boolean; output: string }>;
+    updaterApply(): Promise<{ ok: boolean; output: string; version?: string }>;
 
     backupExport(data: BackupData): Promise<string | null>;
     backupImport(): Promise<BackupData | null>;

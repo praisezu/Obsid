@@ -1,5 +1,6 @@
-# Push a tag like v0.2.0 to publish a release:
-#   npm version 0.2.0 --no-git-tag-version && git commit -am "Release 0.2.0" && git tag v0.2.0 && git push --follow-tags
+# Push a version tag to publish a release (the tag message becomes the release notes):
+#   npm version 0.2.1 --no-git-tag-version && git commit -am "Obsid 0.2.1"
+#   git tag -a v0.2.1 -m "Obsid 0.2.1" -m "- short list of changes" && git push --follow-tags
 # The release gets obsid.tar.gz (what the installer and in-app updater download) and the installers.
 name: Release
 
@@ -15,6 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The release description is the (short) message of the annotated tag:
+      #   git tag -a v0.2.0 -m "Obsid 0.2.0" -m "- what changed"
+      - name: Release notes from tag
+        run: |
+          git fetch --tags --force
+          git tag -l --format='%(contents:body)' "$GITHUB_REF_NAME" > notes.md
+          [ -s notes.md ] || echo "Obsid ${GITHUB_REF_NAME#v}" > notes.md
 
       - uses: actions/setup-node@v4
         with:
@@ -55,7 +66,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: Obsid ${{ github.ref_name }}
+          body_path: notes.md
           files: |
             release/obsid.tar.gz
             release/ObsidInstaller.exe

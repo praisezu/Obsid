@@ -7,6 +7,7 @@ import { logger } from "../core/logger";
 import { onDomReady } from "../core/utils";
 import { CSS } from "./styles";
 import { ICONS } from "./icons";
+import { logoCells, LOGO_WIDTH, LOGO_HEIGHT } from "@shared/logo";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -29,8 +30,28 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props?: Props, 
 }
 
 export function ensureStyle() {
+    installFocusGuard();
     if (document.getElementById("obsid-ui-style")) return;
     document.head.append(h("style", { id: "obsid-ui-style" }, CSS));
+}
+
+/**
+ * Discord's modals (User Settings, etc.) trap focus with a focus-lock that listens for focus events
+ * on the document. Our pop-ups live outside that lock, so it would yank focus out of our inputs and
+ * dropdowns. Catching focus events from our own UI at the window (which runs before the document)
+ * keeps them from ever reaching the lock.
+ */
+let focusGuard = false;
+function installFocusGuard() {
+    if (focusGuard) return;
+    focusGuard = true;
+    const ours = (n: EventTarget | null) => n instanceof Element && !!n.closest(".obsid-modal-back, #obsid-quick, #obsid-toasts");
+    for (const type of ["focusin", "focusout"]) {
+        window.addEventListener(type, e => {
+            const fe = e as FocusEvent;
+            if (ours(fe.target) || (type === "focusout" && ours(fe.relatedTarget))) e.stopImmediatePropagation();
+        }, true);
+    }
 }
 
 /* ----------------------------------------------------------------- icons */
@@ -52,22 +73,25 @@ export function icon(name: string, size = 20): SVGSVGElement {
     return svg;
 }
 
-/** Full-colour Obsid gem. */
+/** The Obsid pixel logo (white O, gradient b, a gem perched on top). */
 export function logo(size = 48): SVGSVGElement {
     const svg = document.createElementNS(SVG_NS, "svg");
-    svg.setAttribute("viewBox", "0 0 32 32");
+    // Square viewBox with the logo centred
+    const side = Math.max(LOGO_WIDTH, LOGO_HEIGHT) + 2;
+    const ox = (side - LOGO_WIDTH) / 2, oy = (side - LOGO_HEIGHT) / 2;
+    svg.setAttribute("viewBox", `0 0 ${side} ${side}`);
     svg.setAttribute("width", String(size));
     svg.setAttribute("height", String(size));
     svg.setAttribute("aria-hidden", "true");
-    const facets: [string, string][] = [
-        ["16,2 28,11 23,30 9,30 4,11", "#2a1f3d"], ["16,2 28,11 16,15", "#a78bfa"], ["16,2 16,15 4,11", "#7c3aed"],
-        ["4,11 16,15 9,30", "#4c1d95"], ["28,11 23,30 16,15", "#5b21b6"], ["16,15 23,30 9,30", "#3b1a6e"],
-    ];
-    for (const [points, fill] of facets) {
-        const p = document.createElementNS(SVG_NS, "polygon");
-        p.setAttribute("points", points);
-        p.setAttribute("fill", fill);
-        svg.append(p);
+    svg.setAttribute("shape-rendering", "crispEdges");
+    for (const c of logoCells()) {
+        const r = document.createElementNS(SVG_NS, "rect");
+        r.setAttribute("x", String(c.x + ox));
+        r.setAttribute("y", String(c.y + oy));
+        r.setAttribute("width", "1.02"); // tiny overlap avoids hairline gaps when scaled
+        r.setAttribute("height", "1.02");
+        r.setAttribute("fill", c.color);
+        svg.append(r);
     }
     return svg;
 }
@@ -126,7 +150,7 @@ export function row({ title, description, control }: { title: Child; description
 }
 
 /** A settings row bound to a boolean in settings.obsid */
-export function settingRow(key: keyof typeof settings.obsid, title: string, description: string, onChange?: (v: boolean) => void) {
+export function settingRow(key: "startupToast" | "quickPanel" | "autoCheckUpdates" | "autoUpdate", title: string, description: string, onChange?: (v: boolean) => void) {
     return row({
         title, description,
         control: switchEl({
@@ -198,6 +222,9 @@ export function modal({ title, body, buttons = [], onClose }: { title: string; b
             h("div", { class: "obsid-modal-head" }, title),
             h("div", { class: "obsid-modal-body" }, body),
             buttons.length ? foot : null));
+    // Discord's own modals (e.g. User Settings) lock focus inside themselves, which would make our
+    // inputs and dropdowns unclickable. Their focus-lock library skips elements with this attribute.
+    back.setAttribute("data-no-focus-lock", "true");
     for (const t of ["keydown", "keypress", "keyup"])
         back.addEventListener(t, e => { if ((e as KeyboardEvent).key !== "Escape") e.stopPropagation(); });
     document.addEventListener("keydown", onKey, true);
@@ -206,12 +233,12 @@ export function modal({ title, body, buttons = [], onClose }: { title: string; b
     return { close, el: back };
 }
 
-export function confirm({ title, body, confirmText = "Confirm", danger }: { title: string; body: Child; confirmText?: string; danger?: boolean }) {
+export function confirm({ title, body, confirmText = "Confirm", cancelText = "Cancel", danger }: { title: string; body: Child; confirmText?: string; cancelText?: string; danger?: boolean }) {
     return new Promise<boolean>(resolve => {
         modal({
             title, body,
             buttons: [
-                { text: "Cancel", variant: "ghost", value: false },
+                { text: cancelText, variant: "ghost", value: false },
                 { text: confirmText, variant: danger ? "danger solid" : "primary", value: true },
             ],
             onClose: r => resolve(r === true),

@@ -22,6 +22,8 @@ const native: NativeAPI = {
     trashTheme: file => invoke("trash-theme", file),
     fetchTheme: url => invoke("fetch-theme", url),
 
+    fetchText: url => invoke("fetch-text", url),
+
     pluginPickFile: () => invoke("plugin-pick-file"),
     pluginFetch: url => invoke("plugin-fetch", url),
     pluginInstall: (fileName, code) => invoke("plugin-install", fileName, code),

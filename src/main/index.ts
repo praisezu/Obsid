@@ -13,6 +13,7 @@ import * as path from "node:path";
 import type { BackupData, BackupParts, RendererScript, ThemeFile } from "@shared/types";
 import { parseMeta, safeName } from "./util";
 import { updaterInfo, updaterCheck, updaterApply } from "./updater";
+import { installCspPatch } from "./csp";
 
 const g = globalThis as any;
 if (!g.__OBSID_LOADED__) {
@@ -33,6 +34,12 @@ function main() {
     const MAX_PLUGIN_SIZE = 2 * 1024 * 1024;
 
     const log = (...a: unknown[]) => console.log("[Obsid]", ...a);
+
+    // Let themes load CSS/fonts/images from other sites (Discord's CSP blocks @import otherwise).
+    app.whenReady().then(() => {
+        try { installCspPatch(); log("Theme content policy patch installed"); }
+        catch (e) { console.error("[Obsid] couldn't patch the content security policy:", e); }
+    });
 
     for (const d of [USER_PLUGINS_DIR, THEMES_DIR]) fs.mkdirSync(d, { recursive: true });
     if (!fs.existsSync(QUICKCSS_FILE)) fs.writeFileSync(QUICKCSS_FILE, "/* Obsid Quick CSS */\n");
@@ -145,6 +152,16 @@ function main() {
         return text;
     });
 
+    // Plain GET for plugins (Discord's CSP blocks most direct requests from the page).
+    handle("fetch-text", async (_, url) => {
+        if (!/^https:\/\/\S+$/i.test(String(url))) throw new Error("Only https:// URLs are allowed");
+        const res = await fetch(String(url), { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 Obsid" } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        if (text.length > 2 * 1024 * 1024) throw new Error("Response is larger than 2 MB");
+        return text;
+    });
+
     // plugin import
     const pluginFileName = (n: string) => safeName(String(n).replace(/[^\w.\-]+/g, "_"), ".js");
     handle("plugin-pick-file", async e => {
@@ -249,6 +266,16 @@ function main() {
 
     class BrowserWindow extends electron.BrowserWindow {
         constructor(options: Electron.BrowserWindowConstructorOptions = {}) {
+            // TransparentWindow plugin: window options can only be set at creation (hence its restart prompt).
+            let material: string | null = null;
+            if (shouldInject(options)) {
+                const tw = readSettings()?.plugins?.TransparentWindow;
+                if (tw?.enabled) {
+                    options.transparent = true;
+                    options.backgroundColor = "#00000000";
+                    material = String(tw.options?.material ?? "acrylic");
+                }
+            }
             if (shouldInject(options)) {
                 const wp = options.webPreferences!;
                 const original = wp.preload!;
@@ -258,6 +285,9 @@ function main() {
                 log("Injecting into window, original preload:", original);
             }
             super(options);
+            if (material && material !== "none" && process.platform === "win32" && typeof (this as any).setBackgroundMaterial === "function") {
+                try { (this as any).setBackgroundMaterial(material); } catch (e) { log("setBackgroundMaterial failed:", e); }
+            }
         }
     }
 

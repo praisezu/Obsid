@@ -1,0 +1,40 @@
+{
+    "about": "Obsid pixel logo. Each character is one pixel: W = white O, G = gradient b, L/M/D = gem light/mid/dark, S = sparkle. Regenerate icons with: node scripts/make-logo.mjs",
+    "rows": [
+        "............LLL.....S......",
+        "...........LLMMD...SSS.....",
+        "..........MMMMDDD...S......",
+        "...........MDDDD.......S...",
+        "............DDD............",
+        "............GGG............",
+        "............GGG............",
+        "..WWWWWWWW..GGG............",
+        ".WWWWWWWWWW.GGG............",
+        "WWWWWWWWWWW.GGG............",
+        "WWWW....WWW.GGG............",
+        "WWW......WW.GGG............",
+        "WWW......WW.GGGGGGGGGGGG...",
+        "WWW......WW.GGGGGGGGGGGGG..",
+        "WWW......WW.GGGGGGGGGGGGGG.",
+        "WWW......WW.GGG.......GGGG.",
+        "WWW......WW.GGG........GGG.",
+        "WWW......WW.GGG........GGG.",
+        "WWWW....WWW.GGG........GGG.",
+        "WWWWWWWWWWW.GGG.......GGGG.",
+        ".WWWWWWWWWW.GGGGGGGGGGGGGG.",
+        "..WWWWWWWW..GGGGGGGGGGGGG..",
+        "............GGGGGGGGGGGG..."
+    ],
+    "colors": {
+        "W": "#f5f3ff",
+        "L": "#f5f3ff",
+        "M": "#c4b5fd",
+        "D": "#7c3aed",
+        "S": "#e9d5ff"
+    },
+    "gradient": {
+        "char": "G",
+        "from": "#f0abfc",
+        "to": "#6d28d9"
+    }
+}
