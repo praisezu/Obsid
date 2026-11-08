@@ -10,7 +10,7 @@ themes, a settings section inside Discord, and a way to import plugins from a fi
 
 ## Install
 
-Download **`VantaInstaller.exe`** from the [latest release](https://github.com/praisezu/Obsid/releases/latest)
+Download **`VantaInstaller.exe`** from the [latest release](https://github.com/praisezu/Vanta/releases/latest)
 and run it. It finds every Discord install (Stable, PTB, Canary, Development) and has
 **Install / Repair** and **Uninstall** buttons. It downloads Vanta into `%APPDATA%\Vanta\app`,
 closes and reopens Discord for you, and in-app updates come from the same releases.

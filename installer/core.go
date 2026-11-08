@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	Repo      = "praisezu/Obsid"
+	Repo      = "praisezu/Vanta"
 	AssetName = "vanta.tar.gz"
 	Marker    = "// Vanta injection"
 	// Vanta used to be called Obsid; installs made by Obsid use this marker.

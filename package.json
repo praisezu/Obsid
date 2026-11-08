@@ -4,9 +4,9 @@
     "description": "Vanta — a Discord client mod",
     "private": true,
     "license": "MIT",
-    "repository": "github:praisezu/Obsid",
+    "repository": "github:praisezu/Vanta",
     "vanta": {
-        "repo": "praisezu/Obsid"
+        "repo": "praisezu/Vanta"
     },
     "scripts": {
         "build": "node scripts/build.mjs",
