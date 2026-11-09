@@ -32,7 +32,7 @@ const lie = (file: string, n: number, fps: number): Clip =>
 
 const CLIPS = {
     idle: st("idle", 60, 24, { w: 116, ax: 47, flips: true }),
-    walk: st("walk", 12, 12),
+    walk: st("walk", 12, 15),
     glitch: st("glitch", 10, 15),
     grin: st("grin", 16, 8),
     dance: st("dance", 16, 16),
@@ -68,6 +68,10 @@ const LEDGES = [
 interface Ledge { el: Element | null; left: number; right: number; top: number }
 
 const GRAVITY = 2600;
+/** Her voice tuning, from Capri Desktop's defaults: her own style's speed, then +2 semitones, 1.2x, 80% volume */
+const VOICE = { styleSpeed: 1.1, speed: 1.2, pitchRatio: 2 ** (2 / 12), volume: 0.8 };
+/** How far (in walk-sheet pixels) one full walk cycle carries her: two steps of ~33 px, measured from the sheet */
+const WALK_STRIDE = 66;
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(weighted: [T, number][]): T => {
     let r = Math.random() * weighted.reduce((s, [, w]) => s + w, 0);
@@ -325,7 +329,8 @@ export default definePlugin({
             else {
                 this.y = g.top;
                 if (this.action === "walk" && this.pose === "stand") {
-                    const speed = this.S() * 0.42;
+                    // Matched to her stride: her feet land WALK_STRIDE sheet pixels further on each walk cycle
+                    const w = CLIPS.walk, speed = WALK_STRIDE * this.k(w) * w.fps / w.n;
                     const step = Math.sign(this.target - this.x) * speed * dt;
                     if (Math.abs(this.target - this.x) <= Math.abs(step)) { this.x = this.target; this.save(); this.standIdle(); }
                     else this.x += step;
@@ -381,16 +386,43 @@ export default definePlugin({
         let i = 0;
         this.typeT = setInterval(() => { b.textContent = text.slice(0, ++i); if (i >= text.length) clearInterval(this.typeT); this.placeBubble(); }, 22);
         this.bubbleT = setTimeout(() => { if (!this.input) b.hidden = true; }, 3500 + text.length * 55);
-        this.talk(Math.min(9000, 1200 + text.length * 55));
-        if (this.settings.voice && "speechSynthesis" in window) {
+        this.placeBubble();
+        if (this.settings.voice) this.speak(text);
+        else this.talk(Math.min(9000, 1200 + text.length * 55));
+    },
+
+    /** Her own voice (Kokoro + her voice from the Capri Desktop pack), with the system voice as a fallback */
+    async speak(text: string) {
+        const line = ++this.lineNo;
+        this.audio?.stop?.();
+        try {
+            // Her voice as Capri Desktop tunes it: pitch +2 semitones, 1.2x speed, 80% volume. Like the desktop app, Kokoro
+            // makes the line a bit slower and playing it back faster raises the pitch, landing on 1.2x.
+            const { audio, rate } = await native.voiceSpeak(text, VOICE.styleSpeed * VOICE.speed / VOICE.pitchRatio);
+            if (line !== this.lineNo || !this.el) return; // a newer line started meanwhile
+            this.ac ??= new AudioContext();
+            const buf = this.ac.createBuffer(1, audio.length, rate);
+            buf.copyToChannel(audio instanceof Float32Array ? audio : new Float32Array(audio), 0);
+            const src = this.ac.createBufferSource();
+            src.buffer = buf;
+            src.playbackRate.value = VOICE.pitchRatio;
+            const gain = this.ac.createGain();
+            gain.gain.value = VOICE.volume;
+            src.connect(gain).connect(this.ac.destination);
+            src.start();
+            this.audio = src;
+            this.talk(buf.duration / VOICE.pitchRatio * 1000 + 200); // mouth moves for as long as she speaks
+        } catch (e) {
+            if (line !== this.lineNo) return;
+            this.logger.warn("Her voice failed, using the system voice:", e);
+            this.talk(Math.min(9000, 1200 + text.length * 55));
+            if (!("speechSynthesis" in window)) return;
             speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
-            const voices = speechSynthesis.getVoices();
-            u.voice = voices.find(v => /zira|aria|jenny|female|samantha/i.test(v.name)) ?? null;
+            u.voice = speechSynthesis.getVoices().find(v => /zira|aria|jenny|female|samantha/i.test(v.name)) ?? null;
             u.rate = 1.05; u.pitch = 1.15;
             speechSynthesis.speak(u);
         }
-        this.placeBubble();
     },
 
     /** Keeps the bubble above her head, inside the window */
@@ -438,13 +470,6 @@ export default definePlugin({
     async reply(userText: string) {
         this.history.push({ role: "user", content: userText });
         if (this.history.length > 16) this.history.splice(0, this.history.length - 16);
-        if (!(await native.aiHasKey().catch(() => false))) {
-            const canned = ["mm, i'd love to chat properly, but i need a brain first. add a Claude API key in my plugin settings!",
-                "i heard you! i just can't think yet. give me an API key in my settings and we'll talk for real.",
-                "*glitches thoughtfully* ...no key, no brain. check my settings!"];
-            this.history.pop();
-            return this.say(canned[Math.floor(Math.random() * canned.length)]);
-        }
         this.talk(1500);
         try {
             const text = await native.aiChat(this.persona() + "\n" + this.context(), this.history, 150);
@@ -473,13 +498,11 @@ export default definePlugin({
         if (now - (this.lastRemark || 0) < gap) return;
         if (Math.random() > ({ quiet: 0.35, normal: 0.6, chatty: 0.9 }[this.settings.chatty as string] ?? 0.6)) return;
         this.lastRemark = now;
-        if (await native.aiHasKey().catch(() => false)) {
-            try {
-                const text = await native.aiChat(this.persona() + "\n" + this.context(),
-                    [{ role: "user", content: `(Something just happened, react to it in one short line, maybe ask them about it: ${event})` }], 80);
-                if (text) return this.say(text);
-            } catch { }
-        }
+        try {
+            const text = await native.aiChat(this.persona() + "\n" + this.context(),
+                [{ role: "user", content: `(Something just happened, react to it in one short line, maybe ask them about it: ${event})` }], 80);
+            if (text) return this.say(text);
+        } catch { }
         this.say(fallback[Math.floor(Math.random() * fallback.length)]);
     },
 
@@ -495,7 +518,7 @@ export default definePlugin({
     async start() {
         this.images = new Map<string, HTMLImageElement>();
         this.dir = 1; this.pose = "gone"; this.action = "idle"; this.think = 0; this.asleep = false; this.music = false;
-        this.vx = this.vy = 0; this.last = 0; this.on = null; this.lastActive = Date.now();
+        this.vx = this.vy = 0; this.last = 0; this.on = null; this.lastActive = Date.now(); this.lineNo = 0;
         const cv = document.createElement("canvas"); cv.width = cv.height = 1;
         this.ctx = cv.getContext("2d", { willReadFrequently: true });
 
@@ -654,6 +677,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         clearTimeout(this.bubbleT); clearInterval(this.typeT);
         this.offs?.forEach((f: () => void) => f());
         if ("speechSynthesis" in window) speechSynthesis.cancel();
+        this.lineNo++;
+        try { this.audio?.stop(); } catch { }
+        this.ac?.close().catch(() => { }); this.ac = null; this.audio = null;
         this.bubble?.remove(); this.bubble = null; this.input = null;
         window.removeEventListener("pointerdown", this.onDown, true);
         window.removeEventListener("mousedown", this.onMouse, true);
@@ -675,13 +701,16 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         // Her brain: a Claude API key, stored encrypted by Vanta and never shown again
         const status = h("span", { style: { marginLeft: "8px" } }, "…");
         const keyInput = h("input", { type: "password", placeholder: "sk-ant-…", style: { width: "220px", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--background-modifier-accent)", background: "var(--input-background, var(--background-tertiary))", color: "var(--text-normal)" } }) as HTMLInputElement;
-        const refresh = () => native.aiHasKey().then(has => { status.textContent = has ? "Key saved. She can talk." : "No key yet: she uses canned lines."; }).catch(() => { status.textContent = ""; });
+        const refresh = () => native.aiHasKey().then(has => { status.textContent = has ? "Claude key saved: she uses Claude." : "No key: she uses the free brain."; }).catch(() => { status.textContent = ""; });
         const btn = (text: string, fn: () => void) => h("button", { type: "button", onclick: fn, style: { marginLeft: "6px", padding: "6px 10px", borderRadius: "6px", border: "0", cursor: "pointer", background: "var(--brand-500, #5865f2)", color: "#fff" } }, text);
         refresh();
         const brain = h("div", { style: { margin: "0 0 10px" } },
-            h("div", { style: { fontWeight: "600", color: "var(--header-primary)", marginBottom: "4px" } }, "Her brain (optional)"),
-            h("p", { style: { margin: "0 0 6px" } }, "To really chat with her, paste an Anthropic API key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
-                "). It's encrypted on this PC and only ever sent to Anthropic. What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), go to Anthropic to make her replies. Usage is billed to your Anthropic account."),
+            h("div", { style: { fontWeight: "600", color: "var(--header-primary)", marginBottom: "4px" } }, "Her brain and voice"),
+            h("p", { style: { margin: "0 0 6px" } }, "She thinks with a free brain (", link("Pollinations", "https://pollinations.ai"),
+                ", no account or key). What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), are sent there to make her replies. ",
+                "For a smarter Capri, paste an Anthropic API key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
+                "): it's encrypted on this PC, only sent to Anthropic, and billed to your account."),
+            h("p", { style: { margin: "0 0 6px" } }, "Her voice is her own, from the Capri Desktop voice pack, and runs on this PC. The first time she speaks, about 90 MB downloads once (her voice and the Kokoro speech model)."),
             h("div", { style: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" } },
                 keyInput,
                 btn("Save", () => native.aiSetKey(keyInput.value).then(() => { keyInput.value = ""; refresh(); }).catch(e => { status.textContent = String(e?.message ?? e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ""); })),

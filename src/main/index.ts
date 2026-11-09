@@ -17,6 +17,7 @@ import { installCspPatch } from "./csp";
 import { startSelfHeal } from "./selfHeal";
 import { createCloud } from "./cloud";
 import { createAi } from "./ai";
+import { createVoice } from "./tts";
 import { bdThemes, bdInstallTheme } from "./bdStore";
 import { storeIndex, storeDownload } from "./pluginStore";
 
@@ -186,6 +187,11 @@ function main() {
     handle("ai-has-key", () => ai.hasKey());
     handle("ai-set-key", (_, k) => ai.setKey(k == null ? null : String(k)));
     handle("ai-chat", (_, system, messages, maxTokens) => ai.chat(String(system ?? ""), messages, Number(maxTokens)));
+    // Capri's own voice (Kokoro in a hidden, sandboxed window)
+    const voice = createVoice(DATA_DIR);
+    handle("voice-speak", (_, text, speed) => voice.speak(String(text ?? ""), Number(speed)));
+    handle("voice-status", () => voice.status());
+    app.on("before-quit", () => voice.close());
     handle("cloud-status", () => cloud.status());
     handle("cloud-sign-in", (_, t) => cloud.signIn(String(t)));
     handle("cloud-sign-out", () => cloud.signOut());

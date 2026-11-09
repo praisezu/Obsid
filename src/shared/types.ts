@@ -132,6 +132,10 @@ export interface NativeAPI {
     aiSetKey(key: string | null): Promise<boolean>;
     aiChat(system: string, messages: { role: "user" | "assistant"; content: string }[], maxTokens?: number): Promise<string>;
 
+    /** Capri's own voice: speaks text with Kokoro and her voice from the Capri Desktop pack. 24 kHz mono samples. */
+    voiceSpeak(text: string, speed?: number): Promise<{ audio: Float32Array; rate: number }>;
+    voiceStatus(): Promise<string>;
+
     /** Opens spotify:/steam: links in their desktop apps */
     openAppUrl(url: string): Promise<void>;
 
