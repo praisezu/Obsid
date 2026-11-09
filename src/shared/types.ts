@@ -135,6 +135,8 @@ export interface NativeAPI {
     /** Capri's own voice: speaks text with Kokoro and her voice from the Capri Desktop pack. 24 kHz mono samples. */
     voiceSpeak(text: string, speed?: number): Promise<{ audio: Float32Array; rate: number }>;
     voiceStatus(): Promise<string>;
+    /** Loads her voice model ahead of time */
+    voiceWarm(): Promise<string>;
 
     /** Opens spotify:/steam: links in their desktop apps */
     openAppUrl(url: string): Promise<void>;

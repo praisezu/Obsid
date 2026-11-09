@@ -28,6 +28,7 @@ const native: NativeAPI = {
     aiChat: (system, messages, maxTokens) => invoke("ai-chat", system, messages, maxTokens),
     voiceSpeak: (text, speed) => invoke("voice-speak", text, speed),
     voiceStatus: () => invoke("voice-status"),
+    voiceWarm: () => invoke("voice-warm"),
     openAppUrl: url => invoke("open-app-url", url),
     bdThemes: force => invoke("bd-themes", force),
     bdInstallTheme: id => invoke("bd-install-theme", id),

@@ -8,7 +8,7 @@
  * another, sits on edges with her legs hanging, lies down, dances to your music, naps, and can be picked
  * up and thrown. Only her actual pixels catch the mouse, so she never blocks clicks around her.
  */
-import { definePlugin, common, onFlux, storage, native, h } from "@api";
+import { definePlugin, common, webpack, onFlux, storage, native, h } from "@api";
 
 const REPO = "https://github.com/lachydotmcg/capri-desktop";
 const SHEETS = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/assets/sprites/";
@@ -68,8 +68,36 @@ const LEDGES = [
 interface Ledge { el: Element | null; left: number; right: number; top: number }
 
 const GRAVITY = 2600;
-/** Her voice tuning, from Capri Desktop's defaults: her own style's speed, then +2 semitones, 1.2x, 80% volume */
-const VOICE = { styleSpeed: 1.1, speed: 1.2, pitchRatio: 2 ** (2 / 12), volume: 0.8 };
+/** Her voice tuning, from Capri Desktop's defaults: her own style's speed, 1.2x, 80% volume. Pitch is a setting. */
+const VOICE = { styleSpeed: 1.1, speed: 1.2, volume: 0.8 };
+/** Capri Desktop's own personality and safety lines, read from its source at runtime (see loadPersona) */
+const BRAIN_URL = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/app/Brain.cs";
+
+/** Splits a line into sentences, so the first one can play while the rest are made */
+function sentences(text: string): string[] {
+    const parts = text.match(/[^.!?…]+[.!?…]+["')\]]*\s*|[^.!?…]+$/g)?.map(s => s.trim()).filter(Boolean) ?? [text];
+    const out: string[] = [];
+    for (const p of parts) {
+        // Glue very short bits onto the previous sentence ("Ha." "Nice.")
+        if (out.length && (p.length < 18 || out[out.length - 1].length < 18) && out[out.length - 1].length + p.length < 140) out[out.length - 1] += " " + p;
+        else out.push(p);
+    }
+    return out;
+}
+
+/** Turns a Discord message into something nice to read out loud */
+function speakable(content: string, resolve: { user(id: string): string; channel(id: string): string; role(id: string): string }) {
+    return String(content || "")
+        .replace(/<@!?(\d+)>/g, (_, id) => "@" + resolve.user(id))
+        .replace(/<#(\d+)>/g, (_, id) => "#" + resolve.channel(id))
+        .replace(/<@&(\d+)>/g, (_, id) => "@" + resolve.role(id))
+        .replace(/<a?:(\w+):\d+>/g, "$1")
+        .replace(/<t:\d+(:\w)?>/g, "a time")
+        .replace(/https?:\/\/\S+/g, "a link")
+        .replace(/```[\s\S]*?```/g, "some code")
+        .replace(/[*_~`|>#]+/g, "")
+        .replace(/\s+/g, " ").trim().slice(0, 220);
+}
 /** How far (in walk-sheet pixels) one full walk cycle carries her: two steps of ~33 px, measured from the sheet */
 const WALK_STRIDE = 66;
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -90,7 +118,11 @@ export default definePlugin({
         talk: { type: "boolean", default: true, label: "Talk when messages arrive" },
         naps: { type: "boolean", default: true, label: "Nap when you're away" },
         napAfter: { type: "number", default: 3, label: "Nap after (minutes)" },
-        voice: { type: "boolean", default: true, label: "Speak out loud", description: "Reads her lines with your computer's text-to-speech voice." },
+        voice: { type: "boolean", default: true, label: "Speak out loud", description: "In her own voice, from the Capri Desktop voice pack." },
+        pitch: { type: "number", default: 4, label: "Voice pitch (semitones)", description: "-2 to 8. Higher is squeakier." },
+        readPings: { type: "boolean", default: true, label: "Read out pings and mentions" },
+        readDMs: { type: "boolean", default: true, label: "Read out DMs" },
+        quietOnDnd: { type: "boolean", default: false, label: "Don't read them out on Do Not Disturb" },
         comments: { type: "boolean", default: true, label: "Comment on what you're doing", description: "Channels you open, calls you join, songs you play." },
         ownMessages: { type: "boolean", default: false, label: "React to messages you send", description: "With an API key set, the message is sent to Anthropic so she can reply to it." },
         chatty: { type: "select", default: "normal", label: "How often she comments", options: [{ value: "quiet", label: "Now and then" }, { value: "normal", label: "Normal" }, { value: "chatty", label: "A lot" }] },
@@ -373,8 +405,12 @@ export default definePlugin({
     },
 
     // ---------- talking ----------
-    /** Shows a line in her speech bubble, typed out, and speaks it if voice is on */
-    say(text: string) {
+    /**
+     * Shows a line in her speech bubble right away (typed out) and speaks it in her voice.
+     * `queue` (pings and DMs): the text still shows at once, and its audio starts being made at once, but it plays after
+     * whatever she's saying instead of cutting it off.
+     */
+    say(text: string, queue = false) {
         text = String(text || "").replace(/\s+/g, " ").trim().slice(0, 280);
         if (!text || !this.el) return;
         this.wake();
@@ -384,44 +420,71 @@ export default definePlugin({
         b.textContent = "";
         b.hidden = false;
         let i = 0;
-        this.typeT = setInterval(() => { b.textContent = text.slice(0, ++i); if (i >= text.length) clearInterval(this.typeT); this.placeBubble(); }, 22);
-        this.bubbleT = setTimeout(() => { if (!this.input) b.hidden = true; }, 3500 + text.length * 55);
+        // Typed out quickly: 2 characters a tick, so long lines don't lag behind
+        this.typeT = setInterval(() => { i += 2; b.textContent = text.slice(0, i); if (i >= text.length) clearInterval(this.typeT); this.placeBubble(); }, 16);
+        this.bubbleT = setTimeout(() => { if (!this.input) b.hidden = true; }, 4000 + text.length * 55);
         this.placeBubble();
-        if (this.settings.voice) this.speak(text);
+        if (this.settings.voice) this.speak(text, queue);
         else this.talk(Math.min(9000, 1200 + text.length * 55));
     },
 
-    /** Her own voice (Kokoro + her voice from the Capri Desktop pack), with the system voice as a fallback */
-    async speak(text: string) {
-        const line = ++this.lineNo;
-        this.audio?.stop?.();
+    /**
+     * Her own voice (Kokoro + her voice from the Capri Desktop pack), with the system voice as a fallback.
+     * Sentence by sentence: each plays as soon as it's ready while the next ones are made.
+     */
+    async speak(text: string, queue = false) {
+        if (!queue) {
+            // A fresh line: stop what she's saying and drop anything still waiting
+            this.lineNo++;
+            for (const s of this.sources ?? []) try { s.stop(); } catch { }
+            this.sources = [];
+            this.playAt = 0;
+            this.genChain = Promise.resolve();
+            if ("speechSynthesis" in window) speechSynthesis.cancel();
+        }
+        const line = this.lineNo;
+        // Like Capri Desktop: Kokoro makes the line a little slower and faster playback raises the pitch, landing on 1.2x
+        const semis = Math.max(-2, Math.min(8, Number(this.settings.pitch ?? 4)));
+        const ratio = 2 ** (semis / 12);
+        const speed = Math.max(0.6, Math.min(1.6, VOICE.styleSpeed * VOICE.speed / ratio));
+        // Ask for every sentence now, in order (the voice works on one at a time)
+        const made = sentences(text).map(p => {
+            const g = this.genChain.then(() => native.voiceSpeak(p, speed));
+            this.genChain = g.catch(() => { });
+            return g;
+        });
         try {
-            // Her voice as Capri Desktop tunes it: pitch +2 semitones, 1.2x speed, 80% volume. Like the desktop app, Kokoro
-            // makes the line a bit slower and playing it back faster raises the pitch, landing on 1.2x.
-            const { audio, rate } = await native.voiceSpeak(text, VOICE.styleSpeed * VOICE.speed / VOICE.pitchRatio);
-            if (line !== this.lineNo || !this.el) return; // a newer line started meanwhile
             this.ac ??= new AudioContext();
-            const buf = this.ac.createBuffer(1, audio.length, rate);
-            buf.copyToChannel(audio instanceof Float32Array ? audio : new Float32Array(audio), 0);
-            const src = this.ac.createBufferSource();
-            src.buffer = buf;
-            src.playbackRate.value = VOICE.pitchRatio;
-            const gain = this.ac.createGain();
-            gain.gain.value = VOICE.volume;
-            src.connect(gain).connect(this.ac.destination);
-            src.start();
-            this.audio = src;
-            this.talk(buf.duration / VOICE.pitchRatio * 1000 + 200); // mouth moves for as long as she speaks
+            if (this.ac.state === "suspended") this.ac.resume().catch(() => { });
+            for (const g of made) {
+                const { audio, rate } = await g;
+                if (line !== this.lineNo || !this.el) return; // a newer line started meanwhile
+                const buf = this.ac.createBuffer(1, audio.length, rate);
+                buf.copyToChannel(audio instanceof Float32Array ? audio : new Float32Array(audio), 0);
+                const src = this.ac.createBufferSource();
+                src.buffer = buf;
+                src.playbackRate.value = ratio;
+                const gain = this.ac.createGain();
+                gain.gain.value = VOICE.volume;
+                src.connect(gain).connect(this.ac.destination);
+                const start = Math.max(this.ac.currentTime + 0.02, this.playAt || 0);
+                src.start(start);
+                this.sources.push(src);
+                this.playAt = start + buf.duration / ratio;
+                const leftMs = (this.playAt - this.ac.currentTime) * 1000;
+                this.talk(leftMs + 150); // mouth moves for as long as she speaks
+                clearTimeout(this.bubbleT);
+                this.bubbleT = setTimeout(() => { if (!this.input) this.bubble.hidden = true; }, leftMs + 1800);
+            }
         } catch (e) {
             if (line !== this.lineNo) return;
             this.logger.warn("Her voice failed, using the system voice:", e);
             this.talk(Math.min(9000, 1200 + text.length * 55));
             if (!("speechSynthesis" in window)) return;
-            speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.voice = speechSynthesis.getVoices().find(v => /zira|aria|jenny|female|samantha/i.test(v.name)) ?? null;
-            u.rate = 1.05; u.pitch = 1.15;
-            speechSynthesis.speak(u);
+            u.rate = 1.05; u.pitch = 1.3;
+            speechSynthesis.speak(u); // queues after anything already speaking
         }
     },
 
@@ -457,27 +520,63 @@ export default definePlugin({
     },
     closeInput() { this.input?.remove(); this.input = null; },
 
+    /**
+     * Her personality is Capri Desktop's own (with its safety lines), read from its source on GitHub and kept for a week,
+     * so she's the same Capri as in the desktop app. It isn't copied into Vanta: it stays under that project's licence.
+     */
+    async loadPersona() {
+        const cached = await storage.get<{ at: number; text: string }>("CapriPersona");
+        if (cached?.text) this.desktopPersona = cached.text;
+        if (cached?.text && Date.now() - cached.at < 7 * 86_400_000) return;
+        try {
+            const src = await native.fetchText(BRAIN_URL);
+            const grab = (name: string) => {
+                const i = src.indexOf(`internal const string ${name} =`);
+                if (i < 0) return "";
+                const body = src.slice(i, src.indexOf('";', i) + 1);
+                return [...body.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(m => m[1]).join("")
+                    .replace(/\\n/g, "\n").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+            };
+            const text = [grab("DefaultPersonality"), grab("Safety"),
+                grab("Machinery").replace(/\n?Only if they say your voice[\s\S]*$/, "").trim()].join("\n");
+            if (!text.startsWith("You are Capri") || text.length < 800) throw new Error("unexpected format");
+            this.desktopPersona = text;
+            storage.set("CapriPersona", { at: Date.now(), text }, 0);
+        } catch (e) { this.logger.warn("Couldn't load Capri Desktop's personality, using a short one:", e); }
+    },
+
     persona() {
         const me = common.UserStore?.getCurrentUser?.();
-        const name = me?.globalName || me?.username || "you";
-        return `You are Capri, a small glitchy digital girl who lives inside ${name}'s Discord window as a desktop mate. ` +
-            `You walk along the panels, sit on the message box, nap and dance to their music. You're playful, curious, a bit cheeky and warm; ` +
-            `you tease ${name} gently and ask about what they're up to. Reply in one or two short sentences (under 30 words), casual and lowercase-friendly, ` +
-            `no markdown, no emoji spam, no roleplay asterisks. Never claim to see their screen beyond what you're told. Stay in character.`;
+        const name = me?.globalName || me?.username || "them";
+        const here = `\nWhere you are now: inside ${name}'s Discord app, as a desktop mate added by the Vanta client mod, not on their desktop and not riding their cursor. ` +
+            `You walk along Discord's panels, sit on the message box, nap and dance to their music. You only know the notes you're given about what's happening in Discord; never guess the rest.`;
+        if (this.desktopPersona) return this.desktopPersona + here;
+        return `You are Capri, a glitchy personality construct from Night City. A playful chaos gremlin: sarcastic, teasing, a little smug, never mean, openly fond of ${name}. ` +
+            `Talk like a friend texting, never like an assistant. One short line under 25 words, plain text, no emoji or asterisks. Use Night City slang like choom only now and then.` + here;
     },
 
     /** Gets her reply from Claude (or a canned one without a key) and says it */
     async reply(userText: string) {
         this.history.push({ role: "user", content: userText });
         if (this.history.length > 16) this.history.splice(0, this.history.length - 16);
+        // She heard you: a thinking bubble until the answer comes
+        clearTimeout(this.bubbleT); clearInterval(this.typeT);
+        this.bubble.hidden = false;
+        this.bubble.textContent = "…";
+        this.placeBubble();
         this.talk(1500);
+        const ask = this.history.length;
         try {
-            const text = await native.aiChat(this.persona() + "\n" + this.context(), this.history, 150);
+            const text = await native.aiChat(this.persona() + "\n" + this.context() +
+                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character.", this.history, 150);
             this.history.push({ role: "assistant", content: text });
             this.say(text);
         } catch (e: any) {
-            this.history.pop();
-            this.say("ugh, my brain glitched: " + String(e?.message ?? e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ""));
+            this.logger.warn("Her brain didn't answer:", e);
+            this.history.splice(ask - 1, 1);
+            this.say(["[SIGNAL CORRUPTED] ...my brain flatlined for a sec. say that again?",
+                "ugh, static. the free brain's swamped right now, ask me again in a moment.",
+                "hold on, my head's full of noise. try me again?"][Math.floor(Math.random() * 3)]);
         }
     },
 
@@ -504,6 +603,33 @@ export default definePlugin({
             if (text) return this.say(text);
         } catch { }
         this.say(fallback[Math.floor(Math.random() * fallback.length)]);
+    },
+
+    /** Reads out a DM or a message that pings you */
+    readOut(channelId: string, m: any) {
+        if (!m?.author || m.author.bot && !m.mentions?.length) return;
+        const me = common.UserStore?.getCurrentUser?.()?.id;
+        const ch = common.ChannelStore?.getChannel?.(channelId);
+        if (!ch || !me) return;
+        const isDM = ch.type === 1 || ch.type === 3;
+        const pinged = !isDM && (m.mentions?.some?.((u: any) => (u?.id ?? u) === me) || m.mention_everyone);
+        if (isDM ? !this.settings.readDMs : !(pinged && this.settings.readPings)) return;
+        // Not for muted DMs/channels, and (if you want) not on Do Not Disturb
+        if (this.settings.quietOnDnd && common.PresenceStore?.getStatus?.(me) === "dnd") return;
+        const muted = this.Guilds?.isChannelMuted?.(ch.guild_id ?? null, channelId) || (ch.guild_id && this.Guilds?.isMuted?.(ch.guild_id));
+        if (muted) return;
+        const who = m.member?.nick || m.author.global_name || m.author.globalName || m.author.username || "someone";
+        const text = speakable(m.content, {
+            user: id => { const u = common.UserStore?.getUser?.(id); return u?.globalName || u?.username || "someone"; },
+            channel: id => common.ChannelStore?.getChannel?.(id)?.name ?? "a channel",
+            role: id => (ch.guild_id && common.GuildStore?.getRole?.(ch.guild_id, id)?.name) || "a role",
+        }) || (m.attachments?.length ? "sent an attachment" : m.sticker_items?.length ? "sent a sticker" : "");
+        if (!text) return;
+        const line = isDM
+            ? (ch.type === 3 ? `${who} in ${ch.name || "your group chat"}: ${text}` : `${who} says: ${text}`)
+            : `${who} pinged you in #${ch.name}: ${text}`;
+        this.wake();
+        this.say(line, true);
     },
 
     poke() {
@@ -544,6 +670,11 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         this.bubble = h("div", { class: "vanta-capri-bubble", role: "status", hidden: true });
         document.body.append(this.bubble);
         this.history = [] as { role: "user" | "assistant"; content: string }[];
+        this.sources = []; this.playAt = 0; this.genChain = Promise.resolve();
+        this.Guilds = webpack.findStore("UserGuildSettingsStore");
+        this.loadPersona();
+        // Load her voice model now, so her first line isn't slow
+        if (this.settings.voice) setTimeout(() => { if (this.el) native.voiceWarm().catch(e => this.logger.warn("Her voice couldn't load:", e)); }, 4000);
 
         // Mouse: only her pixels count
         let swallowClick = false;
@@ -623,6 +754,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
                         this.remark(`they just sent this message: "${String(message.content).slice(0, 300)}"`, ["ooh, bold message.", "did you really just send that?", "typing like a pro today."]);
                     return;
                 }
+                this.readOut(channelId, message);
                 if (this.settings.talk && channelId === common.SelectedChannelStore?.getChannelId?.()) this.talk();
             }),
             onFlux("CHANNEL_SELECT", ({ channelId, guildId }: any) => setTimeout(() => {
@@ -678,8 +810,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         this.offs?.forEach((f: () => void) => f());
         if ("speechSynthesis" in window) speechSynthesis.cancel();
         this.lineNo++;
-        try { this.audio?.stop(); } catch { }
-        this.ac?.close().catch(() => { }); this.ac = null; this.audio = null;
+        clearTimeout(this.nextT);
+        for (const s of this.sources ?? []) try { s.stop(); } catch { }
+        this.ac?.close().catch(() => { }); this.ac = null; this.sources = [];
         this.bubble?.remove(); this.bubble = null; this.input = null;
         window.removeEventListener("pointerdown", this.onDown, true);
         window.removeEventListener("mousedown", this.onMouse, true);
@@ -706,8 +839,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         refresh();
         const brain = h("div", { style: { margin: "0 0 10px" } },
             h("div", { style: { fontWeight: "600", color: "var(--header-primary)", marginBottom: "4px" } }, "Her brain and voice"),
-            h("p", { style: { margin: "0 0 6px" } }, "She thinks with a free brain (", link("Pollinations", "https://pollinations.ai"),
-                ", no account or key). What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), are sent there to make her replies. ",
+            h("p", { style: { margin: "0 0 6px" } }, "With no key, she uses a free brain (", link("Pollinations", "https://pollinations.ai"),
+                ") when it's free to answer, and otherwise her own offline brain on this PC (a small model, about 500 MB, downloaded the first time you chat). ",
+                "What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), can go to Pollinations. ",
                 "For a smarter Capri, paste an Anthropic API key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
                 "): it's encrypted on this PC, only sent to Anthropic, and billed to your account."),
             h("p", { style: { margin: "0 0 6px" } }, "Her voice is her own, from the Capri Desktop voice pack, and runs on this PC. The first time she speaks, about 90 MB downloads once (her voice and the Kokoro speech model)."),

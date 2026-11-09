@@ -18,25 +18,57 @@ export interface AiMessage { role: "user" | "assistant"; content: string }
  * Without a key: Pollinations' free, anonymous text API (no account, no key). Only that host is ever called.
  * Replies are trimmed to the answer itself (no reasoning, no sponsor lines).
  */
-const FREE_API = "https://text.pollinations.ai/openai";
-async function freeChat(system: string, messages: AiMessage[]): Promise<string> {
-    const res = await fetch(FREE_API, {
+const FREE_HOST = "https://text.pollinations.ai";
+
+/** Keeps only her answer: drops anything after a divider, sponsor lines, and stray quotes or "Capri:" labels */
+function tidy(text: string) {
+    text = String(text || "").split(/\n\s*(-{3,}|\*{3,})\s*\n/)[0];
+    text = text.split("\n").filter(l => !/pollinations|sponsor|powered by/i.test(l)).join(" ");
+    return text.replace(/^\s*(capri\s*:)\s*/i, "").replace(/^"(.*)"$/s, "$1").replace(/\s+/g, " ").trim();
+}
+
+async function freeOnce(system: string, messages: AiMessage[], timeout: number): Promise<string> {
+    const res = await fetch(FREE_HOST + "/openai", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ model: "openai", messages: [{ role: "system", content: system }, ...messages] }),
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(timeout),
     });
-    if (res.status === 429) throw new Error("The free brain is busy. Try again in a bit.");
-    if (!res.ok) throw new Error(`The free brain returned HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data: any = await res.json();
-    let text = String(data?.choices?.[0]?.message?.content ?? "");
-    text = text.split(/\n\s*(-{3,}|\*{3,})\s*\n/)[0]; // anything after a divider is not her
-    text = text.split("\n").filter(l => !/pollinations|sponsor|powered by/i.test(l)).join(" ").trim();
-    if (!text) throw new Error("The free brain didn't answer");
+    const text = tidy(data?.choices?.[0]?.message?.content ?? "");
+    if (!text) throw new Error("empty reply"); // e.g. it only "thought" and never answered
     return text;
 }
 
-export function createAi(dataDir: string) {
+/** Something that answers on this PC (Capri's offline brain): no limits, no key */
+export type LocalBrain = (messages: { role: string; content: string }[], maxTokens: number) => Promise<string>;
+
+/** A small model works best with a short prompt: the start of her personality plus the notes about right now */
+function compact(system: string) {
+    const at = system.indexOf("\nWhere you are now:");
+    const tail = at >= 0 ? system.slice(at) : "";
+    const head = system.slice(0, at >= 0 ? Math.min(at, 1400) : 1400);
+    return head.replace(/\s+\S*$/, "") + tail + "\nReply with one short line, under 25 words, plain text, in character.";
+}
+
+/**
+ * Without a key: Pollinations' free, anonymous API (no account, no key) when it allows it (one reply every 45 seconds per
+ * network), and otherwise Capri's offline brain on this PC, so she always answers.
+ */
+let lastFree = 0;
+async function freeChat(system: string, messages: AiMessage[], local: LocalBrain | null): Promise<string> {
+    if (Date.now() - lastFree > 46_000) {
+        lastFree = Date.now();
+        try { return await freeOnce(system, messages, 15_000); } catch { /* busy or limited: answer offline */ }
+    }
+    if (!local) throw new Error("The free brain is busy. Try again in a bit.");
+    const text = tidy(await local([{ role: "system", content: compact(system) }, ...messages.slice(-8)], 70));
+    if (!text) throw new Error("Her brain didn't answer");
+    return text;
+}
+
+export function createAi(dataDir: string, local: LocalBrain | null = null) {
     const keyFile = path.join(dataDir, "ai-key.bin");
     const key = () => { try { return safeStorage.decryptString(fs.readFileSync(keyFile)); } catch { return null; } };
 
@@ -57,7 +89,7 @@ export function createAi(dataDir: string) {
             while (clean.length && clean[0].role !== "user") clean.shift();
             if (!clean.length) throw new Error("A chat has to start with a user message");
             const k = key();
-            if (!k) return freeChat(String(system).slice(0, 6000), clean);
+            if (!k) return freeChat(String(system).slice(0, 8000), clean, local);
             const res = await fetch(API, {
                 method: "POST",
                 headers: { "x-api-key": k, "anthropic-version": "2023-06-01", "content-type": "application/json" },

@@ -25,6 +25,7 @@ import "./pages/plugins";
 import "./pages/store";
 import "./pages/themes";
 import "./pages/updater";
+import "./pages/changelog";
 import { startAutoUpdate, checkForUpdates } from "./autoUpdate";
 import "./pages/cloud";
 import "./pages/backup";
