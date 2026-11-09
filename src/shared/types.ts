@@ -159,7 +159,8 @@ export interface NativeAPI {
 
     updaterInfo(): Promise<UpdaterInfo>;
     updaterCheck(): Promise<UpdateCheck>;
-    updaterApply(): Promise<{ ok: boolean; output: string; version?: string }>;
+    /** restart: true when Discord must restart (not just refresh) to finish */
+    updaterApply(): Promise<{ ok: boolean; output: string; version?: string; restart?: boolean }>;
 
     backupExport(data: BackupData): Promise<string | null>;
     backupImport(): Promise<BackupData | null>;

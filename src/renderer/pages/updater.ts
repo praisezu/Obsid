@@ -70,8 +70,8 @@ ui.registerPage({
             }
 
             parts.push(ui.section("Settings", ui.card({ class: "vanta-rows" },
-                ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every few hours."),
-                ui.settingRow("autoUpdate", "Install updates automatically", "Download the update, restart Discord, then tell you which version you're on. Waits until you're out of a voice call."))));
+                ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every 30 minutes."),
+                ui.settingRow("autoUpdate", "Install updates automatically", "Installs it, refreshes Discord (or restarts it if needed), then tells you what changed. Waits until you're out of a voice call."))));
             body.replaceChildren(...(parts.flat(Infinity as 1) as Node[]));
         };
 

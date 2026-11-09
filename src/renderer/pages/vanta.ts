@@ -56,8 +56,8 @@ ui.registerPage({
                 ui.card({ class: "vanta-rows" },
                     ui.settingRow("startupToast", "Startup notification", "Show a small \"Vanta loaded\" message when Discord starts."),
                     ui.settingRow("quickPanel", "Quick panel shortcut", "Press Ctrl+Shift+O anywhere in Discord to open these settings in a pop-up."),
-                    ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every few hours."),
-                    ui.settingRow("autoUpdate", "Install updates automatically", "Download the update, restart Discord, then tell you which version you're on. Waits until you're out of a voice call."),
+                    ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every 30 minutes."),
+                    ui.settingRow("autoUpdate", "Install updates automatically", "Installs it, refreshes Discord (or restarts it if needed), then tells you what changed. Waits until you're out of a voice call."),
                 ),
             ),
 

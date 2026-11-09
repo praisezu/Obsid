@@ -10,7 +10,7 @@ import { settings, saveSettings, saveSettingsNow } from "./core/settings";
 import { sleep } from "./core/utils";
 import { ui, h } from "./ui/components";
 
-const CHECK_EVERY = 4 * 60 * 60 * 1000;
+const CHECK_EVERY = 30 * 60 * 1000;
 let running = false;
 
 const inVoiceCall = () => !!common.SelectedChannelStore?.getVoiceChannelId?.();
@@ -30,7 +30,7 @@ export function showUpdatedNotice() {
                 ui.logo(48),
                 h("div", {},
                     h("div", { class: "vanta-row-title" }, `Updated from ${p.from} to ${p.to}`),
-                    h("div", { class: "vanta-row-desc" }, "Discord was restarted to finish the update."))),
+                    h("div", { class: "vanta-row-desc" }, p.refreshed ? "Discord was refreshed to finish the update." : "Discord was restarted to finish the update."))),
             p.notes ? ui.section("What's new", ui.card({ class: "vanta-pad", style: { whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: "20px", maxHeight: "300px", overflow: "auto" } }, p.notes)) : null,
         ],
         buttons: [
@@ -40,28 +40,35 @@ export function showUpdatedNotice() {
     });
 }
 
-async function restartWhenIdle(version: string) {
+/**
+ * Finishes an update: a quick refresh of Discord when only Vanta's in-Discord part changed (most updates), or a full
+ * restart when its background part changed too. Never in the middle of a voice call.
+ */
+async function finishWhenIdle(version: string, restart: boolean) {
+    const verb = restart ? "restart" : "refresh";
     if (inVoiceCall()) {
-        ui.toast(`Vanta ${version} is installed. Discord will restart when you leave the voice call.`, { ms: 8000 });
+        ui.toast(`Vanta ${version} is installed. Discord will ${verb} when you leave the voice call.`, { ms: 8000 });
         while (inVoiceCall()) await sleep(15000);
     }
     let cancelled = false;
+    const left = h("span", {}, "5");
     const t = ui.modal({
-        title: "Restarting Discord to finish the update",
-        body: h("div", {}, `Vanta ${version} is installed. Discord restarts in 10 seconds.`),
+        title: `Vanta ${version} is ready`,
+        body: h("div", {}, `Discord will ${verb} in `, left, ` seconds to finish the update.`),
         buttons: [
             { text: "Later", variant: "ghost", onClick: () => { cancelled = true; } },
-            { text: "Restart now", variant: "primary" },
+            { text: restart ? "Restart now" : "Refresh now", variant: "primary" },
         ],
     });
-    for (let i = 0; i < 100 && !cancelled && document.querySelector(".vanta-modal-back"); i++) await sleep(100);
+    for (let i = 50; i > 0 && !cancelled && t.el.isConnected; i--) { left.textContent = String(Math.ceil(i / 10)); await sleep(100); }
     if (cancelled) {
-        ui.toast("Update installed. It'll apply the next time Discord restarts.", { ms: 6000 });
+        ui.toast(`Vanta ${version} is installed. It'll finish the next time Discord ${restart ? "restarts" : "reloads"}.`, { ms: 6000 });
         return;
     }
     t.close();
     await saveSettingsNow();
-    native.relaunch();
+    if (restart) native.relaunch();
+    else location.reload();
 }
 
 /** Checks for an update; installs it and restarts Discord if auto-update is on. */
@@ -82,9 +89,9 @@ export async function checkForUpdates({ manual = false } = {}) {
         if (!res.ok) { ui.toast("Vanta update failed: " + res.output, { type: "danger", ms: 8000 }); return; }
         const to = res.version || label;
         const notes = r.release?.notes || r.updates?.map(u => `• ${u.message}`).join("\n") || "";
-        settings.vanta.pendingUpdate = { from: native.info.version, to, notes, at: Date.now() };
+        settings.vanta.pendingUpdate = { from: __VANTA_VERSION__, to, notes, at: Date.now(), refreshed: !res.restart };
         await saveSettingsNow();
-        await restartWhenIdle(to);
+        await finishWhenIdle(to, res.restart !== false);
     } catch (e) {
         logger.error("Update check failed", e);
         if (manual) ui.toast("Couldn't check for updates: " + cleanError(e), { type: "danger" });

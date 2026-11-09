@@ -12,7 +12,7 @@ import * as path from "node:path";
 
 import type { BackupData, BackupParts, RendererScript, ThemeFile } from "@shared/types";
 import { parseMeta, safeName } from "./util";
-import { updaterInfo, updaterCheck, updaterApply } from "./updater";
+import { updaterInfo, updaterCheck, updaterApply, readVersion } from "./updater";
 import { installCspPatch } from "./csp";
 import { startSelfHeal } from "./selfHeal";
 import { createCloud } from "./cloud";
@@ -169,7 +169,7 @@ function main() {
     ipcMain.on("vanta:get-themes", e => { e.returnValue = listThemes(); });
     ipcMain.on("vanta:get-info", e => {
         e.returnValue = {
-            version: VERSION, repo: __VANTA_REPO__, root: ROOT, dataDir: DATA_DIR, pluginsDir: USER_PLUGINS_DIR, themesDir: THEMES_DIR,
+            version: readVersion(ROOT, VERSION), repo: __VANTA_REPO__, root: ROOT, dataDir: DATA_DIR, pluginsDir: USER_PLUGINS_DIR, themesDir: THEMES_DIR,
             electron: process.versions.electron, chrome: process.versions.chrome, discord: app.getVersion(),
             safeMode: SAFE_MODE, safeModeReason: SAFE_MODE ? (boot.reason ?? "manual") : null,
         };
@@ -299,9 +299,10 @@ function main() {
     handle("plugin-read", (_, file) => readText(path.join(USER_PLUGINS_DIR, safeName(file, ".js"))));
 
     // updater
-    handle("updater-info", () => updaterInfo(ROOT, VERSION));
-    handle("updater-check", () => updaterCheck(ROOT, VERSION));
-    handle("updater-apply", () => updaterApply(ROOT, VERSION));
+    // The version is read fresh each time: an update can be applied while Discord keeps running
+    handle("updater-info", () => updaterInfo(ROOT, readVersion(ROOT, VERSION)));
+    handle("updater-check", () => updaterCheck(ROOT, readVersion(ROOT, VERSION)));
+    handle("updater-apply", () => updaterApply(ROOT, readVersion(ROOT, VERSION)));
 
     // backup
     handle("backup-export", async (e, data: BackupData) => {

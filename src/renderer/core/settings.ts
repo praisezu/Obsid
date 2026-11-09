@@ -20,7 +20,7 @@ export interface Settings {
         /** Download and install updates automatically, then restart Discord */
         autoUpdate: boolean;
         /** Set right before an automatic restart; shown as "updated to x.x.x" after it */
-        pendingUpdate?: { from: string; to: string; notes?: string; at: number } | null;
+        pendingUpdate?: { from: string; to: string; notes?: string; at: number; refreshed?: boolean } | null;
         /** Cloud sync: upload automatically after changes */
         cloudAuto?: boolean;
     };

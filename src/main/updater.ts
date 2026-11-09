@@ -9,6 +9,7 @@ import { execFile } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync } from "node:zlib";
+import { createHash } from "node:crypto";
 
 import type { UpdateCheck, UpdaterInfo } from "@shared/types";
 import { compareVersions } from "./util";
@@ -82,12 +83,28 @@ function npmBuild(root: string) {
     });
 }
 
-const readVersion = (root: string, fallback: string) => {
+/** The installed version, read fresh (it changes when an update is applied while Discord keeps running) */
+export const readVersion = (root: string, fallback: string) => {
     try { return JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).version || fallback; }
     catch { return fallback; }
 };
 
-export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string }> {
+/** Fingerprint of the parts that need a full Discord restart to change (main process and preload) */
+function coreHash(root: string) {
+    const h = createHash("sha256");
+    for (const f of ["dist/main.js", "dist/preload.js"]) { try { h.update(fs.readFileSync(path.join(root, f))); } catch { h.update("missing"); } }
+    return h.digest("hex");
+}
+
+export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string; restart?: boolean }> {
+    const r = await applyUpdate(root, version);
+    // Only the in-Discord part changed? Then a quick refresh is enough; otherwise Discord has to restart.
+    return r.ok ? { ...r, restart: coreHash(root) !== before.get(root) } : r;
+}
+
+const before = new Map<string, string>();
+async function applyUpdate(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string }> {
+    before.set(root, coreHash(root));
     if (isGitCheckout(root)) {
         const r = await git(root, "pull", "--ff-only");
         if (!r.ok) return { ok: false, output: r.err };
