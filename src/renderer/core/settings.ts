@@ -10,6 +10,8 @@ export interface Settings {
     vanta: {
         startupToast: boolean;
         quickPanel: boolean;
+        /** Show the Vanta badge on my profile (undefined = not asked yet) */
+        showBadge?: boolean;
         /** Rewrite outdated Discord class names in themes (default on) */
         themeFixer?: boolean;
         /** Plugins whose first-run preview was already shown */

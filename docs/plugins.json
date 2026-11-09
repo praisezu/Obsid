@@ -1,5 +1,5 @@
 {
-  "version": "0.5.9",
+  "version": "0.5.10",
   "repo": "praisezu/Vanta",
   "discord": "https://discord.gg/Eh6fSPnznj",
   "plugins": [
@@ -60,7 +60,7 @@
     },
     {
       "name": "Capri",
-      "description": "Capri, the desktop mate, lives in your Discord window: she walks along the panels, sits on edges, lies down, dances to your music and naps. Pick her up and throw her. Art from the Capri Desktop project.",
+      "description": "Capri, the desktop mate, lives in your Discord window: she floats around, sits on panel edges, lies down, dances to your music, naps and talks. Pick her up and throw her. Art from the Capri Desktop project.",
       "category": "Appearance"
     },
     {

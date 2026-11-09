@@ -39,6 +39,7 @@ import { quickPanel } from "./quickPanel";
 import { inSafeMode, showSafeModeNotice } from "./safeMode";
 import { startWindowControls } from "./windowControls";
 import { startServerProfiles } from "./serverProfiles";
+import { startVantaBadge } from "./vantaBadge";
 import { startupPluginUpdateCheck } from "./pluginUpdates";
 
 import builtinPlugins from "~plugins";
@@ -78,6 +79,7 @@ if (w.Vanta) {
             });
             startAll();
             startServerProfiles();
+            if (!inSafeMode()) startVantaBadge();
             webpack.ready.then(() => {
                 // Reaching here means Discord loaded fine: reset crash detection (after a short grace period).
                 setTimeout(() => native.bootOk(), 8000);

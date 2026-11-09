@@ -1,4 +1,6 @@
 import { native } from "../core/native";
+import { settings, saveSettings } from "../core/settings";
+import { setMyBadge } from "../vantaBadge";
 import { plugins } from "../core/plugins";
 import { themes } from "../themes";
 import { ui, h } from "../ui/components";
@@ -58,6 +60,18 @@ ui.registerPage({
                     ui.settingRow("quickPanel", "Quick panel shortcut", "Press Ctrl+Shift+O anywhere in Discord to open these settings in a pop-up."),
                     ui.settingRow("autoCheckUpdates", "Check for updates", "On startup and every 30 minutes."),
                     ui.settingRow("autoUpdate", "Install updates automatically", "Installs it, refreshes Discord (or restarts it if needed), then tells you what changed. Waits until you're out of a voice call."),
+                    ui.row({
+                        title: "Show the Vanta badge on my profile",
+                        description: "Other Vanta users see a small Vanta badge on your profile. Adds 4 invisible characters to your About Me; turning it off removes them.",
+                        control: ui.switch({
+                            checked: settings.vanta.showBadge === true, label: "Show the Vanta badge on my profile",
+                            onChange: async v => {
+                                try {
+                                    if (await setMyBadge(v)) { settings.vanta.showBadge = v; saveSettings(); ui.toast(v ? "Your Vanta badge is on." : "Your Vanta badge is off.", { type: "ok" }); }
+                                } catch (e: any) { ui.toast("Couldn't update your profile: " + (e?.body?.message ?? e?.message ?? e), { type: "danger" }); }
+                            },
+                        }),
+                    }),
                 ),
             ),
 

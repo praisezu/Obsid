@@ -4,8 +4,8 @@
  * (https://github.com/lachydotmcg/capri-desktop), used under PolyForm Noncommercial 1.0.0 with credit.
  * They load from that repo at runtime and aren't bundled with Vanta.
  *
- * She walks along the bottom of the window and along the tops of Discord's panels, glitches from one to
- * another, sits on edges with her legs hanging, lies down, dances to your music, naps, and can be picked
+ * She floats around the window, drifts between Discord's panels and sits on their edges, glitches from place to
+ * place, lies down, dances to your music, naps, and can be picked
  * up and thrown. Only her actual pixels catch the mouse, so she never blocks clicks around her.
  */
 import { definePlugin, common, webpack, onFlux, storage, native, h, discord } from "@api";
@@ -32,7 +32,6 @@ const lie = (file: string, n: number, fps: number): Clip =>
 
 const CLIPS = {
     idle: st("idle", 60, 24, { w: 116, ax: 47, flips: true }),
-    walk: st("walk", 12, 15),
     glitch: st("glitch", 10, 15),
     grin: st("grin", 16, 8),
     dance: st("dance", 16, 16),
@@ -56,7 +55,7 @@ const CLIPS = {
 } satisfies Record<string, Clip>;
 type ClipName = keyof typeof CLIPS;
 
-/** Tops of Discord's panels she can stand, walk and sit on */
+/** Tops of Discord's panels she can sit on */
 const LEDGES = [
     'form [class*="channelTextArea_"]',
     'section[class*="panels_"]',
@@ -98,8 +97,8 @@ function speakable(content: string, resolve: { user(id: string): string; channel
         .replace(/[*_~`|>#]+/g, "")
         .replace(/\s+/g, " ").trim().slice(0, 220);
 }
-/** How far (in walk-sheet pixels) one full walk cycle carries her: two steps of ~33 px, measured from the sheet */
-const WALK_STRIDE = 66;
+
+
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const pick = <T,>(weighted: [T, number][]): T => {
     let r = Math.random() * weighted.reduce((s, [, w]) => s + w, 0);
@@ -109,7 +108,7 @@ const pick = <T,>(weighted: [T, number][]): T => {
 
 export default definePlugin({
     name: "Capri",
-    description: "Capri, the desktop mate, lives in your Discord window: she walks along the panels, sits on edges, lies down, dances to your music and naps. Pick her up and throw her. Art from the Capri Desktop project.",
+    description: "Capri, the desktop mate, lives in your Discord window: she floats around, sits on panel edges, lies down, dances to your music, naps and talks. Pick her up and throw her. Art from the Capri Desktop project.",
     authors: ["Vanta"], category: "Appearance", since: "0.5.3",
     needsWebpack: true,
     options: {
@@ -118,7 +117,11 @@ export default definePlugin({
         talk: { type: "boolean", default: true, label: "Talk when messages arrive" },
         naps: { type: "boolean", default: true, label: "Nap when you're away" },
         napAfter: { type: "number", default: 3, label: "Nap after (minutes)" },
+        color: { type: "select", default: "default", label: "Colours", options: [{ value: "default", label: "Her own" }, { value: "bubblegum", label: "Bubblegum" }, { value: "cyan", label: "Cyber cyan" }, { value: "royal", label: "Royal" }, { value: "toxic", label: "Toxic" }, { value: "gold", label: "Gold" }, { value: "ghost", label: "Ghost" }, { value: "custom", label: "Custom hue" }] },
+        hue: { type: "number", default: 0, label: "Custom hue (degrees)", description: "0 to 360, used when Colours is Custom hue." },
+        glow: { type: "boolean", default: true, label: "Glow" },
         voice: { type: "boolean", default: true, label: "Speak out loud", description: "In her own voice, from the Capri Desktop voice pack." },
+        fx: { type: "number", default: 70, label: "Voice effects", description: "0 to 100: her holographic shimmer, echoes and glitches. 0 is her plain voice." },
         pitch: { type: "number", default: 4, label: "Voice pitch (semitones)", description: "-2 to 8. Higher is squeakier." },
         readPings: { type: "boolean", default: true, label: "Read out pings and mentions" },
         readDMs: { type: "boolean", default: true, label: "Read out DMs" },
@@ -180,7 +183,7 @@ export default definePlugin({
         if (f !== this.frame) { this.frame = f; this.el.style.backgroundPositionX = -f * c.w * k + "px"; }
         const mirror = !c.flips && this.dir < 0;
         const ax = (this.flipped ? c.w - c.ax : c.ax) * k;
-        const left = this.x - (mirror ? c.w * k - ax : ax), top = this.y - c.ay * k;
+        const left = this.x - (mirror ? c.w * k - ax : ax), top = this.y + (this.bob || 0) - c.ay * k;
         this.box = { left, top, w: c.w * k, h: c.h * k, mirror };
         this.el.style.transform = `translate(${left.toFixed(1)}px, ${top.toFixed(1)}px)${mirror ? " scaleX(-1)" : ""}`;
         if (this.bubble && !this.bubble.hidden) this.placeBubble();
@@ -241,14 +244,40 @@ export default definePlugin({
     },
 
     save() {
-        storage.set("Capri", { x: this.x / window.innerWidth, ledge: this.on?.el ? LEDGES.findIndex(s => this.on.el.matches(s)) : -1 }, 3000);
+        storage.set("Capri", { x: this.x / window.innerWidth, y: this.y / window.innerHeight }, 3000);
     },
 
-    standIdle() { this.pose = "stand"; this.action = "idle"; this.play("idle"); this.think = performance.now() + rand(3000, 8000); },
+    // Capri doesn't walk: she floats. "stand" = hovering in the air (bobbing), "sit"/"lie" = on a panel's edge.
+    standIdle() { this.pose = "stand"; this.action = "idle"; this.on = null; this.play("idle"); this.think = performance.now() + rand(3000, 8000); },
 
-    sitDown() {
-        this.pose = "busy";
-        this.play("perchArrive", () => { this.pose = "sit"; this.satAt = performance.now(); this.restSit(); });
+    /** Where she may float (her anchor is at her feet) */
+    bounds() {
+        const h = this.S() * 1.11 * 0.9;
+        return { left: 50, right: window.innerWidth - 50, top: Math.min(window.innerHeight - 40, 70 + h), bottom: window.innerHeight - 24 };
+    },
+
+    /** Glides to a point; `then` runs when she gets there */
+    driftTo(x: number, y: number, then?: () => void) {
+        const b = this.bounds();
+        this.pose = "stand"; this.action = "drift"; this.on = null;
+        this.target = { x: Math.max(b.left, Math.min(b.right, x)), y: Math.max(b.top, Math.min(b.bottom, y)), from: { x: this.x, y: this.y }, t0: performance.now(), then };
+        const dist = Math.hypot(this.target.x - this.x, this.target.y - this.y);
+        this.target.ms = Math.max(600, dist / (this.S() * 0.55) * 1000); // a calm glide, ~half her height a second
+        if (Math.abs(this.target.x - this.x) > 20) this.dir = this.target.x < this.x ? -1 : 1;
+        if (this.clipName !== "idle" && this.clipName !== "dance") this.play("idle");
+    },
+
+    sitDown(l?: Ledge) {
+        const ledge = l ?? this.ledges()[Math.floor(Math.random() * this.ledges().length)];
+        if (!ledge) return this.standIdle();
+        // Float over to the panel, then sit on its edge
+        this.driftTo(rand(ledge.left + 40, ledge.right - 40), ledge.top, () => {
+            const g = ledge.el && ledge.el.isConnected ? ledge.el.getBoundingClientRect() : null;
+            if (!g || !g.width) return this.standIdle();
+            this.y = g.top; this.on = { el: ledge.el, left: g.left, right: g.right, top: g.top };
+            this.pose = "busy";
+            this.play("perchArrive", () => { this.pose = "sit"; this.satAt = performance.now(); this.restSit(); this.save(); });
+        });
     },
     restSit() {
         this.play(this.music ? "perchMusic" : "perch");
@@ -256,7 +285,7 @@ export default definePlugin({
     },
     standUp() {
         this.pose = "busy";
-        this.play("perchLeave", () => this.standIdle());
+        this.play("perchLeave", () => { this.y -= this.S() * 0.25; this.standIdle(); }); // lifts off the edge
     },
     lieDown() {
         this.pose = "lie";
@@ -269,31 +298,26 @@ export default definePlugin({
     },
 
     /** Glitch out, then back in somewhere else */
-    teleport(to: Ledge) {
+    teleport(x: number, y: number) {
         this.pose = "busy";
         this.play("leave", () => {
             this.pose = "gone";
             this.el.style.visibility = "hidden";
             setTimeout(() => {
                 if (!this.el) return;
-                this.x = rand(to.left + 30, to.right - 30);
-                this.y = to.top;
-                this.setOn(to);
+                const b = this.bounds();
+                this.x = Math.max(b.left, Math.min(b.right, x)); this.y = Math.max(b.top, Math.min(b.bottom, y));
+                this.on = null;
                 this.el.style.visibility = "";
                 this.pose = "busy";
-                this.play("arrive", () => this.standIdle());
+                this.play("arrive", () => { this.standIdle(); this.save(); });
             }, rand(250, 700));
         });
     },
 
-    walkTo(x: number) {
-        this.pose = "stand"; this.action = "walk"; this.target = x;
-        this.dir = x < this.x ? -1 : 1;
-        this.play("walk");
-    },
-
+    /** Thrown: she tumbles, slows down and hovers again (no gravity: she floats) */
     fallFrom(vx = 0, vy = 0) {
-        this.pose = "air"; this.vx = vx; this.vy = vy; this.setOn(null);
+        this.pose = "air"; this.vx = vx; this.vy = vy; this.on = null;
         if (Math.abs(vx) > 60) this.dir = vx < 0 ? -1 : 1;
         this.play("fall");
     },
@@ -302,27 +326,23 @@ export default definePlugin({
     decide() {
         const now = performance.now();
         if (!this.settings.wander && this.pose !== "lie") { this.think = now + 10000; return; }
-        const g = this.ground();
         if (this.pose === "stand") {
-            const onLedge = !!g?.el;
-            const others = this.ledges().filter(l => l.el !== g?.el);
+            const ledges = this.ledges();
+            const b = this.bounds();
             const choice = pick<string>([
-                ["walk", 55], ["idle", 20], ["grin", 6],
+                ["drift", 45], ["idle", 20], ["grin", 6],
                 ["dance", this.music ? 35 : 0],
-                ["sit", onLedge ? 35 : 0],
-                ["hop", others.length ? (onLedge ? 8 : 12) : 0],
-                ["floor", onLedge ? 6 : 0],
+                ["sit", ledges.length ? 25 : 0],
+                ["hop", 8],
             ]);
-            if (choice === "walk" && g) {
-                const span = Math.max(80, this.S() * 2.5);
-                const lo = Math.max(g.left + 25, this.x - span), hi = Math.min(g.right - 25, this.x + span);
-                if (hi - lo > 40) return this.walkTo(rand(lo, hi));
+            if (choice === "drift") {
+                const span = this.S() * 2.2;
+                return this.driftTo(this.x + rand(-span, span), this.y + rand(-span * 0.6, span * 0.6));
             }
             if (choice === "sit") return this.sitDown();
-            if (choice === "hop" && others.length) return this.teleport(others[Math.floor(Math.random() * others.length)]);
-            if (choice === "floor") return this.teleport(this.floor());
+            if (choice === "hop") return this.teleport(rand(b.left, b.right), rand(b.top, b.bottom));
             if (choice === "dance") { this.play("dance"); this.think = now + rand(8000, 20000); return; }
-            if (choice === "grin") { this.play("grin", () => this.standIdle()); this.think = Infinity; return; }
+            if (choice === "grin") { this.pose = "busy"; this.play("grin", () => this.standIdle()); return; }
             return this.standIdle();
         }
         if (this.pose === "sit") {
@@ -342,40 +362,40 @@ export default definePlugin({
         this.raf = requestAnimationFrame(t => this.loop(t));
         const dt = Math.max(0, Math.min(0.05, (now - (this.last || now)) / 1000));
         this.last = now;
+        const b = this.bounds();
 
         if (this.pose === "air") {
-            const prevY = this.y;
-            this.vy += GRAVITY * dt;
+            // Air drag instead of gravity: a throw slows to a hover
+            const drag = Math.exp(-2.6 * dt);
+            this.vx *= drag; this.vy *= drag;
             this.x += this.vx * dt; this.y += this.vy * dt;
-            const half = 40;
-            if (this.x < half || this.x > window.innerWidth - half) { this.vx *= -0.5; this.x = Math.max(half, Math.min(window.innerWidth - half, this.x)); }
-            if (this.y < 60) { this.y = 60; this.vy = Math.abs(this.vy) * 0.3; }
-            const land = this.vy > 0 ? this.landing(this.x, prevY, this.y) : null;
-            if (land) {
-                if (this.vy > 1100 && !land.el) { this.y = land.top; this.vy *= -0.3; this.vx *= 0.7; }
-                else { this.y = land.top; this.vx = this.vy = 0; this.setOn(land); this.pose = "busy"; this.play("glitch", () => this.standIdle()); }
-            }
-        } else if (this.pose !== "drag" && this.pose !== "gone") {
+            if (this.x < b.left || this.x > b.right) { this.vx *= -0.6; this.x = Math.max(b.left, Math.min(b.right, this.x)); }
+            if (this.y < b.top || this.y > b.bottom) { this.vy *= -0.6; this.y = Math.max(b.top, Math.min(b.bottom, this.y)); }
+            if (Math.hypot(this.vx, this.vy) < 40) { this.vx = this.vy = 0; this.pose = "busy"; this.play("glitch", () => { this.standIdle(); this.save(); }); }
+        } else if (this.pose === "sit" || this.pose === "lie" || (this.pose === "busy" && this.on)) {
+            // On a panel's edge: follow it as it moves; if it's gone, float up
             const g = this.ground();
-            if (!g) { this.fallFrom(); }
-            else {
-                this.y = g.top;
-                if (this.action === "walk" && this.pose === "stand") {
-                    // Matched to her stride: her feet land WALK_STRIDE sheet pixels further on each walk cycle
-                    const w = CLIPS.walk, speed = WALK_STRIDE * this.k(w) * w.fps / w.n;
-                    const step = Math.sign(this.target - this.x) * speed * dt;
-                    if (Math.abs(this.target - this.x) <= Math.abs(step)) { this.x = this.target; this.save(); this.standIdle(); }
-                    else this.x += step;
-                }
-                // Walked or got pushed off the end of a panel: drop
-                if (g.el && (this.x < g.left + 4 || this.x > g.right - 4)) {
-                    if (this.pose === "stand") this.fallFrom(this.dir * 120, 0);
-                    else this.x = Math.max(g.left + 12, Math.min(g.right - 12, this.x));
-                }
-                // (not mid-walk: the walk ends itself when she gets there)
-                if (this.pose !== "busy" && this.pose !== "air" && this.action !== "walk" && now >= this.think) this.decide();
+            if (!g) { this.y -= this.S() * 0.2; this.standIdle(); }
+            else { this.y = g.top; this.x = Math.max(g.left + 12, Math.min(g.right - 12, this.x)); }
+        } else if (this.pose === "stand" && this.action === "drift" && this.target) {
+            // Eased glide (slow start, slow stop)
+            const t = Math.min(1, (now - this.target.t0) / this.target.ms);
+            const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+            this.x = this.target.from.x + (this.target.x - this.target.from.x) * e;
+            this.y = this.target.from.y + (this.target.y - this.target.from.y) * e;
+            if (t >= 1) {
+                const then = this.target.then; this.target = null; this.action = "idle";
+                this.think = now + rand(2500, 7000);
+                if (then) then(); else this.save();
             }
+        } else if (this.pose === "stand" || this.pose === "busy") {
+            // Keep her inside the window if it was resized
+            this.x = Math.max(b.left, Math.min(b.right, this.x)); this.y = Math.max(b.top, Math.min(b.bottom, this.y));
         }
+        // A gentle hover bob while she's in the air (not when sitting or held)
+        const floating = this.pose === "stand" || (this.pose === "busy" && !this.on) || this.pose === "air";
+        this.bob = floating ? Math.sin(now / 650) * this.S() * 0.025 : 0;
+        if ((this.pose === "stand" || this.pose === "sit" || this.pose === "lie") && this.action !== "drift" && now >= this.think) this.decide();
         this.draw(now);
     },
 
@@ -464,11 +484,12 @@ export default definePlugin({
                 const src = this.ac.createBufferSource();
                 src.buffer = buf;
                 src.playbackRate.value = ratio;
-                const gain = this.ac.createGain();
-                gain.gain.value = VOICE.volume;
-                src.connect(gain).connect(this.ac.destination);
+                // Through her holographic voice chain, with a few glitches on this sentence
+                const flicker = this.ac.createGain();
+                src.connect(flicker).connect(this.voiceBus().input);
                 const start = Math.max(this.ac.currentTime + 0.02, this.playAt || 0);
                 src.start(start);
+                this.glitchVoice(src, flicker, start, buf.duration / ratio, text);
                 this.sources.push(src);
                 this.playAt = start + buf.duration / ratio;
                 const leftMs = (this.playAt - this.ac.currentTime) * 1000;
@@ -486,6 +507,111 @@ export default definePlugin({
             u.rate = 1.05; u.pitch = 1.3;
             speechSynthesis.speak(u); // queues after anything already speaking
         }
+    },
+
+    // ---------- her holographic voice ----------
+    /**
+     * Light, airy and crystalline, with a synthetic shimmer, faint metallic overtones, spectral echoes and glitches.
+     * One shared chain (built once): airy EQ → dry, plus a chorus (holographic doubling), a ring modulator (metallic
+     * sparkle) and a filtered echo, mixed by the "Voice effects" strength.
+     */
+    voiceBus() {
+        if (this.bus && this.bus.ac === this.ac) { this.bus.set(); return this.bus; }
+        const ac: AudioContext = this.ac;
+        const input = ac.createGain();
+        const out = ac.createGain();
+        out.gain.value = VOICE.volume;
+        out.connect(ac.destination);
+        // Airy: trim the lows, lift the highs a little
+        const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 150;
+        const air = ac.createBiquadFilter(); air.type = "highshelf"; air.frequency.value = 4800; air.gain.value = 5;
+        input.connect(hp).connect(air);
+        const dry = ac.createGain();
+        air.connect(dry).connect(out);
+        // Holographic doubling: a slightly delayed copy whose delay wobbles
+        const cd = ac.createDelay(0.05); cd.delayTime.value = 0.013;
+        const lfo = ac.createOscillator(); lfo.frequency.value = 0.7;
+        const lfoDepth = ac.createGain(); lfoDepth.gain.value = 0.0035;
+        lfo.connect(lfoDepth).connect(cd.delayTime); lfo.start();
+        const chorus = ac.createGain();
+        air.connect(cd).connect(chorus).connect(out);
+        // Metallic overtones: ring modulation, kept high and quiet
+        const ring = ac.createGain(); ring.gain.value = 0;
+        const carrier = ac.createOscillator(); carrier.frequency.value = 1350; carrier.connect(ring.gain); carrier.start();
+        const ringHp = ac.createBiquadFilter(); ringHp.type = "highpass"; ringHp.frequency.value = 2000;
+        const metal = ac.createGain();
+        air.connect(ring).connect(ringHp).connect(metal).connect(out);
+        // Spectral echoes: a short, darkening echo
+        const ed = ac.createDelay(1); ed.delayTime.value = 0.13;
+        const fb = ac.createGain(); fb.gain.value = 0.3;
+        const elp = ac.createBiquadFilter(); elp.type = "lowpass"; elp.frequency.value = 4500;
+        air.connect(ed); ed.connect(elp).connect(fb).connect(ed);
+        const echo = ac.createGain();
+        elp.connect(echo).connect(out);
+        const self = this;
+        this.bus = {
+            ac, input, out,
+            set() {
+                const f = Math.max(0, Math.min(100, Number(self.settings.fx ?? 70))) / 100;
+                chorus.gain.value = 0.5 * f; metal.gain.value = 0.16 * f; echo.gain.value = 0.22 * f;
+                air.gain.value = 2 + 4 * f;
+            },
+        };
+        this.bus.set();
+        return this.bus;
+    },
+
+    /** Little glitches on a sentence: pitch warps, dropouts and static, more when she's being cheeky */
+    glitchVoice(src: AudioBufferSourceNode, flicker: GainNode, start: number, dur: number, text: string) {
+        const f = Math.max(0, Math.min(100, Number(this.settings.fx ?? 70))) / 100;
+        if (!f) return;
+        const cheeky = /[!~]|\b(he+h|ha(ha)+|hehe|oops|gotcha|nope|corpo|arasaka)\b/i.test(text);
+        const n = Math.min(6, Math.round(f * (0.6 + dur * 0.5) * (cheeky ? 1.7 : 1)));
+        const ac: AudioContext = this.ac;
+        for (let i = 0; i < n; i++) {
+            const t = start + 0.15 + Math.random() * Math.max(0.1, dur - 0.3);
+            const len = 0.03 + Math.random() * 0.05;
+            const kind = Math.random();
+            if (kind < 0.45) { // a quick pitch warp
+                src.detune.setValueAtTime((Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 140) * f, t);
+                src.detune.setValueAtTime(0, t + len);
+            } else if (kind < 0.75) { // a dropout, like a flicker in the projection
+                flicker.gain.setValueAtTime(0.2, t);
+                flicker.gain.setValueAtTime(1, t + len * 0.7);
+            } else { // a crackle of static
+                const noise = ac.createBuffer(1, Math.ceil(ac.sampleRate * len), ac.sampleRate);
+                const d = noise.getChannelData(0);
+                for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * (Math.random() < 0.3 ? 1 : 0.2);
+                const ns = ac.createBufferSource(); ns.buffer = noise;
+                const nhp = ac.createBiquadFilter(); nhp.type = "highpass"; nhp.frequency.value = 3500;
+                const ng = ac.createGain(); ng.gain.value = 0.05 * f;
+                ns.connect(nhp).connect(ng).connect(this.voiceBus().out);
+                ns.start(t);
+            }
+        }
+    },
+
+    // ---------- her look ----------
+    /** Colour presets (hue shifts from her own red and green), plus a custom hue */
+    look() {
+        const presets: Record<string, { filter: string; accent: string }> = {
+            default: { filter: "", accent: "#ff2a6d" },
+            bubblegum: { filter: "hue-rotate(-28deg) saturate(1.15) brightness(1.08)", accent: "#ff5fb8" },
+            cyan: { filter: "hue-rotate(175deg) saturate(1.2)", accent: "#05d9e8" },
+            royal: { filter: "hue-rotate(-95deg) saturate(1.1)", accent: "#8f5bff" },
+            toxic: { filter: "hue-rotate(105deg) saturate(1.3)", accent: "#7dff3a" },
+            gold: { filter: "hue-rotate(40deg) saturate(1.25) brightness(1.08)", accent: "#ffc23a" },
+            ghost: { filter: "grayscale(0.85) brightness(1.25)", accent: "#cfd6e6" },
+            custom: { filter: `hue-rotate(${Number(this.settings.hue) || 0}deg)`, accent: `hsl(${(345 + (Number(this.settings.hue) || 0)) % 360} 100% 58%)` },
+        };
+        return presets[this.settings.color as string] ?? presets.default;
+    },
+    applyLook() {
+        if (!this.el) return;
+        const { filter, accent } = this.look();
+        const glow = this.settings.glow ? ` drop-shadow(0 0 ${Math.round(this.S() * 0.05)}px ${accent})` : "";
+        this.el.style.filter = `${filter} drop-shadow(0 6px 8px rgba(0,0,0,.35))${glow}`.trim();
+        this.bubble?.style.setProperty("--capri-accent", accent);
     },
 
     /** Keeps the bubble above her head, inside the window */
@@ -549,7 +675,7 @@ export default definePlugin({
         const me = common.UserStore?.getCurrentUser?.();
         const name = me?.globalName || me?.username || "them";
         const here = `\nWhere you are now: inside ${name}'s Discord app, as a desktop mate added by the Vanta client mod, not on their desktop and not riding their cursor. ` +
-            `You walk along Discord's panels, sit on the message box, nap and dance to their music. You only know the notes you're given about what's happening in Discord; never guess the rest.`;
+            `You float around their Discord window, sit on the edges of its panels, nap and dance to their music. You only know the notes you're given about what's happening in Discord; never guess the rest.`;
         if (this.desktopPersona) return this.desktopPersona + here;
         return `You are Capri, a glitchy personality construct from Night City. A playful chaos gremlin: sarcastic, teasing, a little smug, never mean, openly fond of ${name}. ` +
             `Talk like a friend texting, never like an assistant. One short line under 25 words, plain text, no emoji or asterisks. Use Night City slang like choom only now and then.` + here;
@@ -557,7 +683,7 @@ export default definePlugin({
 
     /** Gets her reply from Claude (or a canned one without a key) and says it */
     async reply(userText: string) {
-        if (this.trySend(userText)) return;
+        if (this.tryAction(userText) || this.trySend(userText)) return;
         this.history.push({ role: "user", content: userText });
         if (this.history.length > 16) this.history.splice(0, this.history.length - 16);
         // She heard you: a thinking bubble until the answer comes
@@ -569,7 +695,7 @@ export default definePlugin({
         const ask = this.history.length;
         try {
             const text = await native.aiChat(this.persona() + "\n" + this.context() +
-                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages, open things or take actions yourself; never say you did. If they want a message sent, tell them to say it like: send \"hi\" to name.", this.history, 150);
+                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages or take actions yourself; never say you did. If they want something done, tell them to say it plainly, like: send \"hi\" to name, reply to name saying hi, friend name, block name, delete my last message.", this.history, 150);
             this.history.push({ role: "assistant", content: text });
             this.say(text);
         } catch (e: any) {
@@ -604,6 +730,132 @@ export default definePlugin({
             if (text) return this.say(text);
         } catch { }
         this.say(fallback[Math.floor(Math.random() * fallback.length)]);
+    },
+
+    // ---------- doing things for you ----------
+    /** Anyone Discord knows about: your friends and DMs first, then people it has loaded (server members you've seen) */
+    findAnyone(who: string): any[] {
+        const first = this.findPeople(who);
+        if (first.length) return first;
+        const norm = (x: string) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const want = norm(who);
+        if (!want) return [];
+        const all = Object.values(common.UserStore?.getUsers?.() ?? {}) as any[];
+        const names = (u: any) => [u.username, u.globalName, u.global_name].filter(Boolean).map(norm);
+        const exact = all.filter(u => !u.bot && names(u).includes(want));
+        return exact.length ? exact : all.filter(u => !u.bot && names(u).some((n: string) => n.startsWith(want))).slice(0, 5);
+    },
+
+    /** One person for a request, or she says why not */
+    onePerson(who: string, anyone = false): any | null {
+        const found = anyone ? this.findAnyone(who) : this.findPeople(who);
+        const label = (u: any) => u.globalName || u.global_name || u.username;
+        if (!found.length) { this.say(`who's ${who}? i can't find them${anyone ? "" : " in your friends or DMs"}.`); return null; }
+        if (found.length > 1) { this.say(`which one? ${found.slice(0, 4).map(label).join(", ")}.`); return null; }
+        return found[0];
+    },
+
+    /** Shows a question with Do it / Cancel in her bubble; nothing happens until you press it */
+    confirmAction(question: string, yes: string, run: () => Promise<string>) {
+        clearTimeout(this.bubbleT); clearInterval(this.typeT);
+        const b = this.bubble;
+        b.hidden = false;
+        const done = (line: string) => { b.replaceChildren(); this.say(line); };
+        const btn = (label: string, primary: boolean, fn: () => void) => h("button", {
+            type: "button", onclick: fn,
+            style: {
+                marginRight: "6px", marginTop: "8px", padding: "3px 10px", borderRadius: "4px", border: "1px solid var(--capri-accent, #ff2a6d)", cursor: "pointer", font: "inherit",
+                background: primary ? "var(--capri-accent, #ff2a6d)" : "transparent", color: primary ? "#0c0a12" : "#f4eef7",
+            },
+        }, label);
+        b.replaceChildren(h("div", {}, question), h("div", {},
+            btn(yes, true, async () => {
+                b.replaceChildren(h("div", {}, "on it…"));
+                try { done(await run()); }
+                catch (e: any) { done("couldn't do it: " + (e?.body?.message ?? e?.message ?? "Discord said no")); }
+            }),
+            btn("Cancel", false, () => done("okay, never mind."))));
+        this.placeBubble();
+        this.bubbleT = setTimeout(() => { if (b.querySelector("button")) { b.replaceChildren(); b.hidden = true; } }, 30_000);
+        this.talk(1200);
+    },
+
+    /**
+     * "friend 415i", "unfriend 415i", "block 415i", "unblock 415i", "delete my last message", "reply to 415i saying hi".
+     * Returns true if it was one of these (she then asks before doing it).
+     */
+    tryAction(said: string): boolean {
+        let t = said.trim()
+            .replace(/^(hey|hi|yo|ok|okay)?\s*,?\s*capri\s*[,!:]?\s*/i, "")
+            .replace(/^(can|could|would|will) (you|u|ya) (please |pls |plz )?/i, "")
+            .replace(/^(please|pls|plz) /i, "")
+            .replace(/[?!.]+$/, "").trim();
+        for (let i = 0; i < 3; i++) t = t.replace(/[,\s]+(please|pls|plz|for me|rn|right now|now|thanks|thx|ty)$/i, "").trim();
+        const label = (u: any) => u.globalName || u.global_name || u.username;
+        const api = () => discord.api();
+        let m: RegExpExecArray | null;
+
+        if ((m = /^(?:unfriend|remove friend|remove|unadd)\s+@?(\S+)$/i.exec(t)) && !/^(my|the|that|this)$/i.test(m[1])) {
+            const u = this.onePerson(m[1]); if (!u) return true;
+            this.confirmAction(`remove ${label(u)} from your friends?`, "Remove", async () => { await api().del({ url: `/users/@me/relationships/${u.id}` }); return `done. ${label(u)} isn't your friend anymore.`; });
+            return true;
+        }
+        if ((m = /^(?:friend|add|add friend|send (?:a )?friend request to|friend request)\s+@?(\S+)$/i.exec(t))) {
+            const u = this.onePerson(m[1], true); if (!u) return true;
+            this.confirmAction(`send ${label(u)} (@${u.username}) a friend request?`, "Send request", async () => { await api().put({ url: `/users/@me/relationships/${u.id}`, body: {} }); return `request sent to ${label(u)}.`; });
+            return true;
+        }
+        if ((m = /^unblock\s+@?(\S+)$/i.exec(t))) {
+            const u = this.onePerson(m[1], true); if (!u) return true;
+            this.confirmAction(`unblock ${label(u)}?`, "Unblock", async () => { await api().del({ url: `/users/@me/relationships/${u.id}` }); return `${label(u)} is unblocked.`; });
+            return true;
+        }
+        if ((m = /^block\s+@?(\S+)$/i.exec(t))) {
+            const u = this.onePerson(m[1], true); if (!u) return true;
+            this.confirmAction(`block ${label(u)}? they won't be able to message you.`, "Block", async () => { await api().put({ url: `/users/@me/relationships/${u.id}`, body: { type: 2 } }); return `blocked ${label(u)}.`; });
+            return true;
+        }
+        if ((m = /^(?:delete|remove|unsend|undo)\s+(?:my\s+)?(?:last|latest|previous|recent)?\s*(?:message|msg|text)(?:\s+(?:in|to|with)\s+@?(\S+))?$/i.exec(t))) {
+            let channelId = common.SelectedChannelStore?.getChannelId?.();
+            if (m[1] && !/^(here|this)$/i.test(m[1])) {
+                const u = this.onePerson(m[1]); if (!u) return true;
+                channelId = common.ChannelStore?.getDMFromUserId?.(u.id);
+            }
+            if (!channelId) { this.say("delete it where? open the chat first."); return true; }
+            const me = common.UserStore?.getCurrentUser?.()?.id;
+            const msgs: any[] = common.MessageStore?.getMessages?.(channelId)?._array ?? [];
+            const mine = [...msgs].reverse().find(x => x.author?.id === me && !x.deleted);
+            if (!mine) { this.say("i can't see a message from you there."); return true; }
+            const preview = (mine.content || "[attachment]").slice(0, 60);
+            this.confirmAction(`delete "${preview}${mine.content?.length > 60 ? "…" : ""}"?`, "Delete", async () => { await api().del({ url: `/channels/${channelId}/messages/${mine.id}` }); return "gone. nobody saw that. probably."; });
+            return true;
+        }
+        if ((m = /^(?:reply|respond)\s+(?:to\s+)?@?(\S+?)[:,]?\s+(?:saying|with|that)?\s*(.+)$/i.exec(t))) {
+            const who = m[1], text = m[2].replace(/^["“”'‘’]+|["“”'‘’]+$/g, "").trim();
+            if (!text || /^(me|you|u|it|this|that)$/i.test(who)) return false;
+            const norm = (x: string) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            const matches = (a: any) => [a?.username, a?.globalName, a?.global_name].filter(Boolean).map(norm).some((n: string) => n === norm(who) || n.startsWith(norm(who)));
+            // Their latest message in the chat you have open, or else in your DMs with them
+            const latestFrom = (ch?: string | null) => ch ? [...(common.MessageStore?.getMessages?.(ch)?._array ?? [])].reverse().find((x: any) => matches(x.author)) : null;
+            let channelId = common.SelectedChannelStore?.getChannelId?.() ?? null;
+            let target = latestFrom(channelId);
+            if (!target) {
+                const u = this.findPeople(who)[0];
+                channelId = u ? common.ChannelStore?.getDMFromUserId?.(u.id) ?? null : null;
+                target = latestFrom(channelId);
+            }
+            if (!target || !channelId) { this.say(`i can't see a message from ${who} to reply to. open the chat they wrote in first.`); return true; }
+            const guildId = common.ChannelStore?.getChannel?.(channelId)?.guild_id;
+            const quoted = (target.content || "[attachment]").slice(0, 40);
+            this.confirmAction(`reply "${text}" to ${label(target.author)} ("${quoted}${target.content?.length > 40 ? "…" : ""}")?`, "Reply", async () => {
+                const nonce = String(BigInt(Date.now() - 1420070400000) << 22n);
+                const res = await api().post({ url: `/channels/${channelId}/messages`, body: { content: text, nonce, tts: false, flags: 0, message_reference: { message_id: target.id, channel_id: channelId, ...(guildId ? { guild_id: guildId } : {}) } } });
+                if (!res?.body?.id) throw new Error("Discord didn't confirm the reply");
+                return `replied to ${label(target.author)}.`;
+            });
+            return true;
+        }
+        return false;
     },
 
     // ---------- sending messages for you ----------
@@ -748,7 +1000,7 @@ export default definePlugin({
         this.ctx = cv.getContext("2d", { willReadFrequently: true });
 
         // Load the common sets now; the big sitting and lying sets load when first needed
-        for (const n of ["idle", "walk", "fall", "glitch", "arrive", "leave"] as ClipName[]) this.sheet(CLIPS[n], false);
+        for (const n of ["idle", "fall", "glitch", "arrive", "leave"] as ClipName[]) this.sheet(CLIPS[n], false);
 
         this.el = h("div", { class: "vanta-capri", "aria-hidden": "true" });
         Object.assign(this.el.style, {
@@ -759,8 +1011,8 @@ export default definePlugin({
         this.style = h("style", {}, `html.vanta-capri-hover, html.vanta-capri-hover * { cursor: grab !important; }
 html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; user-select: none !important; }
 .vanta-capri-bubble { position: fixed; left: 0; top: 0; z-index: 1000; max-width: 260px; min-width: 40px; padding: 8px 11px;
-  background: rgba(12, 10, 18, .94); color: #f4eef7; border: 1px solid #ff2a6d; border-radius: 4px 12px 12px 12px;
-  box-shadow: 0 0 0 1px rgba(255, 42, 109, .25), 0 8px 24px rgba(0, 0, 0, .45), 0 0 18px rgba(255, 42, 109, .18);
+  background: rgba(12, 10, 18, .94); color: #f4eef7; border: 1px solid var(--capri-accent, #ff2a6d); border-radius: 4px 12px 12px 12px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--capri-accent, #ff2a6d) 25%, transparent), 0 8px 24px rgba(0, 0, 0, .45), 0 0 18px color-mix(in srgb, var(--capri-accent, #ff2a6d) 18%, transparent);
   font: 13px/1.4 "Share Tech Mono", Consolas, ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; pointer-events: auto; }
 .vanta-capri-bubble[hidden] { display: none; }
 .vanta-capri-input { all: unset; display: block; width: 220px; color: #f4eef7; font: inherit; caret-color: #05d9e8; }
@@ -769,6 +1021,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         this.bubble = h("div", { class: "vanta-capri-bubble", role: "status", hidden: true });
         document.body.append(this.bubble);
         this.history = [] as { role: "user" | "assistant"; content: string }[];
+        this.applyLook();
         this.sources = []; this.playAt = 0; this.genChain = Promise.resolve();
         this.Guilds = webpack.findStore("UserGuildSettingsStore");
         this.loadPersona();
@@ -834,7 +1087,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
             e.preventDefault(); e.stopImmediatePropagation();
             clearTimeout(this.pokeT);
             this.wake();
-            if (this.pose === "stand" && this.ground()?.el) this.sitDown();
+            if (this.pose === "stand") this.sitDown(this.ledges().sort((a, c) => Math.abs((a.left + a.right) / 2 - this.x) - Math.abs((c.left + c.right) / 2 - this.x))[0]);
             else if (this.pose === "sit") this.standUp();
             else if (this.pose === "lie") this.sitUp();
         };
@@ -902,12 +1155,12 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         }, 2000);
 
         // Glitch in where she was last time
-        const saved = await storage.get<{ x: number; ledge: number }>("Capri");
+        const saved = await storage.get<{ x: number; y?: number }>("Capri");
         if (!this.el) return; // stopped meanwhile
-        const ledge = saved && saved.ledge >= 0 ? this.ledges().find(l => l.el?.matches(LEDGES[saved.ledge])) : null;
-        const on = ledge ?? this.floor();
-        this.x = Math.max(on.left + 30, Math.min(on.right - 30, (saved?.x ?? 0.7) * window.innerWidth));
-        this.y = on.top; this.on = on;
+        const b = this.bounds();
+        this.x = Math.max(b.left, Math.min(b.right, (saved?.x ?? 0.7) * window.innerWidth));
+        this.y = Math.max(b.top, Math.min(b.bottom, (saved?.y ?? 0.6) * window.innerHeight));
+        this.on = null;
         this.pose = "busy";
         this.play("arrive", () => this.standIdle());
         this.raf = requestAnimationFrame(t => this.loop(t));
@@ -938,7 +1191,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         this.images?.clear();
     },
 
-    onSettingChange() { if (this.started && this.el && this.clip) this.applySheet(); },
+    onSettingChange() { if (this.started && this.el && this.clip) { this.applySheet(); this.applyLook(); this.bus?.set(); } },
 
     settingsPanel() {
         const link = (text: string, url: string) => h("a", { href: url, onclick: (e: Event) => { e.preventDefault(); native.openUrl(url); } }, text);
