@@ -16,6 +16,7 @@ import { updaterInfo, updaterCheck, updaterApply } from "./updater";
 import { installCspPatch } from "./csp";
 import { startSelfHeal } from "./selfHeal";
 import { createCloud } from "./cloud";
+import { createAi } from "./ai";
 import { bdThemes, bdInstallTheme } from "./bdStore";
 import { storeIndex, storeDownload } from "./pluginStore";
 
@@ -180,6 +181,11 @@ function main() {
 
     // Cloud sync (private GitHub Gist; token encrypted with safeStorage)
     const cloud = createCloud(DATA_DIR);
+    // Claude chat for plugins (key encrypted, requests only to api.anthropic.com)
+    const ai = createAi(DATA_DIR);
+    handle("ai-has-key", () => ai.hasKey());
+    handle("ai-set-key", (_, k) => ai.setKey(k == null ? null : String(k)));
+    handle("ai-chat", (_, system, messages, maxTokens) => ai.chat(String(system ?? ""), messages, Number(maxTokens)));
     handle("cloud-status", () => cloud.status());
     handle("cloud-sign-in", (_, t) => cloud.signIn(String(t)));
     handle("cloud-sign-out", () => cloud.signOut());

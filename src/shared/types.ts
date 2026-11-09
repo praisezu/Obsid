@@ -127,6 +127,11 @@ export interface NativeAPI {
     /** GET an https URL from the main process (not subject to Discord's CSP). */
     fetchText(url: string): Promise<string>;
 
+    /** Claude chat for plugins. The key is stored encrypted in the main process and can't be read back. */
+    aiHasKey(): Promise<boolean>;
+    aiSetKey(key: string | null): Promise<boolean>;
+    aiChat(system: string, messages: { role: "user" | "assistant"; content: string }[], maxTokens?: number): Promise<string>;
+
     /** Opens spotify:/steam: links in their desktop apps */
     openAppUrl(url: string): Promise<void>;
 

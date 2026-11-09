@@ -23,6 +23,9 @@ const native: NativeAPI = {
     fetchTheme: url => invoke("fetch-theme", url),
 
     fetchText: url => invoke("fetch-text", url),
+    aiHasKey: () => invoke("ai-has-key"),
+    aiSetKey: key => invoke("ai-set-key", key),
+    aiChat: (system, messages, maxTokens) => invoke("ai-chat", system, messages, maxTokens),
     openAppUrl: url => invoke("open-app-url", url),
     bdThemes: force => invoke("bd-themes", force),
     bdInstallTheme: id => invoke("bd-install-theme", id),
