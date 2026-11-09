@@ -8,6 +8,8 @@ import { native, cleanError } from "./core/native";
 import { quickCss } from "./core/quickCss";
 import { settings, saveSettings } from "./core/settings";
 import { onDomReady } from "./core/utils";
+import { webpack } from "./core/webpack";
+import { fixTheme } from "./themeFixer";
 
 export function parseMeta(css: string): Record<string, string> {
     const block = String(css).match(/^\s*\/\*\*([\s\S]*?)\*\//);
@@ -130,7 +132,15 @@ export const themes = {
                     el.dataset.vantaTheme = key;
                     styles.set(key, el);
                 }
-                if (el.textContent !== css) el.textContent = css;
+                if (el.dataset.vantaRaw !== css) {
+                    // Show it as it is now, then swap in the auto-fixed version (outdated Discord classes) when ready
+                    el.dataset.vantaRaw = css;
+                    el.textContent = css;
+                    const target = el;
+                    if (settings.vanta.themeFixer !== false) webpack.ready.then(() => fixTheme(css)).then(fixed => {
+                        if (target.dataset.vantaRaw === css && fixed !== css) target.textContent = fixed;
+                    });
+                }
                 document.head.append(el); // re-append keeps order stable
             }
             quickCss.apply();

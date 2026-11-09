@@ -5,11 +5,13 @@
  */
 import { logger } from "./logger";
 import { onDomReady } from "./utils";
+import { health } from "./health";
 
 interface Watcher {
     selector: string;
     cb: (el: HTMLElement) => void;
     seen: WeakSet<Element>;
+    owner: string | null;
 }
 
 const watchers = new Set<Watcher>();
@@ -20,7 +22,7 @@ let scheduled = false;
 function run(w: Watcher, el: Element) {
     if (w.seen.has(el)) return;
     w.seen.add(el);
-    try { w.cb(el as HTMLElement); } catch (e) { logger.error("Element watcher failed", e); }
+    try { health.track(w.owner, () => w.cb(el as HTMLElement)); } catch (e) { logger.error(`Element watcher failed${w.owner ? " (" + w.owner + ")" : ""}`, e); }
 }
 
 function scan(w: Watcher, root: ParentNode) {
@@ -66,7 +68,7 @@ function ensureObserver() {
  * added later. Returns a function that stops watching.
  */
 export function watchElements(selector: string, cb: (el: HTMLElement) => void) {
-    const w: Watcher = { selector, cb, seen: new WeakSet() };
+    const w: Watcher = { selector, cb, seen: new WeakSet(), owner: health.current };
     watchers.add(w);
     onDomReady(() => scan(w, document));
     ensureObserver();

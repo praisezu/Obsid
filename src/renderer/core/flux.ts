@@ -4,10 +4,12 @@
  */
 import { common } from "./common";
 import { logger } from "./logger";
+import { health } from "./health";
 
 type Handler = (action: any) => void;
 const handlers = new Map<string, Set<Handler>>();
 const relays = new Map<string, Handler>();
+const owners = new WeakMap<Handler, string | null>();
 
 /** Listen to a Flux action type (e.g. "MESSAGE_CREATE"). Returns a function that stops listening. */
 export function onFlux(type: string, fn: Handler) {
@@ -18,12 +20,13 @@ export function onFlux(type: string, fn: Handler) {
         set = new Set();
         handlers.set(type, set);
         const relay: Handler = action => {
-            for (const h of [...set!]) { try { h(action); } catch (e) { logger.error(`Flux handler for ${type} failed`, e); } }
+            for (const h of [...set!]) { const owner = owners.get(h) ?? null; try { health.track(owner, () => h(action)); } catch (e) { logger.error(`Flux handler for ${type} failed${owner ? " (" + owner + ")" : ""}`, e); } }
         };
         relays.set(type, relay);
         D.subscribe(type, relay);
     }
     set.add(fn);
+    owners.set(fn, health.current);
     return () => {
         set!.delete(fn);
         if (!set!.size) {

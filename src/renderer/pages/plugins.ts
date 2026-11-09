@@ -1,9 +1,10 @@
 import { native } from "../core/native";
 import { plugins, isPluginEnabled, setPluginEnabled, type PluginInstance } from "../core/plugins";
-import { saveSettings, saveSettingsNow } from "../core/settings";
+import { settings, saveSettings, saveSettingsNow } from "../core/settings";
 import { pluginStore } from "../pluginStore";
 import { checkPluginUpdates, knownUpdates, updateAll } from "../pluginUpdates";
 import { ui, h } from "../ui/components";
+import { rank, askCapri } from "../smartSearch";
 
 ui.registerPage({
     id: "plugins",
@@ -23,19 +24,39 @@ ui.registerPage({
         const renderGrid = () => {
             const q = String(st.query).trim().toLowerCase();
             const all = [...plugins.values()].sort((a, b) => a.name.localeCompare(b.name));
-            const list = all.filter(p => {
+            let list = all.filter(p => {
                 const on = isPluginEnabled(p.name);
                 if (st.filter === "enabled" && !on) return false;
                 if (st.filter === "disabled" && on) return false;
                 if (st.filter === "installed" && !p.file) return false;
                 if (st.category && (p.category || "Other") !== st.category) return false;
-                if (!q) return true;
-                // Settings search: also match each option's label and description
-                return [p.name, p.description, p.category, ...(p.authors || []), ...optionText(p)].join(" ").toLowerCase().includes(q);
+                return true;
             });
+            if (q) {
+                // Exact text matches first (names, descriptions, settings), then smart matches by meaning
+                const exact = list.filter(p => [p.name, p.description, p.category, ...(p.authors || []), ...optionText(p)].join(" ").toLowerCase().includes(q));
+                const smart = rank(list.filter(p => !exact.includes(p)), q);
+                list = [...exact, ...smart];
+            }
+            if (st.asked?.query === q && st.asked.names.length) {
+                // Capri's picks go first
+                const picked = st.asked.names.map((n: string) => plugins.get(n)).filter(Boolean) as PluginInstance[];
+                list = [...picked, ...list.filter(p => !picked.includes(p))];
+            }
             count.textContent = `${list.length} of ${all.length}`;
             grid.replaceChildren(...list.map(p => pluginCard(p, renderGrid, q)));
-            if (!list.length)
+            // Ask Capri: for requests written as a sentence, or when nothing matched
+            if (q && (q.split(/s+/).length >= 3 || !list.length) && st.asked?.query !== q) {
+                grid.prepend(h("div", { style: { gridColumn: "1 / -1" } }, ui.note("",
+                    list.length ? "Not what you meant? " : `No plugins match "${st.query}". `,
+                    ui.button(st.asking ? "Asking Capri…" : "Ask Capri", { small: true, variant: "primary", icon: "search", disabled: !!st.asking, onClick: async () => {
+                        st.asking = true; renderGrid();
+                        try { st.asked = { query: q, names: await askCapri(all, String(st.query)) }; }
+                        catch (e) { ui.toast("Capri couldn't answer right now: " + String((e as Error)?.message ?? e), { type: "danger" }); }
+                        st.asking = false; renderGrid();
+                        if (st.asked?.query === q && !st.asked.names.length) ui.toast("Capri doesn't know a plugin that does that.");
+                    } }))));
+            } else if (!list.length)
                 grid.replaceChildren(h("div", { style: { gridColumn: "1 / -1" } },
                     ui.empty(st.filter === "installed" && !q ? "You haven't imported any plugins yet." :
                         q ? `No plugins match "${st.query}".` : "No plugins here.", "search")));
@@ -56,7 +77,7 @@ ui.registerPage({
         renderUpdates();
         checkPluginUpdates().then(renderUpdates);
 
-        const search = ui.searchInput("Search plugins and settings", v => { st.query = v; renderGrid(); });
+        const search = ui.searchInput("Search, or describe what you want (\"hide people's bios\")", v => { st.query = v; renderGrid(); });
         search.querySelector("input")!.value = st.query;
 
         const categories = [...new Set([...plugins.values()].map(p => p.category || "Other"))].sort();
@@ -126,6 +147,7 @@ function pluginCard(p: PluginInstance, rerender: () => void, q = "") {
                 checked: on, label: `Enable ${p.name}`,
                 onChange: async v => {
                     await setPluginEnabled(p.name, v);
+                    if (v) firstRun(p);
                     if (p.restartNeeded) await promptRestart(p.name, v);
                     else if (p.error) ui.toast(`${p.name} failed to start: ${p.error}`, { type: "danger" });
                     rerender();
@@ -205,3 +227,24 @@ function openOptions(p: PluginInstance) {
 }
 
 void native;
+
+/** The first time a plugin is turned on: what it does, a picture if it has one, and its settings */
+function firstRun(p: PluginInstance) {
+    const seen = (settings.vanta.seenPreviews ??= []);
+    if (seen.includes(p.name)) return;
+    seen.push(p.name);
+    saveSettings();
+    const opts = Object.values(p.options || {});
+    ui.modal({
+        title: `${p.name} is on`,
+        body: h("div", { style: { display: "grid", gap: "10px" } },
+            p.preview ? h("img", { src: p.preview, alt: "", style: { width: "100%", borderRadius: "8px" } }) : null,
+            h("div", { style: { fontSize: "15px", lineHeight: "1.5" } }, p.description || "No description."),
+            opts.length ? h("div", { class: "vanta-item-desc" }, `Settings you can change: ${opts.map(o => o.label || "").filter(Boolean).join(", ")}.`) : null,
+            p.restartNeeded ? ui.note("warn", "This one takes effect after Discord restarts.") : null),
+        buttons: [
+            ...(opts.length || typeof p.settingsPanel === "function" ? [{ text: "Open its settings", variant: "ghost", onClick: () => { setTimeout(() => openOptions(p), 0); } }] : []),
+            { text: "Got it", variant: "primary" },
+        ],
+    });
+}

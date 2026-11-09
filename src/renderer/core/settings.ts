@@ -10,6 +10,12 @@ export interface Settings {
     vanta: {
         startupToast: boolean;
         quickPanel: boolean;
+        /** Rewrite outdated Discord class names in themes (default on) */
+        themeFixer?: boolean;
+        /** Plugins whose first-run preview was already shown */
+        seenPreviews?: string[];
+        /** Per-server profiles: guild id -> profile */
+        serverProfiles?: Record<string, { theme?: string | null; css?: string; off?: string[] }>;
         autoCheckUpdates: boolean;
         /** Download and install updates automatically, then restart Discord */
         autoUpdate: boolean;

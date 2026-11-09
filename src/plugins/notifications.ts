@@ -1,5 +1,5 @@
 // Notification-related plugins built on Discord's own stores and events.
-import { definePlugin, every, common, webpack, onFlux, net, ui, h, managedStyle } from "@api";
+import { definePlugin, every, common, webpack, onFlux, net, ui, h, managedStyle, discord } from "@api";
 
 const desktopNotify = (title: string, body: string) => {
     try { if ("Notification" in window) new Notification(title, { body, silent: false }); } catch { }
@@ -163,7 +163,7 @@ export default [
         needsWebpack: true,
         start() {
             // Discord's authenticated HTTP helper: { get, post, put, patch, del }
-            const RestAPI = webpack.findByProps("get", "post", "put", "patch", "del");
+            const RestAPI = discord.api();
             if (!RestAPI) throw new Error("Discord's API module wasn't found");
             const joined = new Set<string>();
             // Only servers you join from now on (GUILD_CREATE also fires for existing servers on reconnect).

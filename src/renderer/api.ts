@@ -12,6 +12,7 @@ export { webpack, filters } from "./core/webpack";
 export { patcher } from "./core/patcher";
 export { net, type NetRequest } from "./core/net";
 export { common } from "./core/common";
+export { discord } from "./core/discord";
 export { native, cleanError } from "./core/native";
 export { settings, saveSettings } from "./core/settings";
 export { quickCss } from "./core/quickCss";

@@ -3,6 +3,7 @@ import { settings, saveSettings, type PluginSettings } from "./settings";
 import { ready as webpackReady } from "./webpack";
 import { onDomReady } from "./utils";
 import { native } from "./native";
+import { health } from "./health";
 
 export type OptionType = "boolean" | "string" | "number" | "text" | "select";
 
@@ -21,6 +22,8 @@ export interface PluginDef {
     description?: string;
     authors?: string[];
     category?: string;
+    /** Picture (URL) shown in the plugin's first-run preview */
+    preview?: string;
     /** Vanta version the plugin was added in; shows a "New" tag during that version */
     since?: string;
     enabledByDefault?: boolean;
@@ -126,7 +129,9 @@ export async function startPlugin(p: PluginInstance) {
     for (let attempt = 0; ; attempt++) {
         if (!isPluginEnabled(p.name) && attempt > 0) return false; // turned off meanwhile
         try {
-            await p.start?.();
+            const t0 = performance.now();
+            await health.attribute(p.name, () => p.start?.());
+            health.startTime(p.name, performance.now() - t0);
             p.started = true;
             p.error = null;
             logger.log(`Started ${p.name}${attempt ? ` (after ${attempt} retr${attempt === 1 ? "y" : "ies"})` : ""}`);

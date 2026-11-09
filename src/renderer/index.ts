@@ -16,6 +16,8 @@ import { storage } from "./core/storage";
 import { settings, saveSettings } from "./core/settings";
 import { onDomReady, sleep, managedStyle } from "./core/utils";
 import { webpack } from "./core/webpack";
+import { health } from "./core/health";
+import { discord } from "./core/discord";
 import { themes } from "./themes";
 import { pluginStore } from "./pluginStore";
 import { ui } from "./ui/components";
@@ -26,6 +28,9 @@ import "./pages/store";
 import "./pages/themes";
 import "./pages/updater";
 import "./pages/changelog";
+import "./pages/performance";
+import "./pages/editor";
+import "./pages/search";
 import { startAutoUpdate, checkForUpdates } from "./autoUpdate";
 import "./pages/cloud";
 import "./pages/backup";
@@ -33,6 +38,7 @@ import { settingsSidebar } from "./settingsSidebar";
 import { quickPanel } from "./quickPanel";
 import { inSafeMode, showSafeModeNotice } from "./safeMode";
 import { startWindowControls } from "./windowControls";
+import { startServerProfiles } from "./serverProfiles";
 import { startupPluginUpdateCheck } from "./pluginUpdates";
 
 import builtinPlugins from "~plugins";
@@ -50,7 +56,7 @@ if (w.Vanta) {
         version: __VANTA_VERSION__,
         native, logger, makeLogger,
         settings, saveSettings,
-        webpack, patcher, net, common, quickCss, themes, pluginStore, storage,
+        webpack, patcher, net, common, discord, quickCss, themes, pluginStore, storage,
         utils: { onDomReady, sleep, managedStyle },
         plugins,
         /** For imported .js plugins: Vanta.definePlugin({...}) registers immediately. */
@@ -63,7 +69,15 @@ if (w.Vanta) {
             if (booted) return;
             booted = true;
             startWindowControls();
+            // Crash shield: a plugin that keeps throwing gets switched off, and you hear about it
+            health.onTrip((name, error) => {
+                const p = plugins.get(name);
+                if (!p || !isPluginEnabled(name)) return;
+                setPluginEnabled(name, false).then(() => { p.error = "Turned off by the crash shield: " + error; });
+                ui.toast(`${name} kept failing, so Vanta turned it off. (${error})`, { type: "danger", ms: 9000 });
+            });
             startAll();
+            startServerProfiles();
             webpack.ready.then(() => {
                 // Reaching here means Discord loaded fine: reset crash detection (after a short grace period).
                 setTimeout(() => native.bootOk(), 8000);

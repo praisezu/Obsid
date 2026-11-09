@@ -1,3 +1,5 @@
+import { health } from "./health";
+
 export function onDomReady(fn: () => void) {
     if (document.readyState !== "loading" && document.body) fn();
     else document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -10,7 +12,8 @@ export const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
  * cost nothing in the background. Stop it with clearInterval().
  */
 export function every(fn: () => void, ms: number) {
-    return setInterval(() => { if (!document.hidden) fn(); }, ms);
+    const owner = health.current;
+    return setInterval(() => { if (!document.hidden) try { health.track(owner, fn); } catch { } }, ms);
 }
 
 /** A <style> element owned by a plugin. Call .set(css) to update and .remove() on stop. */

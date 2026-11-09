@@ -1,5 +1,5 @@
 {
-  "version": "0.5.6",
+  "version": "0.5.7",
   "repo": "praisezu/Vanta",
   "discord": "https://discord.gg/Eh6fSPnznj",
   "plugins": [
@@ -47,6 +47,11 @@
       "name": "BlurNames",
       "description": "Streamer-safe: blurs names and previews in your DM list and member list until you hover them.",
       "category": "Privacy"
+    },
+    {
+      "name": "Bookmarks",
+      "description": "Save messages from anywhere. Hover a message and press Ctrl+B; Ctrl+Shift+B opens your bookmarks. They're in Vanta's Search too.",
+      "category": "Utility"
     },
     {
       "name": "CallTimer",
@@ -196,6 +201,11 @@
     {
       "name": "FocusMode",
       "description": "Press Ctrl+Alt+F to hide the server list, channel list and member list, leaving just the chat.",
+      "category": "Appearance"
+    },
+    {
+      "name": "FolderTweaks",
+      "description": "Server folders that close themselves when you leave them, and folder colours that fill the whole folder.",
       "category": "Appearance"
     },
     {
@@ -534,6 +544,11 @@
       "category": "Chat"
     },
     {
+      "name": "SoundboardKeys",
+      "description": "Alt+1 to Alt+9 play your first nine soundboard favourites in the voice channel you're in.",
+      "category": "Utility"
+    },
+    {
       "name": "SpoilerUploads",
       "description": "Marks every file you upload as a spoiler.",
       "category": "Chat"
@@ -617,6 +632,16 @@
       "name": "VoiceNarrator",
       "description": "Reads out who joins and leaves your voice channel, using your computer's text-to-speech voice.",
       "category": "Utility"
+    },
+    {
+      "name": "VolumeBooster",
+      "description": "Turn people up past Discord's 200% limit (up to 500%). Use the sliders in this plugin's settings while you're in a call.",
+      "category": "Utility"
+    },
+    {
+      "name": "WhoReacted",
+      "description": "Shows the avatars of people who reacted, right on each reaction. Loaded only for reactions on screen, a few at a time.",
+      "category": "Chat"
     },
     {
       "name": "YouTubeShortLinks",

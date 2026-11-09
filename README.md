@@ -72,6 +72,16 @@ Vanta adds an **Vanta Settings** section to Discord's own **User Settings** side
 
 Press **Ctrl+Shift+O** anywhere to open the same pages in a pop-up without going through Settings.
 
+## Tools in Vanta Settings
+
+- **Performance**: what each plugin you switched on costs (CPU time per minute, calls, start time), plus a crash shield that turns off a plugin that keeps throwing errors and tells you which.
+- **Plugin editor**: write or tweak a plugin inside Discord; Ctrl+S saves and reloads it live, with Vanta API suggestions.
+- **Search**: messages Discord has loaded, your MessageLogger history and bookmarks, with filters like from:me, has:image, in:dms.
+- **Server profiles**: a different theme, extra CSS or paused plugins in particular servers.
+- **Smart plugin search**: describe what you want ("hide people's bios"); "Ask Capri" for anything it can't place.
+- **Theme auto-fixer**: old BetterDiscord themes that use Discord's retired class names are updated as they load.
+- **Update log**: every release and what changed.
+
 ## Staying installed, safe mode and sync
 
 - **Auto re-install.** Discord updates reset its files, which would drop Vanta. Vanta re-applies itself
@@ -137,7 +147,7 @@ in `%APPDATA%\Vanta\plugins\`.
 
 Try it with [`examples/HelloVanta.js`](examples/HelloVanta.js).
 
-## Built-in plugins (124)
+## Built-in plugins (129)
 
 Every plugin is off until you turn it on (except NoTrack, ClearURLs and NoDevToolsWarning), and a
 plugin that's off costs nothing. Most appearance plugins are pure CSS, and plugins that react to
@@ -146,9 +156,9 @@ new messages share one page watcher, so turning many on doesn't slow Discord dow
 | Category | Plugins |
 | --- | --- |
 | Privacy | NoTrack, ClearURLs, SilentTyping, AnonymiseFileNames, BlurMedia, BlurNames |
-| Chat | QuickReply, PasteLinks, RevealAllSpoilers, BetterUploadButton, NoBlockedMessages, SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history, saved log), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
-| Appearance | Capri (desktop mate that walks, sits, talks in her own voice and chats with no key needed; art and voice from [Capri Desktop](https://github.com/lachydotmcg/capri-desktop)), CursorPet, KeyboardSounds, CrispText, HideMentionBars, TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
-| Utility | VoiceNarrator, LastSeen, PlatformIndicators, HiddenChannels, FriendsSince, PinDMs, CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
+| Chat | WhoReacted, QuickReply, PasteLinks, RevealAllSpoilers, BetterUploadButton, NoBlockedMessages, SendGuard, Unindent, MessageLogger (keeps deleted messages in chat, shows edit history, saved log), Translate, ShowMeYourName, ChannelTypingIndicator, HoverReactKeys, HideBotMessages, HideSystemMessages, KeywordAlerts, IgnoreUsers, HighlightUsers, HideMessagesWith, CollapseLongMessages, DoubleClickActions, CharacterCounter, FixEmbeds, YouTubeShortLinks, SuppressEmbeds, SafeMentions, TextReplace, TextEffects, SmartPunctuation, InlineCalc, TimestampShortcuts, Signature, AutoCapitalize, SpoilerUploads, NoReplyMention, SilentMessages |
+| Appearance | FolderTweaks, Capri (desktop mate that walks, sits, talks in her own voice and chats with no key needed; art and voice from [Capri Desktop](https://github.com/lachydotmcg/capri-desktop)), CursorPet, KeyboardSounds, CrispText, HideMentionBars, TransparentWindow, HighlightMyMessages, HideAudioMenus, HideActiveNow, AccentColor, ChatBackground, CustomFont, MentionHighlight, MediaCorners, ReadableWidth, ThinScrollbars, ReduceMotion, GrayscaleMode, DimWhenUnfocused, FocusMode, NoChatAvatars, NoJumboEmoji, AlwaysShowTimestamps, ChatBarCleanup, ChannelHeaderCleanup, TitleBarCleanup, HoverBarCleanup, ServerListCleanup, HideUpsells, HideProfileFlair, HideStatuses, HideStickers, HideLinkEmbeds, HideReplyPreviews, HideReactions, HideTypingIndicator, HideGifTag, HideRoleIcons, HideBadgeCounts, HideAttachButton |
+| Utility | Bookmarks, VolumeBooster, SoundboardKeys, VoiceNarrator, LastSeen, PlatformIndicators, HiddenChannels, FriendsSince, PinDMs, CustomRPC, OpenInApp, CallTimer, MemberCount, ImageZoom, ImageFilename, CopyEmojiMarkdown, ReadAllNotifications, RelationshipNotifier, VoiceChannelAlerts, MuteNewServers, OnlineFriendsCount, CopyHoveredMessage, ViewFullImages, ReverseImageSearch, CopyImageLink, CopyIds, CopyMessageLink, CopyCodeBlocks, CopyInlineCode, ViewRaw, ConfirmCalls, NotificationVolume, VideoTweaks, PictureInPicture, ServerHotkeys, BetterTitle, AlwaysTrustLinks, F5Reload |
 | Developer | ConsoleJanitor, ThemeAttributes, ConsoleShortcuts, DevToolsKeybind, ThemeHelper, FluxLogger, NetworkLogger, NoDevToolsWarning |
 
 Each plugin's description and options are in **Settings → Vanta Settings → Plugins**. Plugins tagged

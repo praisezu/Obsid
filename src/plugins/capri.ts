@@ -8,7 +8,7 @@
  * another, sits on edges with her legs hanging, lies down, dances to your music, naps, and can be picked
  * up and thrown. Only her actual pixels catch the mouse, so she never blocks clicks around her.
  */
-import { definePlugin, common, webpack, onFlux, storage, native, h } from "@api";
+import { definePlugin, common, webpack, onFlux, storage, native, h, discord } from "@api";
 
 const REPO = "https://github.com/lachydotmcg/capri-desktop";
 const SHEETS = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/assets/sprites/";
@@ -557,6 +557,7 @@ export default definePlugin({
 
     /** Gets her reply from Claude (or a canned one without a key) and says it */
     async reply(userText: string) {
+        if (this.trySend(userText)) return;
         this.history.push({ role: "user", content: userText });
         if (this.history.length > 16) this.history.splice(0, this.history.length - 16);
         // She heard you: a thinking bubble until the answer comes
@@ -568,7 +569,7 @@ export default definePlugin({
         const ask = this.history.length;
         try {
             const text = await native.aiChat(this.persona() + "\n" + this.context() +
-                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character.", this.history, 150);
+                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages, open things or take actions yourself; never say you did. If they want a message sent, tell them to say it like: send \"hi\" to name.", this.history, 150);
             this.history.push({ role: "assistant", content: text });
             this.say(text);
         } catch (e: any) {
@@ -603,6 +604,104 @@ export default definePlugin({
             if (text) return this.say(text);
         } catch { }
         this.say(fallback[Math.floor(Math.random() * fallback.length)]);
+    },
+
+    // ---------- sending messages for you ----------
+    /**
+     * "send "hi" to 415i", "tell 415i that i'm late", "dm 415i hi", "send gm here".
+     * Returns true if it was a send request (she then asks you to confirm before anything is sent).
+     */
+    trySend(said: string): boolean {
+        let t = said.trim()
+            .replace(/^(hey|hi|yo|ok|okay)?\s*,?\s*capri\s*[,!:]?\s*/i, "")
+            .replace(/^(can|could|would|will) (you|u|ya) (please |pls |plz )?/i, "")
+            .replace(/^(please|pls|plz) /i, "")
+            .replace(/[?!.]+$/, "").trim();
+        // Filler at the end: "… please", "… for me", "… rn"
+        for (let i = 0; i < 3; i++) t = t.replace(/[,\s]+(please|pls|plz|for me|rn|right now|now|thanks|thx|ty|asap|real quick|quick|for me please)$/i, "").trim();
+        const Q = "[\"“”'‘’]";
+        const SAYING = "(?:saying|that says|which says|that|:|-|,)";
+        const A_MSG = "(?:a\\s+(?:message|dm|text|msg)\\s+)?";
+        const pats: [RegExp, number, number][] = [
+            // send "hi" to 415i
+            [new RegExp("^(?:send|say|dm|message|text)\\s+" + Q + "(.+)" + Q + "\\s+(?:to|for|in)\\s+(.+)$", "i"), 1, 2],
+            // send a message to 415i saying hi / dm to 415i: hi
+            [new RegExp("^(?:send|dm|message|text|tell)\\s+" + A_MSG + "to\\s+(\\S+?)\\s*" + SAYING + "\\s*(.+)$", "i"), 2, 1],
+            // send 415i a message saying hi / dm 415i saying yo
+            [new RegExp("^(?:send|dm|message|text|tell)\\s+(\\S+?)\\s+" + A_MSG + "(?:saying|that says|which says|that)\\s+(.+)$", "i"), 2, 1],
+            // tell 415i "hi" / message 415i: hey / dm 415i yo
+            [new RegExp("^(?:tell|dm|message|text|msg)\\s+(\\S+?)[:,-]?\\s+(.+)$", "i"), 2, 1],
+            // send gm here
+            [/^(?:send|say)\s+(.+?)\s+(here|in here)$/i, 1, 2],
+            // send hi to 415i
+            [/^(?:send|say)\s+(.+)\s+(?:to|in)\s+(\S+)$/i, 1, 2],
+        ];
+        for (const [re, ti, wi] of pats) {
+            const m = re.exec(t);
+            if (!m) continue;
+            const text = m[ti].trim().replace(/^["“”'‘’]+|["“”'‘’]+$/g, "").trim();
+            const who = m[wi].trim().replace(/^@/, "").replace(/[:,]+$/, "");
+            if (!text || !who) continue;
+            if (/^(me|us|you|u|ya|myself|yourself|her|him|them|it|a|an|the)$/i.test(who)) return false; // "tell me a joke" is just chat
+            this.confirmSend(text, who);
+            return true;
+        }
+        return false;
+    },
+
+    /** Finds who you mean among your friends and DMs (display name, username or the nickname you gave them) */
+    findPeople(who: string): any[] {
+        const norm = (x: string) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const want = norm(who);
+        if (!want) return [];
+        const ids = new Set<string>(common.RelationshipStore?.getFriendIDs?.() ?? []);
+        for (const ch of Object.values(common.ChannelStore?.getMutablePrivateChannels?.() ?? {}) as any[])
+            if (ch?.type === 1 && ch.recipients?.[0]) ids.add(ch.recipients[0]);
+        const people = [...ids].map(id => common.UserStore?.getUser?.(id)).filter(Boolean);
+        const names = (u: any) => [u.username, u.globalName, u.global_name, common.RelationshipStore?.getNickname?.(u.id)].filter(Boolean).map(norm);
+        const exact = people.filter(u => names(u).includes(want));
+        if (exact.length) return exact;
+        const starts = people.filter(u => names(u).some((n: string) => n.startsWith(want)));
+        return starts.length ? starts : people.filter(u => names(u).some((n: string) => n.includes(want)));
+    },
+
+    confirmSend(text: string, who: string) {
+        let target: { label: string; channel: () => Promise<string> };
+        if (/^(here|in here|this channel)$/i.test(who)) {
+            const ch = common.SelectedChannelStore?.getChannelId?.();
+            if (!ch) return this.say("send it where? open a channel first.");
+            const c = common.ChannelStore?.getChannel?.(ch);
+            target = { label: c?.name ? "#" + c.name : "this chat", channel: async () => ch };
+        } else {
+            const found = this.findPeople(who);
+            if (!found.length) return this.say(`who's ${who}? i can't find them in your friends or DMs.`);
+            if (found.length > 1) return this.say(`which one? ${found.slice(0, 4).map((u: any) => u.globalName || u.global_name || u.username).join(", ")}.`);
+            const u = found[0];
+            target = { label: u.globalName || u.global_name || u.username, channel: () => discord.dmChannel(u.id) };
+        }
+        // Ask first: nothing is sent until you press Send
+        clearTimeout(this.bubbleT); clearInterval(this.typeT);
+        const b = this.bubble;
+        b.hidden = false;
+        const done = (line: string) => { b.replaceChildren(); this.say(line); };
+        const btn = (label: string, primary: boolean, fn: () => void) => h("button", {
+            type: "button", onclick: fn,
+            style: {
+                marginRight: "6px", marginTop: "8px", padding: "3px 10px", borderRadius: "4px", border: "1px solid #ff2a6d", cursor: "pointer", font: "inherit",
+                background: primary ? "#ff2a6d" : "transparent", color: primary ? "#0c0a12" : "#f4eef7",
+            },
+        }, label);
+        b.replaceChildren(
+            h("div", {}, `send "${text}" to ${target.label}?`),
+            h("div", {},
+                btn("Send", true, async () => {
+                    try { await discord.send(await target.channel(), text); done(`sent. ${target.label} got it.`); }
+                    catch (e: any) { done("couldn't send it: " + (e?.body?.message ?? e?.message ?? "Discord said no")); }
+                }),
+                btn("Cancel", false, () => done("okay, not sending it."))));
+        this.placeBubble();
+        this.bubbleT = setTimeout(() => { if (b.querySelector("button")) { b.replaceChildren(); b.hidden = true; } }, 30_000);
+        this.talk(1200);
     },
 
     /** Reads out a DM or a message that pings you */
