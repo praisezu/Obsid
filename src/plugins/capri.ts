@@ -776,15 +776,18 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         if (this.settings.voice) setTimeout(() => { if (this.el) native.voiceWarm().catch(e => this.logger.warn("Her voice couldn't load:", e)); }, 4000);
 
         // Mouse: only her pixels count
-        let swallowClick = false;
+        // The mouse events that follow a press on her are kept from Discord, but only for a moment: a flag that waited
+        // for a click could get stuck (press on her, let go somewhere else) and then swallow every click in Discord.
+        let swallowUntil = 0;
         this.onDown = (e: PointerEvent) => {
-            if (e.button !== 0 || !this.hit(e.clientX, e.clientY)) return;
+            if (e.button !== 0 || !this.hit(e.clientX, e.clientY)) { swallowUntil = 0; return; }
             e.preventDefault(); e.stopImmediatePropagation();
-            swallowClick = true;
+            swallowUntil = performance.now() + 1000;
             const start = { x: e.clientX, y: e.clientY };
-            let dragging = false;
+            let dragging = false, ended = false;
             const trail: { x: number; y: number; t: number }[] = [];
             const move = (ev: PointerEvent) => {
+                if (ev.buttons === 0) return up(); // the button was let go outside Discord
                 if (!dragging && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 5) return;
                 if (!dragging) {
                     dragging = true; this.wake();
@@ -798,10 +801,14 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
                 if (trail.length > 6) trail.shift();
             };
             const up = () => {
+                if (ended) return;
+                ended = true;
                 window.removeEventListener("pointermove", move, true);
                 window.removeEventListener("pointerup", up, true);
                 window.removeEventListener("pointercancel", up, true);
+                window.removeEventListener("blur", up);
                 document.documentElement.classList.remove("vanta-capri-drag");
+                swallowUntil = performance.now() + 300; // just the click that follows this release
                 // A click pokes her, unless it turns out to be a double-click
                 if (!dragging) { clearTimeout(this.pokeT); this.pokeT = setTimeout(() => this.poke(), 280); return; }
                 const a = trail[0], b = trail[trail.length - 1];
@@ -815,8 +822,13 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
             window.addEventListener("pointermove", move, true);
             window.addEventListener("pointerup", up, true);
             window.addEventListener("pointercancel", up, true);
+            window.addEventListener("blur", up); // switched windows mid-drag
         };
-        this.onMouse = (e: MouseEvent) => { if (swallowClick) { e.preventDefault(); e.stopImmediatePropagation(); if (e.type === "click") swallowClick = false; } };
+        this.onMouse = (e: MouseEvent) => {
+            if (performance.now() > swallowUntil) return;
+            e.preventDefault(); e.stopImmediatePropagation();
+            if (e.type === "click") swallowUntil = 0;
+        };
         this.onDbl = (e: MouseEvent) => {
             if (!this.hit(e.clientX, e.clientY)) return;
             e.preventDefault(); e.stopImmediatePropagation();
