@@ -10,8 +10,9 @@ let rest: any, nav: any;
  * Discord's own API client (signed in as you). Careful: a generic web-request library also has get/post/put/patch/del;
  * it has Request/getXHR too, and using it by mistake sends requests to the website instead of the API.
  */
-const api = () => (rest ??= find(m => typeof m?.get === "function" && typeof m?.post === "function" && typeof m?.patch === "function"
-    && typeof m?.del === "function" && !("Request" in m) && !("getXHR" in m)));
+export const isDiscordApi = (m: any) => typeof m?.get === "function" && typeof m?.post === "function" && typeof m?.patch === "function"
+    && typeof m?.del === "function" && !("Request" in m) && !("getXHR" in m);
+const api = () => (rest ??= find(isDiscordApi));
 const router = () => (nav ??= findByCode("transitionTo -"));
 
 export const discord = {

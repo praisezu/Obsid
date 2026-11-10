@@ -1,6 +1,6 @@
 // Shared by every page: nav, footer, motion, and links from plugins.json (built by scripts/site-data.mjs).
 (() => {
-  const PAGES = [["/download/", "Download"], ["/plugins/", "Plugins"], ["/store/", "Store"], ["/faq/", "FAQ"]];
+  const PAGES = [["/download/", "Download"], ["/plugins/", "Plugins"], ["/store/", "Store"], ["/security/", "Security"], ["/faq/", "FAQ"]];
   const here = location.pathname.replace(/index\.html$/, "");
 
   const dither = document.createElement("div");
@@ -43,7 +43,7 @@
       const dl = `${gh}/releases/latest/download/`;
       const links = {
         github: gh, releases: `${gh}/releases`, release: `${gh}/releases/latest`, discord: data.discord, submit: `${gh}/blob/main/store/README.md`,
-        win: dl + "VantaInstaller.exe", linux: dl + "VantaInstaller-linux", mac: dl + "VantaInstaller-macos",
+        security: `${gh}/security/advisories/new`, win: dl + "VantaInstaller.exe", linux: dl + "VantaInstaller-linux", mac: dl + "VantaInstaller-macos", macIntel: dl + "VantaInstaller-macos-intel",
       };
       for (const a of document.querySelectorAll("[data-link]")) {
         const url = links[a.dataset.link];

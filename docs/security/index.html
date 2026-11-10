@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanta Security and Privacy</title>
+<meta name="description" content="What Vanta can access, every website it talks to and when, and how it protects your Discord account.">
+<link rel="icon" type="image/png" href="/logo.png">
+<meta name="theme-color" content="#030205">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/style.css?v=dev">
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <h1 class="in">Security</h1>
+    <p>What Vanta can do, what it never does, and everything it connects to. Vanta is open source, so you can check all of this in the <a data-link="github" href="#">code</a>.</p>
+  </div>
+  <div class="section">
+    <h2>The short version</h2>
+    <ol class="steps">
+      <li><b>No tracking.</b> Vanta has no analytics, no telemetry and no Vanta servers. Nothing about you is collected.</li>
+      <li><b>Your account stays yours.</b> Vanta never reads your login token for itself, and its token guard stops plugins you install from reading it or sending it anywhere.</li>
+      <li><b>Everything runs on your PC.</b> Settings, plugins, themes, bookmarks and Capri's memory are files in your Vanta folder.</li>
+      <li><b>Anything online is either needed (updates) or switched on by you</b> (themes, the plugin store, Capri's online brain).</li>
+    </ol>
+
+    <h2>What Vanta can access</h2>
+    <p class="tag-line" style="text-align:left;margin:0 0 12px;max-width:none">Like every Discord mod, Vanta runs inside Discord, so it has the same access the Discord app has: your messages, servers and account actions. That's why who you trust matters:</p>
+    <ol class="steps">
+      <li><b>Built-in plugins</b> are part of Vanta and open source. They only do what they say, and they're off until you turn them on.</li>
+      <li><b>Store plugins</b> are reviewed before they're listed, and each one is pinned to the exact reviewed file (by its SHA-256 hash): if it changes, Vanta refuses to install it. Only plugins with the Official badge are made by Vanta.</li>
+      <li><b>Plugins you import yourself</b> get a warning before installing, which flags code that mentions your token, makes network requests or runs hidden code. Only import plugins from people you trust.</li>
+    </ol>
+
+    <h2>Protection that's always on</h2>
+    <ol class="steps">
+      <li><b>Token-grabber guard.</b> Your login token lets anyone take over your account. If a plugin you installed asks Discord for it, Vanta refuses and tells you which plugin tried. Any request leaving for a website that isn't Discord with your token in it is stopped, whoever sent it.</li>
+      <li><b>Scam link checker.</b> Links to known Discord scam and phishing sites (fake Nitro, fake logins, fake giveaways) get a warning before they open. The list is the public <a href="https://github.com/Discord-AntiScam/scam-links">Discord-AntiScam</a> list, downloaded once a day and checked on your PC; your clicks aren't sent anywhere.</li>
+      <li><b>Crash shield and safe mode.</b> A plugin that keeps failing is switched off, and if Discord can't start twice in a row, Vanta starts without plugins or themes.</li>
+    </ol>
+
+    <h2>Every website Vanta talks to</h2>
+    <div class="grid">
+      <article class="plugin"><h3>github.com <span class="tag">updates</span></h3><p>Checks for and downloads Vanta updates (the official releases). Store plugins, the scam list and Capri's art come from the same repositories on raw.githubusercontent.com.</p></article>
+      <article class="plugin"><h3>betterdiscord.app <span class="tag">themes</span></h3><p>Only when you browse or install themes in Themes → Online.</p></article>
+      <article class="plugin"><h3>huggingface.co · cdn.jsdelivr.net <span class="tag">Capri</span></h3><p>Only if Capri speaks or uses her offline brain: her voice and brain models download once (pinned, hash-checked libraries) and then run on your PC.</p></article>
+      <article class="plugin"><h3>Pollinations · NVIDIA · Anthropic <span class="tag">opt-in</span></h3><p>Only if you let Capri think online. What you type to her and short notes about what's happening (channel names, songs) go to the AI you picked. With an NVIDIA or Claude key, only that company is used.</p></article>
+      <article class="plugin"><h3>translate.googleapis.com <span class="tag">opt-in</span></h3><p>Only when you translate a message with the Translate plugin.</p></article>
+      <article class="plugin"><h3>Discord <span class="tag">always</span></h3><p>Discord itself, as normal. Plugins that act for you (like Capri sending a message you confirmed) use Discord's own API as you.</p></article>
+    </div>
+
+    <h2>Honest limits</h2>
+    <ol class="steps">
+      <li><b>Client mods break Discord's Terms of Service.</b> Bans for using one are rare, but the risk isn't zero.</li>
+      <li><b>No guard is perfect.</b> The token guard stops the common ways plugins steal tokens, but a determined malicious plugin has the same access Discord does. Installing only trusted plugins is still the real protection.</li>
+      <li><b>Unsigned downloads.</b> Until code signing is in place, Windows may warn about an "unknown publisher", and Mac users should use the install command on the <a href="/download/">Download page</a>.</li>
+    </ol>
+
+    <h2>Found a security problem?</h2>
+    <p class="tag-line" style="text-align:left;margin:0;max-width:none">Please report it privately through <a data-link="security" href="#">GitHub's private vulnerability reporting</a> rather than a public issue. You'll get a reply, and fixes ship as a normal update.</p>
+  </div>
+</main>
+<script src="/site.js?v=dev"></script>
+</body>
+</html>

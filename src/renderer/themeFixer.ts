@@ -37,8 +37,9 @@ function discordClasses() {
 /** Looks like a random hash: has a digit or capital letter (so `.app-mount` or `.theme-dark` are left alone) */
 const hashy = (s: string) => /[0-9A-Z]/.test(s);
 
-function fixClasses(css: string): { css: string; fixed: number } {
-    const { full, names } = discordClasses();
+/** Rewrites retired class names. `known` is Discord's current classes (passed in by tests). */
+export function fixClasses(css: string, known?: { full: Set<string>; names: Set<string> }): { css: string; fixed: number } {
+    const { full, names } = known ?? discordClasses();
     let fixed = 0;
     // Leave url(...) and strings alone
     const out = css.replace(/(url\([^)]*\)|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\.([a-zA-Z][a-zA-Z0-9]*)([-_])([a-zA-Z0-9_-]{5,7})(?![a-zA-Z0-9_-])/g,

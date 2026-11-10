@@ -6,6 +6,7 @@
  */
 import type { PluginInstance } from "./core/plugins";
 import { native } from "./core/native";
+import { settings } from "./core/settings";
 
 const STOP = new Set("a an the i me my to of for in on at and or is are be it its that this with want wanna can could would how do does make let see show stop get when who what which from by into out up any some all".split(" "));
 
@@ -104,7 +105,9 @@ export async function askCapri(list: PluginInstance[], query: string): Promise<s
     const catalog = list.map(p => `${p.name}: ${(p.description ?? "").slice(0, 90)}`).join("\n");
     const answer = await native.aiChat(
         "You pick Discord client-mod plugins. Reply with only the names of up to 3 plugins from the list that best do what the user wants, comma-separated, best first. If none fit, reply NONE.",
-        [{ role: "user", content: `Plugins:\n${catalog}\n\nWhat the user wants: ${query}` }], 60);
+        [{ role: "user", content: `Plugins:\n${catalog}\n\nWhat the user wants: ${query}` }], 60,
+        // Online only if they chose that for Capri (their own key, if any, is used either way)
+        settings.plugins?.Capri?.options?.brainMode === "online" ? "online" : "offline");
     const names = new Map(list.map(p => [p.name.toLowerCase(), p.name]));
     return answer.split(/[,\n]/).map(s => s.trim().replace(/[^\w]/g, "").toLowerCase()).map(s => names.get(s)).filter(Boolean) as string[];
 }

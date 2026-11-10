@@ -8,7 +8,7 @@
  * place, lies down, dances to your music, naps, and can be picked
  * up and thrown. Only her actual pixels catch the mouse, so she never blocks clicks around her.
  */
-import { definePlugin, common, webpack, onFlux, storage, native, h, discord } from "@api";
+import { definePlugin, common, webpack, onFlux, storage, native, h, discord, saveSettings } from "@api";
 
 const REPO = "https://github.com/lachydotmcg/capri-desktop";
 const SHEETS = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/assets/sprites/";
@@ -133,6 +133,7 @@ export default definePlugin({
         quietOnDnd: { type: "boolean", default: false, label: "Don't read them out on Do Not Disturb" },
         comments: { type: "boolean", default: true, label: "Comment on what you're doing", description: "Channels you open, calls you join, songs you play." },
         ownMessages: { type: "boolean", default: false, label: "React to messages you send", description: "With an API key set, the message is sent to Anthropic so she can reply to it." },
+        brainMode: { type: "select", default: "ask", label: "Where she thinks (without your own key)", options: [{ value: "ask", label: "Ask me" }, { value: "online", label: "Online (free, Pollinations)" }, { value: "offline", label: "On this PC (private, 500 MB)" }] },
         freeMind: { type: "boolean", default: true, label: "Has a mind of her own", description: "She remembers things about you, has moods, and starts conversations now and then." },
         chatty: { type: "select", default: "normal", label: "How often she comments", options: [{ value: "quiet", label: "Now and then" }, { value: "normal", label: "Normal" }, { value: "chatty", label: "A lot" }] },
     },
@@ -687,6 +688,50 @@ export default definePlugin({
             `Talk like a friend texting, never like an assistant. One short line under 25 words, plain text, no emoji or asterisks. Use Night City slang like choom only now and then.` + here + this.mindNotes();
     },
 
+    // ---------- where she thinks (opt-in) ----------
+    /**
+     * All her thinking goes through here. With your own NVIDIA or Claude key she uses that. Without one, she only goes
+     * online (the free Pollinations brain) if you chose that; otherwise she thinks on this PC. Until you've chosen,
+     * she asks once (when you talk to her) and stays quiet otherwise.
+     */
+    async think(system: string, messages: { role: "user" | "assistant"; content: string }[], maxTokens: number, interactive = false): Promise<string> {
+        const keys = await native.aiKeys().catch(() => ({ claude: false, nvidia: false }));
+        if (keys.claude || keys.nvidia) return native.aiChat(system, messages, maxTokens, "online");
+        const mode = this.settings.brainMode;
+        if (mode === "online" || mode === "offline") return native.aiChat(system, messages, maxTokens, mode);
+        if (interactive) this.askBrainMode();
+        throw new Error("choose");
+    },
+
+    /** The one-time question: think online (free, fast) or on this PC (private, big download) */
+    askBrainMode() {
+        const pending = this.history.at(-1)?.role === "user" ? this.history.pop().content : null;
+        const set = (mode: "online" | "offline") => {
+            this.settings.brainMode = mode;
+            saveSettings();
+            b.replaceChildren();
+            if (pending) this.reply(pending);
+            else this.say(mode === "online" ? "okay, online brain it is." : "okay, i'll think right here on your PC.");
+        };
+        clearTimeout(this.bubbleT); clearInterval(this.typeT);
+        const b = this.bubble;
+        b.hidden = false;
+        const btn = (label: string, primary: boolean, fn: () => void) => h("button", {
+            type: "button", onclick: fn,
+            style: {
+                marginRight: "6px", marginTop: "8px", padding: "3px 10px", borderRadius: "4px", border: "1px solid var(--capri-accent, #ff2a6d)", cursor: "pointer", font: "inherit",
+                background: primary ? "var(--capri-accent, #ff2a6d)" : "transparent", color: primary ? "#0c0a12" : "#f4eef7",
+            },
+        }, label);
+        b.replaceChildren(
+            h("div", {}, "before i answer: where should i think?"),
+            h("div", { style: { fontSize: "11.5px", opacity: ".75", marginTop: "4px" } },
+                "Online: free and fast, but what you say to me goes to Pollinations. On your PC: private, a one-time 500 MB download, slower. (Or add your own NVIDIA key in my settings.)"),
+            h("div", {}, btn("Online", true, () => set("online")), btn("On my PC", false, () => set("offline"))));
+        this.placeBubble();
+        this.talk(1500);
+    },
+
     // ---------- her own mind: memory, moods, thoughts ----------
     MOODS: ["playful", "smug", "hyper", "sleepy", "soft", "curious", "chaotic"],
 
@@ -716,7 +761,7 @@ export default definePlugin({
         this.learning = true;
         try {
             const recent = this.history.slice(-6).map((m: any) => `${m.role === "user" ? "Them" : "Capri"}: ${m.content}`).join("\n");
-            const answer = await native.aiChat(
+            const answer = await this.think(
                 "You extract lasting facts about the user from a chat, for a companion's memory: their likes, games, plans, people and pets they mention, things they're into. " +
                 "Reply with up to 2 short facts, one per line, written like \"likes Valorant\" or \"has a dog called Biscuit\". Skip anything temporary, private (addresses, passwords, real names) or already known. If nothing is worth keeping, reply NONE.",
                 [{ role: "user", content: `Already known: ${(this.memory ?? []).join("; ") || "nothing"}\n\nChat:\n${recent}` }], 60);
@@ -737,7 +782,7 @@ export default definePlugin({
         if (common.SelectedChannelStore?.getVoiceChannelId?.() && Math.random() < 0.6) return; // quieter during calls
         this.lastRemark = Date.now();
         try {
-            const text = await native.aiChat(this.persona() + "\n" + this.context(),
+            const text = await this.think(this.persona() + "\n" + this.context(),
                 [{ role: "user", content: "(Nobody asked you anything. Say one thing on your own mind: a thought, a question about them, a callback to something you remember, or a reaction to what they're doing. One short line, in character, fresh.)" }], 70);
             if (text && !this.input) this.say(text);
         } catch { /* stay quiet */ }
@@ -756,12 +801,13 @@ export default definePlugin({
         this.talk(1500);
         const ask = this.history.length;
         try {
-            const text = await native.aiChat(this.persona() + "\n" + this.context() +
-                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages or take actions yourself; never say you did. If they want something done, tell them to say it plainly, like: send \"hi\" to name, reply to name saying hi, friend name, block name, delete my last message.", this.history, 150);
+            const text = await this.think(this.persona() + "\n" + this.context() +
+                "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages or take actions yourself; never say you did. If they want something done, tell them to say it plainly, like: send \"hi\" to name, reply to name saying hi, friend name, block name, delete my last message.", this.history, 150, true);
             this.history.push({ role: "assistant", content: text });
             this.say(text);
             this.learn();
         } catch (e: any) {
+            if (e?.message === "choose") return; // she's asking where to think
             this.logger.warn("Her brain didn't answer:", e);
             this.history.splice(ask - 1, 1);
             this.say(["[SIGNAL CORRUPTED] ...my brain flatlined for a sec. say that again?",
@@ -788,7 +834,7 @@ export default definePlugin({
         if (Math.random() > ({ quiet: 0.35, normal: 0.6, chatty: 0.9 }[this.settings.chatty as string] ?? 0.6)) return;
         this.lastRemark = now;
         try {
-            const text = await native.aiChat(this.persona() + "\n" + this.context(),
+            const text = await this.think(this.persona() + "\n" + this.context(),
                 [{ role: "user", content: `(Something just happened, react to it in one short line, maybe ask them about it: ${event})` }], 80);
             if (text) return this.say(text);
         } catch { }
@@ -1280,9 +1326,8 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         refresh();
         const brain = h("div", { style: { margin: "0 0 10px" } },
             h("div", { style: { fontWeight: "600", color: "var(--header-primary)", marginBottom: "4px" } }, "Her brain and voice"),
-            h("p", { style: { margin: "0 0 6px" } }, "With no key, she uses a free brain (", link("Pollinations", "https://pollinations.ai"),
-                ") when it's free to answer, and otherwise her own offline brain on this PC (a small model, about 500 MB, downloaded the first time you chat). ",
-                "What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), can go to Pollinations. ",
+            h("p", { style: { margin: "0 0 6px" } }, "Without your own key, she only thinks online if you choose it (\"Where she thinks\" below): then she uses ", link("Pollinations", "https://pollinations.ai"),
+                ", which is free, and what you type to her plus short notes about what you're doing (channel names, songs) go there. Otherwise she thinks on this PC (a small model, about 500 MB, downloaded the first time). ",
                 "For a faster, sharper Capri, paste a free NVIDIA key (from ", link("build.nvidia.com", "https://build.nvidia.com"),
                 ", answers in under a second) or a Claude key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
                 "). Keys are encrypted on this PC and only sent to NVIDIA or Anthropic."),

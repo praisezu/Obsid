@@ -17,6 +17,16 @@ and run it. It finds every Discord install (Stable, PTB, Canary, Development) an
 **Install / Repair** and **Uninstall** buttons. It downloads Vanta into `%APPDATA%\Vanta\app`,
 closes and reopens Discord for you, and in-app updates come from the same releases.
 
+**macOS and Linux:** paste this into a terminal. It picks the right installer (Apple Silicon, Intel Mac or Linux),
+checks it against the release's `SHA256SUMS`, and installs. Downloading with `curl` avoids macOS's "unidentified
+developer" block. You can [read the script](docs/install.sh) first.
+
+```sh
+curl -fsSL https://tryvanta.dev/install.sh | sh
+```
+
+Privacy and security: [tryvanta.dev/security](https://tryvanta.dev/security/) and [SECURITY.md](SECURITY.md).
+
 Command line (Windows, macOS, Linux):
 
 ```bash

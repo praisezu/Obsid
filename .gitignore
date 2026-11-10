@@ -16,3 +16,4 @@ Thumbs.db
 
 # Build output
 release/
+.test-build/

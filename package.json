@@ -1,6 +1,6 @@
 {
     "name": "vanta",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "Vanta — a Discord client mod",
     "private": true,
     "license": "MIT",
@@ -20,7 +20,8 @@
         "uninject": "node scripts/install.js --uninstall",
         "status": "node scripts/install.js --status",
         "package": "node scripts/package.mjs",
-        "build:installer": "cd installer && go build -trimpath -ldflags \"-s -w -H windowsgui\" -o ../dist/VantaInstaller.exe ."
+        "build:installer": "cd installer && go build -trimpath -ldflags \"-s -w -H windowsgui\" -o ../dist/VantaInstaller.exe .",
+        "test": "node scripts/test.mjs"
     },
     "devDependencies": {
         "@types/node": "^26.6.6",

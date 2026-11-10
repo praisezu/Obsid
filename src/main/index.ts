@@ -191,7 +191,7 @@ function main() {
     handle("ai-has-key", () => ai.hasKey());
     handle("ai-keys", () => ai.keys());
     handle("ai-set-key", (_, k) => ai.setKey(k == null ? null : String(k)));
-    handle("ai-chat", (_, system, messages, maxTokens) => ai.chat(String(system ?? ""), messages, Number(maxTokens)));
+    handle("ai-chat", (_, system, messages, maxTokens, mode) => ai.chat(String(system ?? ""), messages, Number(maxTokens), mode === "online" ? "online" : "offline"));
     handle("voice-speak", (_, text, speed) => voice.speak(String(text ?? ""), Number(speed)));
     handle("voice-status", () => voice.status());
     handle("voice-warm", () => voice.warm());

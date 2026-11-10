@@ -56,6 +56,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Tests
+        run: npm test
+
       - name: Build Vanta
         # obsid.tar.gz: same file under Vanta's old name, so Obsid 0.2.x installs auto-update into Vanta
         run: npm run build:release && npm run package && cp release/vanta.tar.gz release/obsid.tar.gz
@@ -78,6 +81,7 @@ jobs:
           GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -X main.Version=$V" -o ../release/VantaInstaller.exe .
           GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-linux .
           GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-macos .
+          GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.Version=$V" -o ../release/VantaInstaller-macos-intel .
 
       - name: Sign Windows installer
         if: env.CERT_PFX_BASE64 != ''
@@ -87,6 +91,11 @@ jobs:
           osslsigncode sign -pkcs12 cert.pfx -pass "$CERT_PASSWORD" -n "Vanta Installer" -i "https://github.com/${GITHUB_REPOSITORY}" -t http://timestamp.digicert.com -in release/VantaInstaller.exe -out release/VantaInstaller-signed.exe
           mv release/VantaInstaller-signed.exe release/VantaInstaller.exe
           rm cert.pfx
+
+      # Checksums, so install.sh (and anyone) can verify a download before running it
+      - name: Checksums
+        working-directory: release
+        run: sha256sum vanta.tar.gz obsid.tar.gz VantaInstaller.exe VantaInstaller-linux VantaInstaller-macos VantaInstaller-macos-intel > SHA256SUMS
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -99,3 +108,5 @@ jobs:
             release/VantaInstaller.exe
             release/VantaInstaller-linux
             release/VantaInstaller-macos
+            release/VantaInstaller-macos-intel
+            release/SHA256SUMS

@@ -57,8 +57,8 @@ function compact(system: string) {
  * network), and otherwise Capri's offline brain on this PC, so she always answers.
  */
 let lastFree = 0;
-async function freeChat(system: string, messages: AiMessage[], local: LocalBrain | null): Promise<string> {
-    if (Date.now() - lastFree > 46_000) {
+async function freeChat(system: string, messages: AiMessage[], local: LocalBrain | null, online: boolean): Promise<string> {
+    if (online && Date.now() - lastFree > 46_000) {
         lastFree = Date.now();
         try { return await freeOnce(system, messages, 15_000); } catch { /* busy or limited: answer offline */ }
     }
@@ -114,7 +114,8 @@ export function createAi(dataDir: string, local: LocalBrain | null = null) {
             fs.writeFileSync(file, safeStorage.encryptString(k));
             return true;
         },
-        async chat(system: string, messages: AiMessage[], maxTokens = 200): Promise<string> {
+        /** mode: without a key, "online" may use the free online brain; anything else stays on this PC */
+        async chat(system: string, messages: AiMessage[], maxTokens = 200, mode = "offline"): Promise<string> {
             const clean = (Array.isArray(messages) ? messages : []).slice(-20)
                 .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
                 .map(m => ({ role: m.role, content: m.content.slice(0, 4000) }));
@@ -127,7 +128,7 @@ export function createAi(dataDir: string, local: LocalBrain | null = null) {
                     try { return await nvidiaChat(nv, String(system).slice(0, 12000), clean, maxTokens); }
                     catch (e) { if (/rejected/.test(String((e as Error)?.message))) throw e; /* busy: fall back to the free brains */ }
                 }
-                return freeChat(String(system).slice(0, 8000), clean, local);
+                return freeChat(String(system).slice(0, 8000), clean, local, mode === "online");
             }
             const res = await fetch(API, {
                 method: "POST",
