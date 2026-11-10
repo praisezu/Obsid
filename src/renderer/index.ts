@@ -40,6 +40,7 @@ import { inSafeMode, showSafeModeNotice } from "./safeMode";
 import { startWindowControls } from "./windowControls";
 import { startServerProfiles } from "./serverProfiles";
 import { startVantaBadge } from "./vantaBadge";
+import { startSecurity } from "./security";
 import { startupPluginUpdateCheck } from "./pluginUpdates";
 
 import builtinPlugins from "~plugins";
@@ -70,6 +71,7 @@ if (w.Vanta) {
             if (booted) return;
             booted = true;
             startWindowControls();
+            startSecurity(); // token guard + link checker, even in safe mode
             // Crash shield: a plugin that keeps throwing gets switched off, and you hear about it
             health.onTrip((name, error) => {
                 const p = plugins.get(name);

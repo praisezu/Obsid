@@ -68,18 +68,50 @@ async function freeChat(system: string, messages: AiMessage[], local: LocalBrain
     return text;
 }
 
+/**
+ * NVIDIA's API (build.nvidia.com, free credits with your own key). Nemotron 3.5 Lightning with "thinking" off answers
+ * in well under a second and stays sharp. Only integrate.api.nvidia.com is called.
+ */
+const NV_API = "https://integrate.api.nvidia.com/v1/chat/completions";
+const NV_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
+async function nvidiaChat(k: string, system: string, messages: AiMessage[], maxTokens: number): Promise<string> {
+    const res = await fetch(NV_API, {
+        method: "POST",
+        headers: { authorization: `Bearer ${k}`, "content-type": "application/json" },
+        body: JSON.stringify({
+            model: NV_MODEL, max_tokens: Math.max(16, Math.min(400, Number(maxTokens) || 200)), temperature: 0.9, top_p: 0.95,
+            chat_template_kwargs: { enable_thinking: false },
+            messages: [{ role: "system", content: system }, ...messages],
+        }),
+        signal: AbortSignal.timeout(20_000),
+    });
+    if (res.status === 401 || res.status === 403) throw new Error("NVIDIA rejected the API key.");
+    if (!res.ok) throw new Error(`NVIDIA returned HTTP ${res.status}`);
+    const data: any = await res.json();
+    const text = tidy(data?.choices?.[0]?.message?.content ?? "");
+    if (!text) throw new Error("NVIDIA didn't answer");
+    return text;
+}
+
 export function createAi(dataDir: string, local: LocalBrain | null = null) {
     const keyFile = path.join(dataDir, "ai-key.bin");
-    const key = () => { try { return safeStorage.decryptString(fs.readFileSync(keyFile)); } catch { return null; } };
+    const nvFile = path.join(dataDir, "nvidia-key.bin");
+    const read = (file: string) => { try { return safeStorage.decryptString(fs.readFileSync(file)); } catch { return null; } };
+    const key = () => read(keyFile);
+    const nvKey = () => read(nvFile);
 
     return {
-        hasKey: () => !!key(),
+        hasKey: () => !!key() || !!nvKey(),
+        /** Which brains have a key */
+        keys: () => ({ claude: !!key(), nvidia: !!nvKey() }),
+        /** Saves a Claude (sk-ant-…) or NVIDIA (nvapi-…) key, encrypted. null removes both. */
         setKey(k: string | null) {
-            if (!k) { try { fs.unlinkSync(keyFile); } catch { } return false; }
+            if (!k) { for (const f of [keyFile, nvFile]) try { fs.unlinkSync(f); } catch { } return false; }
             k = String(k).trim();
-            if (!/^sk-ant-[\w-]{20,}$/.test(k)) throw new Error("That doesn't look like an Anthropic API key (they start with sk-ant-).");
+            const file = /^sk-ant-[\w-]{20,}$/.test(k) ? keyFile : /^nvapi-[\w-]{20,}$/.test(k) ? nvFile : null;
+            if (!file) throw new Error("That doesn't look like a Claude key (sk-ant-…) or an NVIDIA key (nvapi-…).");
             if (!safeStorage.isEncryptionAvailable()) throw new Error("Your system can't encrypt the key, so Vanta won't store it.");
-            fs.writeFileSync(keyFile, safeStorage.encryptString(k));
+            fs.writeFileSync(file, safeStorage.encryptString(k));
             return true;
         },
         async chat(system: string, messages: AiMessage[], maxTokens = 200): Promise<string> {
@@ -89,7 +121,14 @@ export function createAi(dataDir: string, local: LocalBrain | null = null) {
             while (clean.length && clean[0].role !== "user") clean.shift();
             if (!clean.length) throw new Error("A chat has to start with a user message");
             const k = key();
-            if (!k) return freeChat(String(system).slice(0, 8000), clean, local);
+            if (!k) {
+                const nv = nvKey();
+                if (nv) {
+                    try { return await nvidiaChat(nv, String(system).slice(0, 12000), clean, maxTokens); }
+                    catch (e) { if (/rejected/.test(String((e as Error)?.message))) throw e; /* busy: fall back to the free brains */ }
+                }
+                return freeChat(String(system).slice(0, 8000), clean, local);
+            }
             const res = await fetch(API, {
                 method: "POST",
                 headers: { "x-api-key": k, "anthropic-version": "2023-06-01", "content-type": "application/json" },

@@ -18,6 +18,7 @@ import { startSelfHeal } from "./selfHeal";
 import { createCloud } from "./cloud";
 import { createAi } from "./ai";
 import { createVoice } from "./tts";
+import { saveFiles, muteOverlay, closeOverlay } from "./extras";
 import { bdThemes, bdInstallTheme } from "./bdStore";
 import { storeIndex, storeDownload } from "./pluginStore";
 
@@ -188,11 +189,15 @@ function main() {
     // Chat for plugins: Claude with the user's key (encrypted), else a free brain, else her offline brain
     const ai = createAi(DATA_DIR, (messages, maxTokens) => voice.chat(messages, maxTokens));
     handle("ai-has-key", () => ai.hasKey());
+    handle("ai-keys", () => ai.keys());
     handle("ai-set-key", (_, k) => ai.setKey(k == null ? null : String(k)));
     handle("ai-chat", (_, system, messages, maxTokens) => ai.chat(String(system ?? ""), messages, Number(maxTokens)));
     handle("voice-speak", (_, text, speed) => voice.speak(String(text ?? ""), Number(speed)));
     handle("voice-status", () => voice.status());
     handle("voice-warm", () => voice.warm());
+    handle("save-files", (e, files) => saveFiles(winOf(e), files));
+    handle("mute-overlay", (_, state, corner) => muteOverlay(String(state), String(corner || "top-right")));
+    app.on("before-quit", () => closeOverlay());
     app.on("before-quit", () => voice.close());
     handle("cloud-status", () => cloud.status());
     handle("cloud-sign-in", (_, t) => cloud.signIn(String(t)));

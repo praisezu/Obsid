@@ -1,5 +1,5 @@
 {
-  "version": "0.5.10",
+  "version": "0.6.0",
   "repo": "praisezu/Vanta",
   "discord": "https://discord.gg/Eh6fSPnznj",
   "plugins": [
@@ -67,6 +67,11 @@
       "name": "ChannelHeaderCleanup",
       "description": "Hides buttons you don't use in the channel header: calls, pins, invite.",
       "category": "Appearance"
+    },
+    {
+      "name": "ChannelTabs",
+      "description": "Browser-style tabs for channels and DMs in Discord's title bar. Click + for a new tab, Ctrl+Tab to switch, middle-click or × to close.",
+      "category": "Utility"
     },
     {
       "name": "ChannelTypingIndicator",
@@ -344,6 +349,11 @@
       "category": "Utility"
     },
     {
+      "name": "ImageGallery",
+      "description": "Ctrl+Shift+G shows every image in the channel you're in as a grid (scroll to load older ones). Click to view, or save them all at once.",
+      "category": "Utility"
+    },
+    {
       "name": "ImageZoom",
       "description": "When you open an image, scroll to zoom in where your mouse is. Click to reset.",
       "category": "Utility"
@@ -374,6 +384,11 @@
       "category": "Appearance"
     },
     {
+      "name": "MediaViewer",
+      "description": "Click an image in chat for a better viewer: scroll to zoom, drag to pan, R to rotate, arrow keys for the channel's other images, and Save with the real filename.",
+      "category": "Chat"
+    },
+    {
       "name": "MemberCount",
       "description": "Shows how many members a server has, and how many are online, at the top of the member list.",
       "category": "Utility"
@@ -391,6 +406,11 @@
     {
       "name": "MuteNewServers",
       "description": "When you join a server, it's muted with @everyone and role pings suppressed, so new servers don't flood you.",
+      "category": "Utility"
+    },
+    {
+      "name": "MuteOverlay",
+      "description": "A small always-on-top indicator in the corner of your screen that shows when you're muted or deafened, even when Discord is behind other windows.",
       "category": "Utility"
     },
     {
@@ -554,6 +574,11 @@
       "category": "Chat"
     },
     {
+      "name": "StreamPrivacy",
+      "description": "While you're streaming or sharing your screen, blurs your DM list, server names, message previews and emails, and unblurs on hover.",
+      "category": "Privacy"
+    },
+    {
       "name": "SuppressEmbeds",
       "description": "Sends links without a preview underneath (like wrapping every link in < >).",
       "category": "Chat"
@@ -606,6 +631,16 @@
     {
       "name": "Unindent",
       "description": "Removes extra indentation from code blocks you send, so pasted code isn't pushed to the right.",
+      "category": "Chat"
+    },
+    {
+      "name": "VantaSwitcher",
+      "description": "Ctrl+Shift+K: one search for channels, DMs, friends, Vanta settings pages, plugins (to turn on or off), bookmarks and loaded messages.",
+      "category": "Utility"
+    },
+    {
+      "name": "VideoDownloader",
+      "description": "Adds a download button to videos posted in chat that saves them with their real filename.",
       "category": "Chat"
     },
     {

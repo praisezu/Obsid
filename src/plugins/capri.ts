@@ -81,6 +81,11 @@ function sentences(text: string): string[] {
         if (out.length && (p.length < 18 || out[out.length - 1].length < 18) && out[out.length - 1].length + p.length < 140) out[out.length - 1] += " " + p;
         else out.push(p);
     }
+    // Start talking sooner: if the first sentence is long, its first clause goes on its own (it's made faster)
+    if (out[0] && out[0].length > 45) {
+        const m = /^(.{12,60}?[,;:—–-])s+(.+)$/.exec(out[0]);
+        if (m) out.splice(0, 1, m[1], m[2]);
+    }
     return out;
 }
 
@@ -128,6 +133,7 @@ export default definePlugin({
         quietOnDnd: { type: "boolean", default: false, label: "Don't read them out on Do Not Disturb" },
         comments: { type: "boolean", default: true, label: "Comment on what you're doing", description: "Channels you open, calls you join, songs you play." },
         ownMessages: { type: "boolean", default: false, label: "React to messages you send", description: "With an API key set, the message is sent to Anthropic so she can reply to it." },
+        freeMind: { type: "boolean", default: true, label: "Has a mind of her own", description: "She remembers things about you, has moods, and starts conversations now and then." },
         chatty: { type: "select", default: "normal", label: "How often she comments", options: [{ value: "quiet", label: "Now and then" }, { value: "normal", label: "Normal" }, { value: "chatty", label: "A lot" }] },
     },
 
@@ -676,12 +682,68 @@ export default definePlugin({
         const name = me?.globalName || me?.username || "them";
         const here = `\nWhere you are now: inside ${name}'s Discord app, as a desktop mate added by the Vanta client mod, not on their desktop and not riding their cursor. ` +
             `You float around their Discord window, sit on the edges of its panels, nap and dance to their music. You only know the notes you're given about what's happening in Discord; never guess the rest.`;
-        if (this.desktopPersona) return this.desktopPersona + here;
+        if (this.desktopPersona) return this.desktopPersona + here + this.mindNotes();
         return `You are Capri, a glitchy personality construct from Night City. A playful chaos gremlin: sarcastic, teasing, a little smug, never mean, openly fond of ${name}. ` +
-            `Talk like a friend texting, never like an assistant. One short line under 25 words, plain text, no emoji or asterisks. Use Night City slang like choom only now and then.` + here;
+            `Talk like a friend texting, never like an assistant. One short line under 25 words, plain text, no emoji or asterisks. Use Night City slang like choom only now and then.` + here + this.mindNotes();
     },
 
-    /** Gets her reply from Claude (or a canned one without a key) and says it */
+    // ---------- her own mind: memory, moods, thoughts ----------
+    MOODS: ["playful", "smug", "hyper", "sleepy", "soft", "curious", "chaotic"],
+
+    /** What colours her replies right now: her mood and what she remembers about you */
+    mindNotes() {
+        const me = common.UserStore?.getCurrentUser?.();
+        const name = me?.globalName || me?.username || "them";
+        const mem: string[] = this.memory ?? [];
+        return `\nYour mood right now: ${this.mood ?? "playful"}. Let it colour how you talk, without saying it.` +
+            (mem.length ? `\nThings you remember about ${name} (bring one up only when it really fits, never list them): ${mem.join("; ")}.` : "");
+    },
+
+    shiftMood() {
+        const moods: string[] = this.MOODS;
+        const next = moods.filter(m => m !== this.mood);
+        this.mood = next[Math.floor(Math.random() * next.length)];
+        this.nextMood = Date.now() + rand(20, 45) * 60_000;
+    },
+
+    /** Every couple of messages: anything worth remembering about you? (Kept on this PC, up to 30 facts.) */
+    async learn() {
+        this.chatCount = (this.chatCount ?? 0) + 1;
+        if (this.chatCount % 2 || this.learning) return;
+        // Only with a fast brain (NVIDIA or Claude key): on the free brains it would slow her answers down
+        const keys = await native.aiKeys().catch(() => ({ claude: false, nvidia: false }));
+        if (!keys.claude && !keys.nvidia) return;
+        this.learning = true;
+        try {
+            const recent = this.history.slice(-6).map((m: any) => `${m.role === "user" ? "Them" : "Capri"}: ${m.content}`).join("\n");
+            const answer = await native.aiChat(
+                "You extract lasting facts about the user from a chat, for a companion's memory: their likes, games, plans, people and pets they mention, things they're into. " +
+                "Reply with up to 2 short facts, one per line, written like \"likes Valorant\" or \"has a dog called Biscuit\". Skip anything temporary, private (addresses, passwords, real names) or already known. If nothing is worth keeping, reply NONE.",
+                [{ role: "user", content: `Already known: ${(this.memory ?? []).join("; ") || "nothing"}\n\nChat:\n${recent}` }], 60);
+            const facts = answer.split(/\n+/).map(l => l.replace(/^[-*•\d.)\s]+/, "").trim()).filter(l => l && !/^none/i.test(l) && l.length < 90);
+            for (const f of facts) if (!this.memory.some((m: string) => m.toLowerCase() === f.toLowerCase())) this.memory.push(f);
+            if (this.memory.length > 30) this.memory.splice(0, this.memory.length - 30);
+            if (facts.length) storage.set("CapriMemory", this.memory, 2000);
+        } catch { /* nothing learned this time */ }
+        this.learning = false;
+    },
+
+    /** Now and then, something on her own mind */
+    async ownThought() {
+        this.nextThought = Date.now() + rand(6, 15) * 60_000;
+        if (!this.settings.freeMind || !this.settings.comments || this.asleep || this.input || !this.el) return;
+        if (Date.now() - this.lastActive > 3 * 60_000) return; // you're away: no talking to an empty room
+        if (Date.now() - (this.lastRemark || 0) < 60_000) return;
+        if (common.SelectedChannelStore?.getVoiceChannelId?.() && Math.random() < 0.6) return; // quieter during calls
+        this.lastRemark = Date.now();
+        try {
+            const text = await native.aiChat(this.persona() + "\n" + this.context(),
+                [{ role: "user", content: "(Nobody asked you anything. Say one thing on your own mind: a thought, a question about them, a callback to something you remember, or a reaction to what they're doing. One short line, in character, fresh.)" }], 70);
+            if (text && !this.input) this.say(text);
+        } catch { /* stay quiet */ }
+    },
+
+    /** Gets her reply from her brain and says it */
     async reply(userText: string) {
         if (this.tryAction(userText) || this.trySend(userText)) return;
         this.history.push({ role: "user", content: userText });
@@ -698,6 +760,7 @@ export default definePlugin({
                 "\nThey're talking to you directly now. Always answer exactly what they just said or asked, straight away, in character. You can't send messages or take actions yourself; never say you did. If they want something done, tell them to say it plainly, like: send \"hi\" to name, reply to name saying hi, friend name, block name, delete my last message.", this.history, 150);
             this.history.push({ role: "assistant", content: text });
             this.say(text);
+            this.learn();
         } catch (e: any) {
             this.logger.warn("Her brain didn't answer:", e);
             this.history.splice(ask - 1, 1);
@@ -834,7 +897,8 @@ export default definePlugin({
             const who = m[1], text = m[2].replace(/^["“”'‘’]+|["“”'‘’]+$/g, "").trim();
             if (!text || /^(me|you|u|it|this|that)$/i.test(who)) return false;
             const norm = (x: string) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-            const matches = (a: any) => [a?.username, a?.globalName, a?.global_name].filter(Boolean).map(norm).some((n: string) => n === norm(who) || n.startsWith(norm(who)));
+            const g = common.SelectedGuildStore?.getGuildId?.(), Members = webpack.findStore("GuildMemberStore");
+            const matches = (a: any) => [a?.username, a?.globalName, a?.global_name, g ? Members?.getNick?.(g, a?.id) : null, common.RelationshipStore?.getNickname?.(a?.id)].filter(Boolean).map(norm).some((n: string) => n === norm(who) || n.startsWith(norm(who)));
             // Their latest message in the chat you have open, or else in your DMs with them
             const latestFrom = (ch?: string | null) => ch ? [...(common.MessageStore?.getMessages?.(ch)?._array ?? [])].reverse().find((x: any) => matches(x.author)) : null;
             let channelId = common.SelectedChannelStore?.getChannelId?.() ?? null;
@@ -909,8 +973,12 @@ export default definePlugin({
         const ids = new Set<string>(common.RelationshipStore?.getFriendIDs?.() ?? []);
         for (const ch of Object.values(common.ChannelStore?.getMutablePrivateChannels?.() ?? {}) as any[])
             if (ch?.type === 1 && ch.recipients?.[0]) ids.add(ch.recipients[0]);
-        const people = [...ids].map(id => common.UserStore?.getUser?.(id)).filter(Boolean);
-        const names = (u: any) => [u.username, u.globalName, u.global_name, common.RelationshipStore?.getNickname?.(u.id)].filter(Boolean).map(norm);
+        // Display name, username, the nickname you gave them, and their nickname in the server you're in
+        const guild = common.SelectedGuildStore?.getGuildId?.();
+        const Members = webpack.findStore("GuildMemberStore");
+        if (guild && Members?.getMemberIds) for (const id of Members.getMemberIds(guild) ?? []) ids.add(id);
+        const people = [...ids].map(id => common.UserStore?.getUser?.(id)).filter((u: any) => u && !u.bot);
+        const names = (u: any) => [u.username, u.globalName, u.global_name, common.RelationshipStore?.getNickname?.(u.id), guild ? Members?.getNick?.(guild, u.id) : null].filter(Boolean).map(norm);
         const exact = people.filter(u => names(u).includes(want));
         if (exact.length) return exact;
         const starts = people.filter(u => names(u).some((n: string) => n.startsWith(want)));
@@ -1021,6 +1089,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         this.bubble = h("div", { class: "vanta-capri-bubble", role: "status", hidden: true });
         document.body.append(this.bubble);
         this.history = [] as { role: "user" | "assistant"; content: string }[];
+        this.memory = (await storage.get<string[]>("CapriMemory")) ?? [];
+        this.shiftMood();
+        this.nextThought = Date.now() + rand(4, 9) * 60_000;
         this.applyLook();
         this.sources = []; this.playAt = 0; this.genChain = Promise.resolve();
         this.Guilds = webpack.findStore("UserGuildSettingsStore");
@@ -1136,7 +1207,11 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         ];
 
         // Every couple of seconds: music and naps
-        this.mood = setInterval(() => {
+        this.moodTimer = setInterval(() => {
+            if (Date.now() > this.nextMood) this.shiftMood();
+            if (Date.now() > this.nextThought) this.ownThought();
+            // Keep her voice loaded while she's around, so lines never wait for it to start up
+            if (this.settings.voice && Date.now() - (this.warmedAt || 0) > 30 * 60_000) { this.warmedAt = Date.now(); native.voiceWarm().catch(() => { }); }
             if (document.hidden) return;
             const me = common.UserStore?.getCurrentUser?.()?.id;
             const listening = common.PresenceStore?.getActivities?.(me)?.find?.((a: any) => a?.type === 2);
@@ -1168,7 +1243,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
 
     stop() {
         cancelAnimationFrame(this.raf);
-        clearInterval(this.mood);
+        clearInterval(this.moodTimer);
         clearTimeout(this.pokeT);
         clearTimeout(this.bubbleT); clearInterval(this.typeT);
         this.offs?.forEach((f: () => void) => f());
@@ -1197,8 +1272,10 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
         const link = (text: string, url: string) => h("a", { href: url, onclick: (e: Event) => { e.preventDefault(); native.openUrl(url); } }, text);
         // Her brain: a Claude API key, stored encrypted by Vanta and never shown again
         const status = h("span", { style: { marginLeft: "8px" } }, "…");
-        const keyInput = h("input", { type: "password", placeholder: "sk-ant-…", style: { width: "220px", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--background-modifier-accent)", background: "var(--input-background, var(--background-tertiary))", color: "var(--text-normal)" } }) as HTMLInputElement;
-        const refresh = () => native.aiHasKey().then(has => { status.textContent = has ? "Claude key saved: she uses Claude." : "No key: she uses the free brain."; }).catch(() => { status.textContent = ""; });
+        const keyInput = h("input", { type: "password", placeholder: "nvapi-… or sk-ant-…", style: { width: "220px", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--background-modifier-accent)", background: "var(--input-background, var(--background-tertiary))", color: "var(--text-normal)" } }) as HTMLInputElement;
+        const refresh = () => native.aiKeys().then(k => {
+            status.textContent = k.claude ? "Claude key saved: she thinks with Claude." : k.nvidia ? "NVIDIA key saved: she thinks with Nemotron (fast)." : "No key: she uses the free brains.";
+        }).catch(() => { status.textContent = ""; });
         const btn = (text: string, fn: () => void) => h("button", { type: "button", onclick: fn, style: { marginLeft: "6px", padding: "6px 10px", borderRadius: "6px", border: "0", cursor: "pointer", background: "var(--brand-500, #5865f2)", color: "#fff" } }, text);
         refresh();
         const brain = h("div", { style: { margin: "0 0 10px" } },
@@ -1206,8 +1283,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
             h("p", { style: { margin: "0 0 6px" } }, "With no key, she uses a free brain (", link("Pollinations", "https://pollinations.ai"),
                 ") when it's free to answer, and otherwise her own offline brain on this PC (a small model, about 500 MB, downloaded the first time you chat). ",
                 "What you type to her, and short notes about what you're doing (channel names, songs, and your messages if you turned that on), can go to Pollinations. ",
-                "For a smarter Capri, paste an Anthropic API key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
-                "): it's encrypted on this PC, only sent to Anthropic, and billed to your account."),
+                "For a faster, sharper Capri, paste a free NVIDIA key (from ", link("build.nvidia.com", "https://build.nvidia.com"),
+                ", answers in under a second) or a Claude key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
+                "). Keys are encrypted on this PC and only sent to NVIDIA or Anthropic."),
             h("p", { style: { margin: "0 0 6px" } }, "Her voice is her own, from the Capri Desktop voice pack, and runs on this PC. The first time she speaks, about 90 MB downloads once (her voice and the Kokoro speech model)."),
             h("div", { style: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" } },
                 keyInput,
@@ -1216,6 +1294,9 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
                 status));
         return h("div", { style: { fontSize: "13px", lineHeight: "1.5", color: "var(--text-muted)" } },
             brain,
+            h("div", { style: { display: "flex", alignItems: "center", gap: "8px", margin: "0 0 10px" } },
+                h("span", {}, `She remembers ${(this.memory ?? []).length} thing${(this.memory ?? []).length === 1 ? "" : "s"} about you.`),
+                h("button", { type: "button", style: { padding: "4px 10px", borderRadius: "6px", border: "0", cursor: "pointer", background: "var(--button-danger-background, #da373c)", color: "#fff" }, onclick: (e: Event) => { this.memory = []; storage.setNow("CapriMemory", []); (e.target as HTMLElement).parentElement!.firstChild!.textContent = "She forgot everything about you."; } }, "Forget me")),
             h("p", { style: { margin: "0 0 6px" } }, "Drag her to pick her up and throw her. Click her to talk to her. Double-click her on a panel to make her sit or stand."),
             h("p", { style: { margin: "0 0 6px" } }, "Capri's art and animations are from ", link("Capri Desktop", REPO),
                 " by lachydotmcg and her artists, used under PolyForm Noncommercial 1.0.0. They load from that project's GitHub."),

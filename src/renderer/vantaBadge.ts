@@ -41,11 +41,54 @@ export async function setMyBadge(on: boolean) {
     return true;
 }
 
+const BADGE_CSS = `.vanta-profile-badge { width: 22px; height: 22px; display: inline-grid; place-items: center; cursor: pointer; position: relative; border-radius: 4px; }
+.vanta-profile-badge:hover { background: var(--background-modifier-hover, rgba(255,255,255,.06)); }
+.vanta-badge-tip { position: fixed; z-index: 100010; padding: 6px 10px; border-radius: 6px; background: var(--background-floating, #111214); color: var(--text-normal, #dbdee1);
+  font: 600 13px/1.3 var(--font-primary, "gg sans", sans-serif); box-shadow: 0 8px 16px rgba(0,0,0,.24); pointer-events: none; white-space: nowrap; transform: translate(-50%, -100%); }
+.vanta-badge-tip::after { content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%); border: 5px solid transparent; border-bottom: 0; border-top-color: var(--background-floating, #111214); }
+.vanta-badge-card { position: fixed; z-index: 100011; width: 260px; padding: 14px; border-radius: 10px; background: var(--background-floating, #111214); color: var(--text-normal, #dbdee1);
+  box-shadow: 0 12px 32px rgba(0,0,0,.4); border: 1px solid rgba(169,139,255,.35); font: 14px/1.45 var(--font-primary, "gg sans", sans-serif); animation: vanta-badge-in .14s ease-out; }
+.vanta-badge-card .vbc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.vanta-badge-card .vbc-head b { display: block; font-size: 15px; color: var(--header-primary, #fff); }
+.vanta-badge-card .vbc-head small { color: #b9a4ff; font-weight: 600; font-size: 12px; }
+.vanta-badge-card p { margin: 0 0 12px; color: var(--text-muted, #b5bac1); font-size: 13px; }
+.vanta-badge-card button { all: unset; box-sizing: border-box; width: 100%; text-align: center; cursor: pointer; padding: 8px; border-radius: 6px; font-weight: 600; color: #fff; background: linear-gradient(135deg, #7c4dff, #a98bff); }
+.vanta-badge-card button:hover { filter: brightness(1.1); }
+@keyframes vanta-badge-in { from { opacity: 0; transform: translateY(4px) scale(.98); } }`;
+
+let tip: HTMLElement | null = null, card: HTMLElement | null = null;
+function hideTip() { tip?.remove(); tip = null; }
+function closeCard() { card?.remove(); card = null; document.removeEventListener("mousedown", outside, true); }
+function outside(e: MouseEvent) { if (card && !card.contains(e.target as Node)) closeCard(); }
+
+/** Like Discord's Nitro badge: a tooltip on hover, a little card on click */
 function badge() {
-    const el = h("div", {
-        class: "vanta-profile-badge", role: "img", "aria-label": "Uses Vanta", title: "Uses Vanta",
-        style: { width: "22px", height: "22px", display: "inline-grid", placeItems: "center", cursor: "default" },
-    }, ui.logo(20));
+    const el = h("div", { class: "vanta-profile-badge", role: "button", tabindex: 0, "aria-label": "Uses Vanta" }, ui.logo(20));
+    el.addEventListener("mouseenter", () => {
+        hideTip();
+        const r = el.getBoundingClientRect();
+        tip = h("div", { class: "vanta-badge-tip" }, "Vanta");
+        tip.style.left = r.left + r.width / 2 + "px"; tip.style.top = r.top - 8 + "px";
+        document.body.append(tip);
+    });
+    el.addEventListener("mouseleave", hideTip);
+    const open = (e: Event) => {
+        e.preventDefault(); e.stopPropagation(); hideTip();
+        if (card) return closeCard();
+        const r = el.getBoundingClientRect();
+        card = h("div", { class: "vanta-badge-card", role: "dialog", "aria-label": "Vanta" },
+            h("div", { class: "vbc-head" }, ui.logo(36), h("div", {}, h("b", {}, "Vanta"), h("small", {}, "Uses Vanta"))),
+            h("p", {}, "This person uses Vanta, a Discord client mod with themes, 100+ plugins and Capri, a desktop mate who lives in Discord."),
+            h("button", { type: "button", onclick: () => { closeCard(); (window as any).VantaNative?.openUrl?.("https://tryvanta.dev"); } }, "Get Vanta"));
+        document.body.append(card);
+        const w = 260, hgt = card.offsetHeight;
+        const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+        const top = r.bottom + 8 + hgt > window.innerHeight ? r.top - hgt - 8 : r.bottom + 8;
+        card.style.left = left + "px"; card.style.top = top + "px";
+        setTimeout(() => document.addEventListener("mousedown", outside, true), 0);
+    };
+    el.addEventListener("click", open);
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") open(e); });
     return el;
 }
 
@@ -78,6 +121,7 @@ function decorate(row: HTMLElement) {
 export function startVantaBadge() {
     webpackReady.then(() => {
         try {
+            document.head.append(Object.assign(document.createElement("style"), { id: "vanta-badge-css", textContent: BADGE_CSS }));
             watchElements('[class*="usernameAndPronounsRow_"]', decorate);
         } catch (e) { logger.warn("Vanta badges couldn't start:", e); }
         // Ask once whether to show your own badge

@@ -129,6 +129,8 @@ export interface NativeAPI {
 
     /** Claude chat for plugins. The key is stored encrypted in the main process and can't be read back. */
     aiHasKey(): Promise<boolean>;
+    /** Which brain keys are saved */
+    aiKeys(): Promise<{ claude: boolean; nvidia: boolean }>;
     aiSetKey(key: string | null): Promise<boolean>;
     aiChat(system: string, messages: { role: "user" | "assistant"; content: string }[], maxTokens?: number): Promise<string>;
 
@@ -137,6 +139,11 @@ export interface NativeAPI {
     voiceStatus(): Promise<string>;
     /** Loads her voice model ahead of time */
     voiceWarm(): Promise<string>;
+
+    /** Saves Discord-hosted files with their real names (asks where). Returns how many were saved. */
+    saveFiles(files: { url: string; name: string }[]): Promise<number>;
+    /** Always-on-top mute indicator: "muted" | "deafened" | "hidden" */
+    muteOverlay(state: string, corner: string): Promise<void>;
 
     /** Opens spotify:/steam: links in their desktop apps */
     openAppUrl(url: string): Promise<void>;
