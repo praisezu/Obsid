@@ -61,3 +61,13 @@ test("expressions and shorthand are spoken naturally", () => {
     assert.equal(speechText("summer is sweet"), "summer is sweet");
     assert.equal(speechText("mmm hmm, hmm"), "hmm hmm, hmm");
 });
+
+import { trimSilence } from "../src/plugins/capri";
+test("silence around a sentence is trimmed to a short beat", () => {
+    const rate = 1000; // 1 sample per ms keeps the numbers easy
+    const a = new Float32Array(1000); // 400 ms quiet, 200 ms speech, 400 ms quiet
+    for (let i = 400; i < 600; i++) a[i] = 0.5;
+    const t = trimSilence(a, rate, 20, 110);
+    assert.equal(t.length, 20 + 200 + 110);
+    assert.equal(trimSilence(new Float32Array(50), rate).length, 50); // all quiet: left alone
+});

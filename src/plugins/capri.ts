@@ -68,7 +68,20 @@ interface Ledge { el: Element | null; left: number; right: number; top: number }
 
 const GRAVITY = 2600;
 /** Her voice tuning, from Capri Desktop's defaults: her own style's speed, 1.2x, 80% volume. Pitch is a setting. */
-const VOICE = { styleSpeed: 1.1, speed: 1.2, volume: 0.8 };
+const VOICE = { styleSpeed: 1.1, speed: 1.32, volume: 0.8 };
+
+/**
+ * Cuts the silence the voice puts before and after each sentence (it adds up to long gaps at every full stop),
+ * keeping a short natural beat: a little lead-in, and a pause after the sentence.
+ */
+export function trimSilence(audio: Float32Array, rate: number, leadMs = 20, tailMs = 110): Float32Array {
+    const quiet = 0.012;
+    let a = 0, b = audio.length - 1;
+    while (a < audio.length && Math.abs(audio[a]) < quiet) a++;
+    while (b > a && Math.abs(audio[b]) < quiet) b--;
+    if (a >= b) return audio;
+    return audio.subarray(Math.max(0, a - Math.round(rate * leadMs / 1000)), Math.min(audio.length, b + 1 + Math.round(rate * tailMs / 1000)));
+}
 /** Capri Desktop's own personality and safety lines, read from its source at runtime (see loadPersona) */
 const BRAIN_URL = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/app/Brain.cs";
 
@@ -517,10 +530,11 @@ export default definePlugin({
             this.ac ??= new AudioContext();
             if (this.ac.state === "suspended") this.ac.resume().catch(() => { });
             for (const g of made) {
-                const { audio, rate } = await g;
+                const { audio: raw, rate } = await g;
                 if (line !== this.lineNo || !this.el) return; // a newer line started meanwhile
+                const audio = trimSilence(raw instanceof Float32Array ? raw : new Float32Array(raw), rate);
                 const buf = this.ac.createBuffer(1, audio.length, rate);
-                buf.copyToChannel(audio instanceof Float32Array ? audio : new Float32Array(audio), 0);
+                buf.copyToChannel(audio, 0);
                 const src = this.ac.createBufferSource();
                 src.buffer = buf;
                 src.playbackRate.value = ratio;
