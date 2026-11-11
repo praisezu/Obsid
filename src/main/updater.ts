@@ -90,9 +90,9 @@ export const readVersion = (root: string, fallback: string) => {
 };
 
 /** Fingerprint of the parts that need a full Discord restart to change (main process and preload) */
-export function coreHash(root: string) {
+export function coreHash(root: string, files = ["dist/main.js", "dist/preload.js"]) {
     const h = createHash("sha256");
-    for (const f of ["dist/main.js", "dist/preload.js"]) { try { h.update(fs.readFileSync(path.join(root, f))); } catch { h.update("missing"); } }
+    for (const f of files) { try { h.update(fs.readFileSync(path.join(root, f))); } catch { h.update("missing"); } }
     return h.digest("hex");
 }
 
@@ -100,9 +100,16 @@ export function coreHash(root: string) {
  * What's installed on disk compared with what's running: an update (or a rebuild) can land while Discord keeps
  * running, and only takes effect after a refresh, or a restart if the background part changed.
  */
-export function updaterInstalled(root: string, fallback: string, bootCore: string) {
-    return { version: readVersion(root, fallback), restart: coreHash(root) !== bootCore };
+export function updaterInstalled(root: string, fallback: string, boot: { core: string; page: string }, pageLoaded = false) {
+    const page = coreHash(root, PAGE_FILES);
+    // The page has just (re)loaded, so it's running what's on disk now: remember that
+    if (pageLoaded) boot.page = page;
+    const restart = coreHash(root) !== boot.core;
+    return { version: readVersion(root, fallback), changed: restart || page !== boot.page, id: (coreHash(root) + page).slice(0, 12) + page.slice(0, 12), restart };
 }
+
+/** What the Discord page loads from Vanta (a refresh picks up a new copy; main and preload need a restart) */
+export const PAGE_FILES = ["dist/renderer.js"];
 
 export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string; restart?: boolean }> {
     const r = await applyUpdate(root, version);

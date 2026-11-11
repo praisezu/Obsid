@@ -170,7 +170,7 @@ export interface NativeAPI {
     /** restart: true when Discord must restart (not just refresh) to finish */
     updaterApply(): Promise<{ ok: boolean; output: string; version?: string; restart?: boolean }>;
     /** The version on disk, and whether Discord needs a full restart (not just a refresh) to load it */
-    updaterInstalled(): Promise<{ version: string; restart: boolean }>;
+    updaterInstalled(pageLoaded?: boolean): Promise<{ version: string; changed: boolean; id: string; restart: boolean }>;
 
     backupExport(data: BackupData): Promise<string | null>;
     backupImport(): Promise<BackupData | null>;

@@ -503,7 +503,9 @@ export default definePlugin({
 
     /**
      * Her own voice (Kokoro + her voice from the Capri Desktop pack), with the system voice as a fallback.
-     * Sentence by sentence: each plays as soon as it's ready while the next ones are made.
+     * Sentence by sentence while the next ones are made. Making her voice can take longer than saying it (on most
+     * CPUs it does), so she learns how long it takes and starts just late enough that every next sentence is ready
+     * in time: no long gaps at full stops, only short natural pauses.
      */
     async speak(text: string, queue = false) {
         if (!queue) {
@@ -521,16 +523,23 @@ export default definePlugin({
         const ratio = 2 ** (semis / 12);
         const speed = Math.max(0.6, Math.min(1.6, VOICE.styleSpeed * VOICE.speed / ratio));
         // Ask for every sentence now, in order (the voice works on one at a time)
-        const made = sentences(speechText(text) || text).map(p => {
-            const g = this.genChain.then(() => native.voiceSpeak(p, speed));
+        // If this PC makes her voice slower than she talks, the whole line in one go is quickest overall (every piece
+        // has a fixed start-up cost) and has no gaps; on faster PCs, sentence by sentence starts sooner.
+        const clean = speechText(text) || text;
+        const parts = (this.vRate ?? 1.4) >= 1.1 ? [clean] : sentences(clean);
+        const made = parts.map(p => {
+            const g = this.genChain.then(() => {
+                const t0 = performance.now();
+                return native.voiceSpeak(p, speed).then(r => ({ ...r, genMs: performance.now() - t0 }));
+            });
             this.genChain = g.catch(() => { });
             return g;
         });
         try {
             this.ac ??= new AudioContext();
             if (this.ac.state === "suspended") this.ac.resume().catch(() => { });
-            for (const g of made) {
-                const { audio: raw, rate } = await g;
+            for (let i = 0; i < made.length; i++) {
+                const { audio: raw, rate, genMs } = await made[i];
                 if (line !== this.lineNo || !this.el) return; // a newer line started meanwhile
                 const audio = trimSilence(raw instanceof Float32Array ? raw : new Float32Array(raw), rate);
                 const buf = this.ac.createBuffer(1, audio.length, rate);
@@ -541,11 +550,22 @@ export default definePlugin({
                 // Through her holographic voice chain, with a few glitches on this sentence
                 const flicker = this.ac.createGain();
                 src.connect(flicker).connect(this.voiceBus().input);
-                const start = Math.max(this.ac.currentTime + 0.02, this.playAt || 0);
+                const dur = buf.duration / ratio;
+                // What she's learned: how long making her voice takes per second of it, and seconds per character
+                this.vRate = 0.7 * (this.vRate ?? 1.4) + 0.3 * Math.min(6, genMs / 1000 / dur);
+                this.vPerChar = 0.7 * (this.vPerChar ?? 0.055) + 0.3 * (dur / Math.max(1, parts[i].length));
+                let start = Math.max(this.ac.currentTime + 0.02, this.playAt || 0);
+                if (i === 0 && parts.length > 1 && start < this.ac.currentTime + 0.1) {
+                    // Hold the first sentence just long enough that the last one is ready when its turn comes
+                    const rest = parts.slice(1).reduce((n, s) => n + s.length, 0) * this.vPerChar;
+                    const restMade = rest * this.vRate;
+                    const last = parts[parts.length - 1].length * this.vPerChar;
+                    start += Math.max(0, Math.min(8, 1.1 * restMade - dur - rest + last));
+                }
                 src.start(start);
-                this.glitchVoice(src, flicker, start, buf.duration / ratio, text);
+                this.glitchVoice(src, flicker, start, dur, text);
                 this.sources.push(src);
-                this.playAt = start + buf.duration / ratio;
+                this.playAt = start + dur;
                 const leftMs = (this.playAt - this.ac.currentTime) * 1000;
                 this.talk(leftMs + 150); // mouth moves for as long as she speaks
                 clearTimeout(this.bubbleT);
@@ -1381,7 +1401,7 @@ html.vanta-capri-drag, html.vanta-capri-drag * { cursor: grabbing !important; us
                 "For a faster, sharper Capri, paste a free NVIDIA key (from ", link("build.nvidia.com", "https://build.nvidia.com"),
                 ", answers in under a second) or a Claude key (from ", link("console.anthropic.com", "https://console.anthropic.com/settings/keys"),
                 "). Keys are encrypted on this PC and only sent to NVIDIA or Anthropic."),
-            h("p", { style: { margin: "0 0 6px" } }, "Her voice is her own, from the Capri Desktop voice pack, and runs on this PC. The first time she speaks, about 90 MB downloads once (her voice and the Kokoro speech model)."),
+            h("p", { style: { margin: "0 0 6px" } }, "Her voice is her own, from the Capri Desktop voice pack, and runs on this PC. The first time she speaks, about 330 MB downloads once (her voice and the Kokoro speech model, full quality)."),
             h("div", { style: { display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" } },
                 keyInput,
                 btn("Save", () => native.aiSetKey(keyInput.value).then(() => { keyInput.value = ""; refresh(); }).catch(e => { status.textContent = String(e?.message ?? e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ""); })),

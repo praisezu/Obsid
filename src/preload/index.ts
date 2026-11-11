@@ -49,7 +49,7 @@ const native: NativeAPI = {
     updaterInfo: () => invoke("updater-info"),
     updaterCheck: () => invoke("updater-check"),
     updaterApply: () => invoke("updater-apply"),
-    updaterInstalled: () => invoke("updater-installed"),
+    updaterInstalled: (pageLoaded?: boolean) => invoke("updater-installed", pageLoaded === true),
 
     backupExport: data => invoke("backup-export", data),
     backupImport: () => invoke("backup-import"),

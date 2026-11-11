@@ -16,6 +16,8 @@ let running = false;
 let finishing = false;
 /** A version you said "Later" to: not asked again this session */
 let postponed: string | null = null;
+/** The build being offered right now (what "Later" postpones) */
+let postponing: string | null = null;
 
 const inVoiceCall = () => !!common.SelectedChannelStore?.getVoiceChannelId?.();
 
@@ -72,7 +74,7 @@ async function finishPrompt(version: string, restart: boolean) {
     });
     for (let i = 50; i > 0 && !cancelled && t.el.isConnected; i--) { left.textContent = String(Math.ceil(i / 10)); await sleep(100); }
     if (cancelled) {
-        postponed = version;
+        postponed = postponing;
         ui.toast(`Vanta ${version} is installed. It'll finish the next time Discord ${restart ? "restarts" : "reloads"}.`, { ms: 6000 });
         return;
     }
@@ -89,9 +91,12 @@ async function finishPrompt(version: string, restart: boolean) {
 async function finishInstalled() {
     if (finishing || running) return false;
     const inst = await native.updaterInstalled().catch(() => null);
-    if (!inst || inst.version === __VANTA_VERSION__ || inst.version === postponed) return false;
-    settings.vanta.pendingUpdate ??= { from: __VANTA_VERSION__, to: inst.version, notes: "", at: Date.now(), refreshed: !inst.restart };
-    await saveSettingsNow();
+    if (!inst || !inst.changed || inst.id === postponed) return false;
+    postponing = inst.id;
+    if (inst.version !== __VANTA_VERSION__) {
+        settings.vanta.pendingUpdate ??= { from: __VANTA_VERSION__, to: inst.version, notes: "", at: Date.now(), refreshed: !inst.restart };
+        await saveSettingsNow();
+    }
     await finishWhenIdle(inst.version, inst.restart);
     return true;
 }
@@ -129,6 +134,8 @@ export async function checkForUpdates({ manual = false } = {}) {
 /** Startup: show the "updated" notice, then check now and every few hours. */
 export function startAutoUpdate() {
     showUpdatedNotice();
+    // This page just loaded what's on disk: tell the background part, so it only offers newer files than these
+    native.updaterInstalled(true).catch(() => { });
     if (!settings.vanta.autoCheckUpdates) return;
     setTimeout(() => checkForUpdates(), 8000);
     setInterval(() => { if (settings.vanta.autoCheckUpdates) checkForUpdates(); }, CHECK_EVERY);

@@ -70,7 +70,7 @@ if (KIND === "brain") {
   host.ready("brain");
 } else try {
   const { KokoroTTS } = await import("kokoro");
-  const tts = await KokoroTTS.from_pretrained(${JSON.stringify(VOICE_MODEL)}, { dtype: "q8", device: "wasm" });
+  const tts = await KokoroTTS.from_pretrained(${JSON.stringify(VOICE_MODEL)}, { dtype: "fp32", device: "wasm" });
   host.onSpeak(async (id, text, speed) => {
     try { const a = await tts.generate(text, { voice: "af_heart", speed }); host.done(id, a.audio, a.sampling_rate); }
     catch (e) { host.fail(id, String(e && e.message || e)); }
