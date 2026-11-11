@@ -39,3 +39,6 @@ func hiddenCmd(name string, args ...string) *exec.Cmd {
 }
 
 func openFolder(path string) { _ = exec.Command("explorer.exe", path).Start() }
+
+// openURL opens a web page in the default browser.
+func openURL(url string) { _ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start() }

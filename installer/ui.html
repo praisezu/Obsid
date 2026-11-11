@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vanta Installer</title>
+<style>
+/*FONTS*/
+/* Same look as tryvanta.dev: hard pixel edges, stepped corners, dither glow, frosted panels, chunky motion. */
+:root {
+  --bg: #030205;
+  --text: #f1eef7; --muted: #a29bb0; --dim: #686274;
+  --v: #a98bff; --v-hi: #d4c6ff; --v-deep: #5b3fd0; --ok: #7ee2a8; --warn: #fad66e; --bad: #ff8a8a;
+  --line: rgba(212, 198, 255, .2); --line-hi: rgba(212, 198, 255, .5);
+  --fill: rgba(16, 12, 26, .62);
+  --p: 3px;
+  --pixel: "Pixelify Sans", "Silkscreen", monospace;
+  --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  color: var(--text); font: 400 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; user-select: none; overflow: hidden;
+  background: var(--bg) radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.4px) 0 0 / 12px 12px;
+  display: flex; flex-direction: column;
+}
+img { image-rendering: pixelated; }
+
+/* Dithered violet glow at the top */
+.dither { position: fixed; left: 0; right: 0; top: 0; height: 420px; pointer-events: none; z-index: 0;
+  background: repeating-conic-gradient(rgba(169, 139, 255, .5) 0 25%, transparent 0 50%) 0 0 / calc(var(--p) * 2) calc(var(--p) * 2);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, rgba(0, 0, 0, .45) 40%, transparent 75%); opacity: .5; }
+.dither::after { content: ""; position: absolute; inset: 0;
+  background: repeating-conic-gradient(rgba(91, 63, 208, .7) 0 25%, transparent 0 50%) var(--p) 0 / calc(var(--p) * 4) calc(var(--p) * 4); }
+
+/* Pixel panel: stepped corners + pixel border + frosted fill */
+.px, .btn, .tag {
+  --b: var(--line); --f: var(--fill);
+  position: relative;
+  background:
+    linear-gradient(var(--b), var(--b)) calc(var(--p) * 2) 0 / calc(100% - var(--p) * 4) var(--p) no-repeat,
+    linear-gradient(var(--b), var(--b)) calc(var(--p) * 2) 100% / calc(100% - var(--p) * 4) var(--p) no-repeat,
+    linear-gradient(var(--b), var(--b)) 0 calc(var(--p) * 2) / var(--p) calc(100% - var(--p) * 4) no-repeat,
+    linear-gradient(var(--b), var(--b)) 100% calc(var(--p) * 2) / var(--p) calc(100% - var(--p) * 4) no-repeat,
+    linear-gradient(var(--b), var(--b)) var(--p) var(--p) / var(--p) var(--p) no-repeat,
+    linear-gradient(var(--b), var(--b)) calc(100% - var(--p)) var(--p) / var(--p) var(--p) no-repeat,
+    linear-gradient(var(--b), var(--b)) var(--p) calc(100% - var(--p)) / var(--p) var(--p) no-repeat,
+    linear-gradient(var(--b), var(--b)) calc(100% - var(--p)) calc(100% - var(--p)) / var(--p) var(--p) no-repeat,
+    linear-gradient(var(--f), var(--f));
+  clip-path: polygon(
+    0 calc(var(--p) * 2), var(--p) calc(var(--p) * 2), var(--p) var(--p), calc(var(--p) * 2) var(--p), calc(var(--p) * 2) 0,
+    calc(100% - var(--p) * 2) 0, calc(100% - var(--p) * 2) var(--p), calc(100% - var(--p)) var(--p), calc(100% - var(--p)) calc(var(--p) * 2), 100% calc(var(--p) * 2),
+    100% calc(100% - var(--p) * 2), calc(100% - var(--p)) calc(100% - var(--p) * 2), calc(100% - var(--p)) calc(100% - var(--p)), calc(100% - var(--p) * 2) calc(100% - var(--p)), calc(100% - var(--p) * 2) 100%,
+    calc(var(--p) * 2) 100%, calc(var(--p) * 2) calc(100% - var(--p)), var(--p) calc(100% - var(--p)), var(--p) calc(100% - var(--p) * 2), 0 calc(100% - var(--p) * 2));
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Header */
+.hero { position: relative; z-index: 1; display: flex; align-items: center; gap: 22px; padding: 30px 32px 10px; }
+.logo { position: relative; width: 96px; height: 96px; flex: none; }
+.logo img { width: 100%; height: 100%; animation: hover 2.4s steps(4) infinite alternate; }
+@keyframes hover { to { transform: translateY(calc(var(--p) * -3)); } }
+.spark { position: absolute; width: var(--p); height: var(--p); background: var(--v-hi); box-shadow: 0 0 0 var(--p) rgba(212, 198, 255, .25); animation: blink 1.6s steps(2) infinite; }
+.spark:nth-child(2) { left: -12px; top: 26px; animation-delay: .4s; }
+.spark:nth-child(3) { right: -4px; top: 74px; animation-delay: .9s; }
+.spark:nth-child(4) { left: 8px; bottom: 2px; animation-delay: 1.3s; }
+@keyframes blink { 50% { opacity: 0; } }
+.word { font: 700 58px/.9 var(--pixel); letter-spacing: .02em;
+  text-shadow: var(--p) var(--p) 0 var(--v-deep), calc(var(--p) * 2) calc(var(--p) * 2) 0 rgba(91, 63, 208, .45); }
+.tagline { margin-top: 10px; font-size: 15px; color: var(--muted); }
+.tagline b { color: var(--text); font-weight: 600; }
+.meta { margin-top: 8px; font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+.meta b { color: var(--v-hi); font-weight: 500; }
+
+main { position: relative; z-index: 1; flex: 1; padding: 14px 32px 0; display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; }
+main::-webkit-scrollbar { width: 0; }
+.label { font: 500 11.5px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.label::before { content: "▸ "; color: var(--v); }
+
+/* Discord picker */
+.discords { display: flex; flex-direction: column; gap: 8px; }
+.card { display: flex; align-items: center; gap: 14px; padding: 14px 18px; cursor: pointer; --f: rgba(255, 255, 255, .025); --b: rgba(212, 198, 255, .14); }
+.card:hover { --b: var(--line-hi); }
+.card.sel { --b: var(--v); --f: rgba(91, 63, 208, .2); }
+.radio { width: 15px; height: 15px; flex: none; background: rgba(255, 255, 255, .1); position: relative; }
+.radio::after { content: ""; position: absolute; inset: 4px; background: transparent; }
+.card.sel .radio { background: var(--v-deep); }
+.card.sel .radio::after { background: var(--v-hi); }
+.card .name { font: 600 18px/1.1 var(--pixel); letter-spacing: .03em; }
+.card .sub { font: 11px var(--mono); color: var(--dim); margin-top: 3px; }
+.state { margin-left: auto; font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; padding: 6px 10px; }
+.state.ok { color: var(--ok); --b: rgba(126, 226, 168, .45); --f: rgba(126, 226, 168, .08); }
+.state.warn { color: var(--warn); --b: rgba(250, 214, 110, .45); --f: rgba(250, 214, 110, .07); }
+.state.no { color: var(--muted); }
+.empty { padding: 18px; color: var(--muted); text-align: center; font-size: 13.5px; }
+
+/* Options */
+.opts { padding: 4px 18px; --f: rgba(10, 7, 17, .8); }
+.opt { display: flex; align-items: center; gap: 14px; padding: 12px 0; cursor: pointer; }
+.opt + .opt { border-top: var(--p) solid rgba(212, 198, 255, .08); }
+.opt .t { font-size: 14px; font-weight: 600; }
+.opt .h { font-size: 12px; color: var(--dim); }
+.tog { margin-left: auto; flex: none; width: 36px; height: 18px; background: rgba(255, 255, 255, .12); position: relative; }
+.tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: var(--muted); transition: transform .24s steps(4), background .24s steps(1); }
+.opt.on .tog { background: var(--v-deep); }
+.opt.on .tog::after { transform: translateX(18px); background: var(--v-hi); }
+
+/* Buttons */
+footer { position: relative; z-index: 1; padding: 16px 32px 18px; }
+.actions { display: flex; gap: 10px; }
+.btn {
+  --b: var(--line-hi); --f: rgba(20, 15, 32, .7);
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; padding: 0 24px;
+  font: 600 16px var(--pixel); letter-spacing: .05em; text-transform: uppercase; color: var(--text); cursor: pointer; border: 0; white-space: nowrap;
+  transition: transform .18s steps(3);
+}
+.btn:hover:not(:disabled) { transform: translateY(calc(var(--p) * -1)); --b: var(--v-hi); }
+.btn:active:not(:disabled) { transform: translateY(var(--p)); }
+.btn.primary { --b: #efe8ff; --f: var(--v); color: #0b0812; }
+.actions .btn.primary { flex: 1; }
+.btn.primary:hover:not(:disabled) { --f: var(--v-hi); }
+.btn.danger { color: var(--bad); }
+.btn.danger:hover:not(:disabled) { --b: var(--bad); }
+.btn:disabled { --b: rgba(212, 198, 255, .12); --f: rgba(255, 255, 255, .04); color: var(--dim); cursor: default; }
+.btn .dots { display: none; }
+.busy .btn.primary .dots { display: inline-flex; gap: 4px; }
+.dots i { width: 6px; height: 6px; background: currentColor; animation: blink 1s steps(2) infinite; }
+.dots i:nth-child(2) { animation-delay: .33s; } .dots i:nth-child(3) { animation-delay: .66s; }
+
+/* Pixel progress: a lit block that runs along a row of blocks */
+.prog { height: 12px; margin-top: 12px; display: flex; gap: 3px; visibility: hidden; }
+.busy .prog { visibility: visible; }
+.prog i { flex: 1; background: rgba(212, 198, 255, .1); animation: fill 1.6s steps(1) infinite; animation-delay: calc(var(--i) * .1s); }
+@keyframes fill { 0% { background: var(--v); } 15%, 100% { background: rgba(212, 198, 255, .1); } }
+
+.bottom { display: flex; align-items: center; gap: 14px; margin-top: 10px; font: 11.5px var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+#status { color: var(--dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#status.ok { color: var(--ok); } #status.err { color: var(--bad); }
+.links a { color: var(--muted); cursor: pointer; margin-left: 14px; }
+.links a:hover { color: var(--v-hi); }
+
+/* Dialogs, styled like the site's window mock */
+.modal, .done { position: fixed; inset: 0; z-index: 9; display: none; place-items: center; background: rgba(3, 2, 5, .85); }
+.modal.open, .done.open { display: grid; }
+.window { width: min(440px, 88vw); --f: rgba(10, 7, 17, .97); animation: pop .24s steps(3); }
+@keyframes pop { from { transform: scale(.92); opacity: 0; } }
+.titlebar { display: flex; align-items: center; gap: 8px; padding: 12px 16px 10px; border-bottom: var(--p) solid var(--line); font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .1em; }
+.titlebar i { width: 9px; height: 9px; background: var(--line-hi); }
+.titlebar i:first-child { background: var(--v); }
+.titlebar span { margin-left: 6px; }
+.wbody { padding: 18px 20px 20px; }
+.wbody h3 { font: 600 20px var(--pixel); letter-spacing: .03em; margin-bottom: 8px; }
+.wbody p { color: var(--muted); font-size: 13.5px; white-space: pre-line; }
+.wbody .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.wbody .btn { height: 42px; font-size: 14px; padding: 0 18px; }
+.btn.red { --f: #ff7b7b; --b: #ffd2d2; color: #1a0606; }
+.btn.red:hover:not(:disabled) { --f: #ffa3a3; }
+
+.done .window { text-align: center; }
+.check { width: 72px; height: 72px; margin: 6px auto 14px; display: block; animation: hover 1.2s steps(3) infinite alternate; }
+.done .row { justify-content: center !important; }
+
+.in { animation: rise .5s steps(5) both; animation-delay: calc(var(--d, 0) * 70ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(9px); } }
+</style>
+</head>
+<body>
+<div class="dither"></div>
+
+<header class="hero">
+  <div class="logo in"><img id="logo" alt=""><i class="spark"></i><i class="spark"></i><i class="spark"></i></div>
+  <div>
+    <h1 class="word in" style="--d:1">Vanta</h1>
+    <p class="tagline in" style="--d:2">The Discord mod that <b>protects your account</b>.</p>
+    <p class="meta in" style="--d:3"><b id="ver"></b> · Installer · Open source</p>
+  </div>
+</header>
+
+<main>
+  <section class="in" style="--d:4">
+    <div class="label">Choose your Discord</div>
+    <div class="discords" id="list"></div>
+  </section>
+  <section class="in" style="--d:5">
+    <div class="label">Options</div>
+    <div class="opts px" id="opts"></div>
+  </section>
+</main>
+
+<footer class="in" style="--d:6">
+  <div class="actions">
+    <button class="btn primary" id="go"><span class="dots"><i></i><i></i><i></i></span><span id="goText">Install Vanta</span></button>
+    <button class="btn danger" id="rm">Uninstall</button>
+  </div>
+  <div class="prog" id="prog"></div>
+  <div class="bottom">
+    <div id="status">Pick your Discord and press Install.</div>
+    <div class="links"><a id="safe">Safe mode</a><a id="folder">Folder</a><a id="site">tryvanta.dev</a></div>
+  </div>
+</footer>
+
+<div class="modal" id="modal"><div class="window px">
+  <div class="titlebar"><i></i><i></i><i></i><span>vanta installer</span></div>
+  <div class="wbody">
+    <h3 id="mTitle"></h3><p id="mText"></p>
+    <div class="row"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mYes">Continue</button></div>
+  </div>
+</div></div>
+
+<div class="done" id="done"><div class="window px">
+  <div class="titlebar"><i></i><i></i><i></i><span>all done</span></div>
+  <div class="wbody">
+    <svg class="check" viewBox="0 0 12 12" shape-rendering="crispEdges"><path fill="#5b3fd0" d="M10 3h1v1h-1zM9 4h1v1H9zM8 5h1v1H8zM7 6h1v1H7zM6 7h1v1H6zM5 8h1v1H5zM4 9h1v1H4zM3 8h1v1H3zM2 7h1v1H2zM1 6h1v1H1z"/><path fill="#d4c6ff" d="M10 2h1v1h-1zM9 3h1v1H9zM8 4h1v1H8zM7 5h1v1H7zM6 6h1v1H6zM5 7h1v1H5zM4 8h1v1H4zM3 7h1v1H3zM2 6h1v1H2zM1 5h1v1H1z"/></svg>
+    <h3>Vanta is installed</h3>
+    <p id="dText"></p>
+    <div class="row"><button class="btn primary" id="dOk">Nice</button></div>
+  </div>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let S = { items: [], sel: 0, busy: false };
+const opt = { guard: true, restart: true, dev: false };
+$("prog").innerHTML = Array.from({ length: 16 }, (_, i) => `<i style="--i:${i}"></i>`).join("");
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function status(text, kind) { const s = $("status"); s.textContent = text; s.className = kind || ""; s.title = text; }
+
+function render() {
+  const list = $("list");
+  if (!S.items.length) {
+    list.innerHTML = '<div class="empty px">No Discord found. Install Discord, open it once, then reopen this installer.</div>';
+  } else {
+    list.innerHTML = S.items.map((b, i) => {
+      const cls = b.state === 1 ? "ok" : b.state === 0 ? "no" : "warn";
+      return `<div class="card px${i === S.sel ? " sel" : ""}" data-i="${i}">
+        <div class="radio"></div>
+        <div><div class="name">${esc(b.name)}</div><div class="sub">${esc(b.version || "")}</div></div>
+        <div class="state tag ${cls}">${esc(b.stateText)}</div></div>`;
+    }).join("");
+    list.querySelectorAll(".card").forEach(c => c.onclick = () => { if (!S.busy) { S.sel = +c.dataset.i; render(); } });
+  }
+  const b = S.items[S.sel];
+  document.body.classList.toggle("busy", S.busy);
+  $("go").disabled = S.busy || !b;
+  $("rm").disabled = S.busy || !b || !(b.state === 1 || b.state === 2);
+  $("goText").textContent = S.busy ? "Working" : b && b.state === 1 ? "Repair Vanta" : "Install Vanta";
+}
+
+function renderOpts() {
+  const rows = [
+    ["guard", "Keep Vanta installed when Discord updates", "Recommended. A tiny helper puts Vanta back after Discord updates itself."],
+    ["restart", "Close and reopen Discord when done", ""],
+  ];
+  if (S.localBuild) rows.push(["dev", "Use this PC's development build", S.localBuild]);
+  $("opts").innerHTML = rows.map(([k, t, h]) =>
+    `<div class="opt${opt[k] ? " on" : ""}" data-k="${k}"><div><div class="t">${esc(t)}</div>${h ? `<div class="h">${esc(h)}</div>` : ""}</div><div class="tog"></div></div>`).join("");
+  $("opts").querySelectorAll(".opt").forEach(o => o.onclick = async () => {
+    if (S.busy) return;
+    const k = o.dataset.k; opt[k] = !opt[k]; o.classList.toggle("on", opt[k]);
+    if (k === "dev") { S.items = await vReload(opt.dev); render(); }
+  });
+}
+
+let closeModal = () => {};
+function confirmBox(title, text, yes, red, single) {
+  return new Promise(res => {
+    $("mTitle").textContent = title; $("mText").textContent = text; $("mYes").textContent = yes;
+    $("mYes").classList.toggle("red", !!red); $("mYes").classList.toggle("primary", !red);
+    $("mNo").hidden = !!single; $("modal").classList.add("open");
+    closeModal = v => { $("modal").classList.remove("open"); closeModal = () => {}; res(v); };
+    $("mYes").onclick = () => closeModal(true); $("mNo").onclick = () => closeModal(false);
+  });
+}
+
+$("go").onclick = async () => {
+  const b = S.items[S.sel]; if (!b || S.busy) return;
+  if (b.state === 3 && !await confirmBox("Another mod is installed", b.name + " was already changed by another mod (for example BetterDiscord).\n\nInstalling Vanta replaces that change. The current file is backed up, and uninstalling Vanta puts it back.", "Install anyway")) return;
+  S.busy = true; render(); status("Starting…");
+  vInstall(S.sel, opt.restart, opt.guard, opt.dev);
+};
+$("rm").onclick = async () => {
+  const b = S.items[S.sel]; if (!b || S.busy) return;
+  if (!await confirmBox("Remove Vanta?", "Vanta will be removed from " + b.name + ".\nYour settings, plugins and themes stay in the Vanta folder.", "Uninstall", true)) return;
+  S.busy = true; render(); status("Starting…");
+  vUninstall(S.sel, opt.restart);
+};
+$("safe").onclick = async () => { const b = S.items[S.sel]; if (!b) return; const err = await vSafeMode(S.sel); err ? status(err, "err") : status(b.name + " restarted in safe mode.", "ok"); };
+$("folder").onclick = () => vOpenFolder();
+$("site").onclick = () => vOpenSite();
+$("dOk").onclick = () => $("done").classList.remove("open");
+
+// Called from Go
+window.onStatus = t => status(t);
+window.onFinished = async (ok, install, msg, name, restarted) => {
+  S.busy = false; S.items = await vReload(opt.dev); render();
+  if (!ok) { status("Something went wrong: " + msg, "err"); await confirmBox("Something went wrong", msg, "OK", false, true); return; }
+  if (install) {
+    status("Done! Vanta is in " + name + ".", "ok");
+    $("dText").textContent = restarted ? name + " is restarting. Open Settings → Vanta, or press Ctrl+Shift+O." : "Fully quit and reopen " + name + " to load Vanta.";
+    $("done").classList.add("open");
+  } else status("Vanta was removed from " + name + ".", "ok");
+};
+
+(async () => {
+  const st = await vState();
+  S.items = st.items; S.localBuild = st.localBuild; opt.dev = !!st.localBuild;
+  $("ver").textContent = "v" + st.version; $("logo").src = st.logo;
+  if (opt.dev) S.items = await vReload(true);
+  renderOpts(); render();
+})();
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(false); $("done").classList.remove("open"); } });
+</script>
+</body>
+</html>

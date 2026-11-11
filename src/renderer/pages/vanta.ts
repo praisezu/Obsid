@@ -5,6 +5,7 @@ import { plugins } from "../core/plugins";
 import { themes } from "../themes";
 import { ui, h } from "../ui/components";
 import { inSafeMode, safeModeCard, restartInSafeMode } from "../safeMode";
+import { communityStats } from "../community";
 
 function folderRow(title: string, path: string, which: "data" | "plugins" | "themes" | "root") {
     return ui.row({
@@ -24,6 +25,15 @@ ui.registerPage({
         const all = [...plugins.values()];
         const running = all.filter(p => p.started).length;
         const errors = all.filter(p => p.error).length;
+        // How many people use Vanta (from GitHub's public download counts; nobody is tracked)
+        const community = h("span", { style: { display: "contents" } });
+        communityStats().then(c => {
+            if (!c) return;
+            const fmt = (n: number) => n.toLocaleString();
+            community.replaceChildren(
+                h("span", { class: "vanta-stat", title: "Every download of a Vanta installer (Windows, macOS, Linux), from GitHub's public counts" }, h("b", {}, fmt(c.installs)), " installs"),
+                h("span", { class: "vanta-stat", title: `Vantas that downloaded the newest update (${c.version}). Running Vantas update themselves, so this follows how many are in use. Nobody is tracked.` }, h("b", {}, fmt(c.active)), " active"));
+        });
 
         return h("div", { class: "vanta-page" },
             inSafeMode() ? safeModeCard() : null,
@@ -36,6 +46,7 @@ ui.registerPage({
                         h("span", { class: "vanta-stat" }, h("b", {}, String(running)), ` of ${all.length} plugins running`),
                         h("span", { class: "vanta-stat" }, h("b", {}, String(themes.activeCount)), " themes on"),
                         errors ? h("span", { class: "vanta-stat", style: { color: "var(--o-danger)" } }, `${errors} plugin error${errors > 1 ? "s" : ""}`) : null,
+                        community,
                     ),
                 ),
                 h("div", { style: { display: "flex", flexDirection: "column", gap: "6px" } },
