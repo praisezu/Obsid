@@ -43,3 +43,21 @@ test("ordinary chat is never mistaken for an action", () => {
     for (const phrase of ["tell me a joke", "what song should i play", "what's 12 times 7?", "who made you?", "hey capri how are you"])
         assert.equal(hear(phrase), "chat", phrase);
 });
+
+// What her voice is given to say: sounds respelled so they aren't read letter by letter
+import { speechText } from "../src/plugins/capri";
+test("expressions and shorthand are spoken naturally", () => {
+    assert.equal(speechText("mm, okay"), "hmm, okay");
+    assert.equal(speechText("Mmm."), "hmm.");
+    assert.equal(speechText("mhm sure"), "hmm hmm sure");
+    assert.equal(speechText("mm-hmm"), "hmm hmm");
+    assert.equal(speechText("hm"), "hmm");
+    assert.equal(speechText("ew, sooo gross!!!"), "eew, so gross!!!");
+    assert.equal(speechText("idk tbh"), "I don't know to be honest");
+    assert.equal(speechText("this is so sus 😭 :)"), "this is so sus");
+    assert.equal(speechText("*sighs* fine~"), "haah. fine");
+    assert.equal(speechText("*waves* hi"), "hi");
+    assert.equal(speechText("shh"), "shush");
+    assert.equal(speechText("summer is sweet"), "summer is sweet");
+    assert.equal(speechText("mmm hmm, hmm"), "hmm hmm, hmm");
+});

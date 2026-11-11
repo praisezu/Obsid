@@ -83,10 +83,15 @@ async function nvidiaChat(k: string, system: string, messages: AiMessage[], maxT
             chat_template_kwargs: { enable_thinking: false },
             messages: [{ role: "system", content: system }, ...messages],
         }),
-        signal: AbortSignal.timeout(20_000),
-    });
-    if (res.status === 401 || res.status === 403) throw new Error("NVIDIA rejected the API key.");
-    if (!res.ok) throw new Error(`NVIDIA returned HTTP ${res.status}`);
+        signal: AbortSignal.timeout(25_000),
+    }).catch(e => { throw new Error(/timeout|abort/i.test(String(e?.name ?? e)) ? "NVIDIA took too long to answer." : "Couldn't reach NVIDIA: " + (e?.message ?? e)); });
+    if (res.status === 401 || res.status === 403) throw new Error("NVIDIA rejected the API key. Make a new one at build.nvidia.com and paste it in Capri's settings.");
+    if (res.status === 402) throw new Error("Your NVIDIA key is out of free credits.");
+    if (res.status === 429) throw new Error("NVIDIA says too many requests right now. Try again in a minute.");
+    if (!res.ok) {
+        const detail = await res.text().then(t => { try { const j = JSON.parse(t); return j.detail ?? j.error?.message ?? j.message ?? t; } catch { return t; } }).catch(() => "");
+        throw new Error(`NVIDIA returned HTTP ${res.status}${detail ? ": " + String(detail).slice(0, 160) : ""}`);
+    }
     const data: any = await res.json();
     const text = tidy(data?.choices?.[0]?.message?.content ?? "");
     if (!text) throw new Error("NVIDIA didn't answer");
@@ -125,8 +130,12 @@ export function createAi(dataDir: string, local: LocalBrain | null = null) {
             if (!k) {
                 const nv = nvKey();
                 if (nv) {
+                    let nvErr: Error;
                     try { return await nvidiaChat(nv, String(system).slice(0, 12000), clean, maxTokens); }
-                    catch (e) { if (/rejected/.test(String((e as Error)?.message))) throw e; /* busy: fall back to the free brains */ }
+                    catch (e) { nvErr = e as Error; if (/rejected|credits/.test(nvErr.message)) throw nvErr; }
+                    // NVIDIA had a hiccup: try the free brains, and if they can't answer either, say why NVIDIA didn't
+                    try { return await freeChat(String(system).slice(0, 8000), clean, local, mode === "online"); }
+                    catch { throw nvErr; }
                 }
                 return freeChat(String(system).slice(0, 8000), clean, local, mode === "online");
             }

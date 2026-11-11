@@ -11,7 +11,11 @@ import { sleep } from "./core/utils";
 import { ui, h } from "./ui/components";
 
 const CHECK_EVERY = 30 * 60 * 1000;
+const WATCH_EVERY = 60 * 1000;
 let running = false;
+let finishing = false;
+/** A version you said "Later" to: not asked again this session */
+let postponed: string | null = null;
 
 const inVoiceCall = () => !!common.SelectedChannelStore?.getVoiceChannelId?.();
 
@@ -45,6 +49,12 @@ export function showUpdatedNotice() {
  * restart when its background part changed too. Never in the middle of a voice call.
  */
 async function finishWhenIdle(version: string, restart: boolean) {
+    if (finishing) return;
+    finishing = true;
+    try { await finishPrompt(version, restart); } finally { finishing = false; }
+}
+
+async function finishPrompt(version: string, restart: boolean) {
     const verb = restart ? "restart" : "refresh";
     if (inVoiceCall()) {
         ui.toast(`Vanta ${version} is installed. Discord will ${verb} when you leave the voice call.`, { ms: 8000 });
@@ -62,6 +72,7 @@ async function finishWhenIdle(version: string, restart: boolean) {
     });
     for (let i = 50; i > 0 && !cancelled && t.el.isConnected; i--) { left.textContent = String(Math.ceil(i / 10)); await sleep(100); }
     if (cancelled) {
+        postponed = version;
         ui.toast(`Vanta ${version} is installed. It'll finish the next time Discord ${restart ? "restarts" : "reloads"}.`, { ms: 6000 });
         return;
     }
@@ -71,9 +82,24 @@ async function finishWhenIdle(version: string, restart: boolean) {
     else location.reload();
 }
 
+/**
+ * A newer Vanta is already on disk but not running yet (an update finished while Discord stayed open, or you pressed
+ * "Later", or a developer rebuilt it): refresh or restart to load it, just like after an automatic update.
+ */
+async function finishInstalled() {
+    if (finishing || running) return false;
+    const inst = await native.updaterInstalled().catch(() => null);
+    if (!inst || inst.version === __VANTA_VERSION__ || inst.version === postponed) return false;
+    settings.vanta.pendingUpdate ??= { from: __VANTA_VERSION__, to: inst.version, notes: "", at: Date.now(), refreshed: !inst.restart };
+    await saveSettingsNow();
+    await finishWhenIdle(inst.version, inst.restart);
+    return true;
+}
+
 /** Checks for an update; installs it and restarts Discord if auto-update is on. */
 export async function checkForUpdates({ manual = false } = {}) {
     if (running) return;
+    if (await finishInstalled()) return;
     running = true;
     try {
         const r = await native.updaterCheck();
@@ -106,4 +132,6 @@ export function startAutoUpdate() {
     if (!settings.vanta.autoCheckUpdates) return;
     setTimeout(() => checkForUpdates(), 8000);
     setInterval(() => { if (settings.vanta.autoCheckUpdates) checkForUpdates(); }, CHECK_EVERY);
+    // Cheap (two local files): catches a newer Vanta landing on disk while Discord is open
+    setInterval(() => { if (settings.vanta.autoUpdate) finishInstalled(); }, WATCH_EVERY);
 }

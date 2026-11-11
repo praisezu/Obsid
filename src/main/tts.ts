@@ -246,7 +246,7 @@ export function createVoice(dataDir: string) {
         /** Loads the voice model ahead of time (and keeps it loaded), so her lines aren't slow */
         async warm() { await use("voice"); return engines.voice.status; },
         async speak(text: string, speed = 1.1): Promise<{ audio: Float32Array; rate: number }> {
-            text = String(text || "").replace(/s+/g, " ").trim().slice(0, 400);
+            text = String(text || "").replace(/\s+/g, " ").trim().slice(0, 400);
             if (!text) throw new Error("Nothing to say");
             const wc = await use("voice");
             const id = nextId++;

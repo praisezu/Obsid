@@ -90,10 +90,18 @@ export const readVersion = (root: string, fallback: string) => {
 };
 
 /** Fingerprint of the parts that need a full Discord restart to change (main process and preload) */
-function coreHash(root: string) {
+export function coreHash(root: string) {
     const h = createHash("sha256");
     for (const f of ["dist/main.js", "dist/preload.js"]) { try { h.update(fs.readFileSync(path.join(root, f))); } catch { h.update("missing"); } }
     return h.digest("hex");
+}
+
+/**
+ * What's installed on disk compared with what's running: an update (or a rebuild) can land while Discord keeps
+ * running, and only takes effect after a refresh, or a restart if the background part changed.
+ */
+export function updaterInstalled(root: string, fallback: string, bootCore: string) {
+    return { version: readVersion(root, fallback), restart: coreHash(root) !== bootCore };
 }
 
 export async function updaterApply(root: string, version: string): Promise<{ ok: boolean; output: string; version?: string; restart?: boolean }> {

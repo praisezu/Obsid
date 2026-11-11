@@ -72,6 +72,39 @@ const VOICE = { styleSpeed: 1.1, speed: 1.2, volume: 0.8 };
 /** Capri Desktop's own personality and safety lines, read from its source at runtime (see loadPersona) */
 const BRAIN_URL = "https://raw.githubusercontent.com/lachydotmcg/capri-desktop/main/app/Brain.cs";
 
+/** Chat shorthand she'd say in full */
+const SAY_IN_FULL: Record<string, string> = {
+    idk: "I don't know", omg: "oh my god", ngl: "not gonna lie", tbh: "to be honest", brb: "be right back", rn: "right now",
+    imo: "in my opinion", btw: "by the way", ty: "thank you", np: "no problem", pls: "please", plz: "please", gg: "good game",
+    fr: "for real", istg: "I swear to god", smh: "shaking my head", wdym: "what do you mean", ikr: "I know, right",
+    lmao: "ha ha", lmfao: "ha ha", rofl: "ha ha", u: "you", ur: "your", w: "with", bc: "because", cuz: "cause", ofc: "of course",
+};
+
+/**
+ * Makes a line sound right out loud. Her voice spells out letter-only words ("mm" came out as "M M"), so sounds are
+ * respelled the way it reads them naturally (checked against its phonemizer), stretched words are evened out ("sooo"),
+ * chat shorthand is said in full, and emoji, emoticons and *actions* are dropped (a few actions become sounds).
+ */
+export function speechText(text: string): string {
+    return String(text || "")
+        .replace(/\*(sighs?|giggles?|laughs?|hums?|gasps?)\*/gi, (_, a) => ({ s: "haah.", g: "hehe.", l: "haha.", h: "hmm.", ga: "ah!" } as Record<string, string>)[/^ga/i.test(a) ? "ga" : a[0].toLowerCase()])
+        .replace(/\*[^*\n]{1,40}\*/g, " ")
+        .replace(/\p{Extended_Pictographic}|️|‍/gu, " ")
+        .replace(/(^|\s)(?:[:;=xX][-']?[)(DPpOo3\]\[/\|]+|<\/?3+|\^\^|\^_\^|uwu|owo|T_T|;-;)(?=\s|$|[.!?,])/g, "$1")
+        .replace(/~+/g, "")
+        .replace(/\b(?:mm+[-\s]?hm+|m+hm+|uh[-\s]?huh)\b/gi, "hmm hmm")
+        .replace(/\b(?:h?m{2,}|hm+)\b/gi, "hmm")
+        .replace(/\bh+m+p+h+\b/gi, "humph")
+        .replace(/\bs+h{1,}\b/gi, "shush")
+        .replace(/\b(?:pf+t*|ps+h+|ph+)\b/gi, "puh")
+        .replace(/\b(?:tch|ts+k+)\b/gi, "tsk")
+        .replace(/\bew+\b/gi, "eew")
+        .replace(/\baw{2,}\b/gi, "aw")
+        .replace(/([a-z])\1{2,}/gi, "$1")
+        .replace(/\b[a-z]+\b/gi, w => SAY_IN_FULL[w.toLowerCase()] ?? w)
+        .replace(/\s+/g, " ").trim();
+}
+
 /** Splits a line into sentences, so the first one can play while the rest are made */
 function sentences(text: string): string[] {
     const parts = text.match(/[^.!?…]+[.!?…]+["')\]]*\s*|[^.!?…]+$/g)?.map(s => s.trim()).filter(Boolean) ?? [text];
@@ -83,7 +116,7 @@ function sentences(text: string): string[] {
     }
     // Start talking sooner: if the first sentence is long, its first clause goes on its own (it's made faster)
     if (out[0] && out[0].length > 45) {
-        const m = /^(.{12,60}?[,;:—–-])s+(.+)$/.exec(out[0]);
+        const m = /^(.{12,60}?[,;:—–-])\s+(.+)$/.exec(out[0]);
         if (m) out.splice(0, 1, m[1], m[2]);
     }
     return out;
@@ -475,7 +508,7 @@ export default definePlugin({
         const ratio = 2 ** (semis / 12);
         const speed = Math.max(0.6, Math.min(1.6, VOICE.styleSpeed * VOICE.speed / ratio));
         // Ask for every sentence now, in order (the voice works on one at a time)
-        const made = sentences(text).map(p => {
+        const made = sentences(speechText(text) || text).map(p => {
             const g = this.genChain.then(() => native.voiceSpeak(p, speed));
             this.genChain = g.catch(() => { });
             return g;
@@ -810,6 +843,9 @@ export default definePlugin({
             if (e?.message === "choose") return; // she's asking where to think
             this.logger.warn("Her brain didn't answer:", e);
             this.history.splice(ask - 1, 1);
+            // Her own key's brain failed: say exactly why, so it can be fixed
+            const why = String(e?.message ?? "").replace(/^Error invoking remote method '[^']+': (Error: )?/, "");
+            if (/NVIDIA|Anthropic/.test(why)) { this.say("my brain link's down. " + why); return; }
             this.say(["[SIGNAL CORRUPTED] ...my brain flatlined for a sec. say that again?",
                 "ugh, static. the free brain's swamped right now, ask me again in a moment.",
                 "hold on, my head's full of noise. try me again?"][Math.floor(Math.random() * 3)]);

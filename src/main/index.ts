@@ -12,7 +12,7 @@ import * as path from "node:path";
 
 import type { BackupData, BackupParts, RendererScript, ThemeFile } from "@shared/types";
 import { parseMeta, safeName } from "./util";
-import { updaterInfo, updaterCheck, updaterApply, readVersion } from "./updater";
+import { updaterInfo, updaterCheck, updaterApply, updaterInstalled, readVersion, coreHash } from "./updater";
 import { installCspPatch } from "./csp";
 import { startSelfHeal } from "./selfHeal";
 import { createCloud } from "./cloud";
@@ -308,6 +308,8 @@ function main() {
     handle("updater-info", () => updaterInfo(ROOT, readVersion(ROOT, VERSION)));
     handle("updater-check", () => updaterCheck(ROOT, readVersion(ROOT, VERSION)));
     handle("updater-apply", () => updaterApply(ROOT, readVersion(ROOT, VERSION)));
+    const bootCore = coreHash(ROOT);
+    handle("updater-installed", () => updaterInstalled(ROOT, VERSION, bootCore));
 
     // backup
     handle("backup-export", async (e, data: BackupData) => {
