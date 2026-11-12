@@ -31,7 +31,7 @@ esac
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-echo "Downloading $asset…"
+echo "Downloading ${asset}..."
 curl -fsSL "$BASE/$asset" -o "$tmp/$asset"
 curl -fsSL "$BASE/SHA256SUMS" -o "$tmp/SHA256SUMS"
 
