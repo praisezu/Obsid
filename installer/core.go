@@ -137,11 +137,10 @@ func FindDiscords(mainEntry string) []*Branch {
 				}
 				b.BaseDir = filepath.Join(cfg, b.Folder)
 			}
-			b.AppVersion = newest(b.BaseDir, reUnixVer)
-			if b.AppVersion == "" {
+			b.AppVersion, b.IndexPath = findUnixCore(b.BaseDir)
+			if b.IndexPath == "" {
 				continue
 			}
-			b.IndexPath = filepath.Join(b.BaseDir, b.AppVersion, "modules", "discord_desktop_core", "index.js")
 		}
 		if _, err := os.Stat(b.IndexPath); err != nil {
 			continue
@@ -150,6 +149,23 @@ func FindDiscords(mainEntry string) []*Branch {
 		out = append(out, b)
 	}
 	return out
+}
+
+// findUnixCore finds discord_desktop_core's index.js under a macOS/Linux Discord folder. Older Discord:
+// <base>/0.0.300/modules/discord_desktop_core/index.js. Newer Discord (the same layout as Windows):
+// <base>/app-0.0.421/modules/discord_desktop_core-1/discord_desktop_core/index.js. The newest install wins.
+func findUnixCore(base string) (version, index string) {
+	oldVer, newVer := newest(base, reUnixVer), newest(base, reWinApp)
+	if newVer != "" && (oldVer == "" || versionKey(newVer) > versionKey(oldVer)) {
+		modules := filepath.Join(base, newVer, "modules")
+		if core := newest(modules, reWinCore); core != "" {
+			return newVer, filepath.Join(modules, core, "discord_desktop_core", "index.js")
+		}
+	}
+	if oldVer == "" {
+		return "", ""
+	}
+	return oldVer, filepath.Join(base, oldVer, "modules", "discord_desktop_core", "index.js")
 }
 
 var reRequire = regexp.MustCompile(`require\("((?:[^"\\]|\\.)*)"\)`)
