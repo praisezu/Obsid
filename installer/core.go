@@ -148,24 +148,129 @@ func FindDiscords(mainEntry string) []*Branch {
 		b.Refresh(mainEntry)
 		out = append(out, b)
 	}
+	if len(out) == 0 && runtime.GOOS != "windows" {
+		for _, b := range searchDiscords(home) {
+			b.Refresh(mainEntry)
+			out = append(out, b)
+		}
+	}
 	return out
 }
 
-// findUnixCore finds discord_desktop_core's index.js under a macOS/Linux Discord folder. Older Discord:
-// <base>/0.0.300/modules/discord_desktop_core/index.js. Newer Discord (the same layout as Windows):
-// <base>/app-0.0.421/modules/discord_desktop_core-1/discord_desktop_core/index.js. The newest install wins.
+// findUnixCore finds discord_desktop_core's index.js under a macOS/Linux Discord folder, in either layout:
+// older Discord: <base>/0.0.300/modules/discord_desktop_core/index.js; newer Discord (the same layout as Windows):
+// <base>/app-0.0.421/modules/discord_desktop_core-1/discord_desktop_core/index.js. Every version folder is tried,
+// newest first, and the first index.js that really exists wins.
 func findUnixCore(base string) (version, index string) {
-	oldVer, newVer := newest(base, reUnixVer), newest(base, reWinApp)
-	if newVer != "" && (oldVer == "" || versionKey(newVer) > versionKey(oldVer)) {
-		modules := filepath.Join(base, newVer, "modules")
-		if core := newest(modules, reWinCore); core != "" {
-			return newVer, filepath.Join(modules, core, "discord_desktop_core", "index.js")
-		}
-	}
-	if oldVer == "" {
+	entries, err := os.ReadDir(base)
+	if err != nil {
 		return "", ""
 	}
-	return oldVer, filepath.Join(base, oldVer, "modules", "discord_desktop_core", "index.js")
+	var vers []string
+	for _, e := range entries {
+		if e.IsDir() && (reUnixVer.MatchString(e.Name()) || reWinApp.MatchString(e.Name())) {
+			vers = append(vers, e.Name())
+		}
+	}
+	sort.SliceStable(vers, func(i, j int) bool {
+		ki, kj := versionKey(vers[i]), versionKey(vers[j])
+		if ki != kj {
+			return ki > kj
+		}
+		return strings.HasPrefix(vers[i], "app-") // same version in both layouts: the newer layout first
+	})
+	for _, v := range vers {
+		modules := filepath.Join(base, v, "modules")
+		mods, _ := os.ReadDir(modules)
+		var cores []string
+		for _, m := range mods {
+			if m.IsDir() && reWinCore.MatchString(m.Name()) {
+				cores = append(cores, m.Name())
+			}
+		}
+		sort.Slice(cores, func(i, j int) bool { return versionKey(cores[i]) > versionKey(cores[j]) })
+		for _, c := range cores {
+			for _, idx := range []string{filepath.Join(modules, c, "discord_desktop_core", "index.js"), filepath.Join(modules, c, "index.js")} {
+				if fi, err := os.Stat(idx); err == nil && !fi.IsDir() {
+					return v, idx
+				}
+			}
+		}
+	}
+	return "", ""
+}
+
+// unixSearchRoots are where Discord keeps its files on macOS and Linux (normal, Flatpak and Snap installs)
+func unixSearchRoots(home string) []string {
+	if runtime.GOOS == "darwin" {
+		return []string{filepath.Join(home, "Library", "Application Support")}
+	}
+	cfg := os.Getenv("XDG_CONFIG_HOME")
+	if cfg == "" {
+		cfg = filepath.Join(home, ".config")
+	}
+	return []string{cfg, filepath.Join(home, ".var", "app"), filepath.Join(home, "snap")}
+}
+
+// searchDiscords looks through unixSearchRoots for any discord_desktop_core/index.js, when the usual places came up
+// empty (an unusual install). Which Discord it belongs to comes from the folder name (discordptb, discordcanary, …).
+func searchDiscords(home string) []*Branch {
+	found := map[string]*Branch{}
+	for _, root := range unixSearchRoots(home) {
+		_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+			if err != nil || p == root {
+				return nil
+			}
+			rel, _ := filepath.Rel(root, p)
+			depth := len(strings.Split(rel, string(filepath.Separator)))
+			if d.IsDir() {
+				if depth > 8 || (depth == 1 && !strings.Contains(strings.ToLower(d.Name()), "discord")) {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if d.Name() != "index.js" || filepath.Base(filepath.Dir(p)) != "discord_desktop_core" {
+				return nil
+			}
+			lower := strings.ToLower(rel)
+			def := branchDefs[0]
+			for _, bd := range branchDefs[1:] {
+				if strings.Contains(lower, bd[3]) {
+					def = bd
+				}
+			}
+			ver := ""
+			for _, part := range strings.Split(rel, string(filepath.Separator)) {
+				if reUnixVer.MatchString(part) || reWinApp.MatchString(part) {
+					ver = part
+				}
+			}
+			if prev := found[def[0]]; prev == nil || versionKey(ver) > versionKey(prev.AppVersion) {
+				base := p
+				for i := 0; i < 6 && filepath.Base(base) != ver && base != root; i++ {
+					base = filepath.Dir(base)
+				}
+				found[def[0]] = &Branch{Key: def[0], Name: def[1], Exe: def[2], Folder: def[3], BaseDir: filepath.Dir(base), AppVersion: ver, IndexPath: p}
+			}
+			return nil
+		})
+	}
+	var out []*Branch
+	for _, d := range branchDefs {
+		if b := found[d[0]]; b != nil {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
+// DiscordSearchHint lists where Discord was looked for, for the "not found" message
+func DiscordSearchHint() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.Getenv("LOCALAPPDATA"), "Discord")
+	}
+	home, _ := os.UserHomeDir()
+	return strings.Join(unixSearchRoots(home), ", ")
 }
 
 var reRequire = regexp.MustCompile(`require\("((?:[^"\\]|\\.)*)"\)`)

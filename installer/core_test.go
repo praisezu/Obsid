@@ -40,7 +40,28 @@ func TestFindUnixCore(t *testing.T) {
 		t.Fatalf("both: got %q, want %q", got, want)
 	}
 
+	// Same version in both layouts, but only the new one has the file (the old folder is just leftovers)
+	tie := t.TempDir()
+	os.MkdirAll(filepath.Join(tie, "0.0.421", "modules"), 0o755)
+	want = mk(tie, "app-0.0.421", "modules", "discord_desktop_core-1", "discord_desktop_core", "index.js")
+	if _, got := findUnixCore(tie); got != want {
+		t.Fatalf("tie: got %q, want %q", got, want)
+	}
+
 	if _, got := findUnixCore(t.TempDir()); got != "" {
 		t.Fatalf("empty folder: got %q", got)
+	}
+}
+
+func TestSearchDiscords(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", "")
+	// An unusual spot: a Flatpak install of Discord PTB
+	want := filepath.Join(home, ".var", "app", "com.discordapp.DiscordPTB", "config", "discordptb", "app-0.0.99", "modules", "discord_desktop_core-1", "discord_desktop_core", "index.js")
+	os.MkdirAll(filepath.Dir(want), 0o755)
+	os.WriteFile(want, []byte("x"), 0o644)
+	got := searchDiscords(home)
+	if len(got) != 1 || got[0].IndexPath != want || got[0].Key != "ptb" || got[0].AppVersion != "app-0.0.99" {
+		t.Fatalf("got %+v", got)
 	}
 }

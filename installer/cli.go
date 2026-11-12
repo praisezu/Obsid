@@ -55,6 +55,8 @@ func runCLI(o cliOptions) int {
 	branches := FindDiscords(entry)
 	if len(branches) == 0 {
 		fmt.Println("No Discord installation found.")
+		fmt.Println("Looked in: " + DiscordSearchHint())
+		fmt.Println("Open Discord and let it finish loading (log in), then run this again.")
 		return 1
 	}
 	if o.status {
